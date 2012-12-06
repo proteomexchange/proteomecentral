@@ -1,0 +1,500 @@
+#!/usr/local/bin/perl -w
+
+use strict;
+use JSON;
+use XML::Writer;
+use lib "/local/wwwspecial/proteomecentral/lib/perl";
+use ProteomeXchange::Dataset;
+use ProteomeXchange::DatasetParser;
+$| = 1;
+use CGI qw/:standard/;
+my $cgi = new CGI;
+
+my $response = {};
+$response->{result} = "ERROR";
+$response->{message} = "ERROR: Unhandled exception E001";
+my @tmp = ( 'Dataset service start' );
+$response->{info} = \@tmp;
+
+my $params;
+
+my @parameters = qw ( test verbose ID outputMode detailLevel);
+our @page;
+use LWP::UserAgent;
+use HTTP::Request;
+my $ua = LWP::UserAgent->new();
+
+
+#### Extract CGI parameters
+foreach my $parameter ( @parameters ) {
+  if ($cgi->param($parameter)) {
+    $params->{$parameter} = $cgi->param($parameter);
+  	push(@{$response->{info}},"Found input parameter $parameter=$params->{$parameter}") if ($cgi->param('verbose'));
+  }
+}
+my $skinLink = 'http://proteomecentral.proteomexchange.org/template.php';
+$response = $ua->request( HTTP::Request->new( GET => "$skinLink" ) );
+if ( $response -> is_success()){
+  @page = split( "\n", $response->content() );
+}else{
+  $response->{message} = "unable to open template http://proteomecentral.proteomexchange.org/template.php\n";
+  exit;
+}
+
+#### Also extract command-line parameters, useful for testing
+foreach my $arg ( @ARGV ) {
+  if ( $arg =~ /(\S+)=(\S+)/) {
+    my $key = $1;
+	  my $value = $2;
+		foreach my $parameter ( @parameters ) {
+			if ($key eq $parameter) {
+				$params->{$parameter} = $value;
+				push(@{$response->{info}},"Found input parameter $key=$value");
+			}
+		}
+  }# else {
+   #  $response->{message} = "ERROR: Unable to parse method line parameter '$arg'\n";
+	 #  exit;
+  #}
+}
+
+$response->{verbose} = $params->{verbose};
+
+#### Handle a dataset identifier
+if ($params->{ID}  and $params->{ID} ne '') {
+  showDataset(params=>$params,response=>$response);
+}else{
+  listDatasets(params=>$params,response=>$response);
+}
+
+
+exit;
+
+
+###############################################################################
+# sendResponse
+###############################################################################
+sub sendResponse {
+  my %args = @_;
+  my $SUB_NAME = 'sendResponse';
+
+  #### Decode the argument list
+  my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
+
+  print "Content-type: text/plain\n\n";
+
+  print "result=$response->{result}\n";
+  print "message=$response->{message}\n" if ($response->{result});
+  print "identifier=$response->{identifier}\n" if ($response->{identifier});
+
+  #if ($response->{info} && $response->{verbose}) {
+  if ($response->{info}) {
+    foreach my $line (@{$response->{info}}) {
+      print "info=$line\n";
+	}
+  }
+	
+  exit;
+}
+
+
+###############################################################################
+# listDatasets
+###############################################################################
+sub listDatasets {
+  my %args = @_;
+  my $SUB_NAME = 'listDatasets';
+
+  #### Decode the argument list
+  my $params = $args{'params'}; 
+  my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
+  my $test = $params->{test} || 'no';
+  my $outputMode=$params->{outputMode} || 'html';
+  my $extended = $params->{detailLevel} || '0';
+  my $table_name = 'dataset';
+  my $teststr = '';
+
+  if ($test && ($test =~ /yes/i || $test =~ /true/i)){
+    $teststr = "&test=$test";
+    $table_name = 'dataset_test' 
+  }
+
+	my $dbh = new ProteomeXchange::Database;
+  my $whereclause = '';
+  my %hidden_cols = ();
+  my @headings = (); 
+  
+  if ($extended !~ /extended/i){
+    $whereclause = "where status != 'ID requested'";
+    %hidden_cols = (
+                  "Status" => 1,
+                  "Identifier Date"=> 1,
+                  "Revision Date" => 1,);
+  }
+
+  my  @column_array =(
+        ["datasetIdentifier","Dataset Identifier"],
+        ["PXPartner","Repository"],
+        ["status","Status"],
+        ["primarySubmitter","Primary Submitter"],
+        ["title","Title"],
+        ["species","Species"],
+        ["instrument","Instrument"],
+        ["publication","Publication"],
+        ["DATE_FORMAT(identifierDate,'\%Y-\%m-\%d')","Identifier Date"],
+        ["DATE_FORMAT(submissionDate,'\%Y-\%m-\%d')","Announcement Date"],
+        ["DATE_FORMAT(revisionDate,'\%Y-\%m-\%d')","Revision Date"],
+        );
+
+  my $columns_clause =  build_SQL_columns_list(
+				column_array_ref=>\@column_array,
+        hidden_cols_ref => \%hidden_cols,
+        heading => \@headings);
+
+	my $sql = qq~ select
+                 $columns_clause 
+                 from $table_name
+                 $whereclause
+             ~;
+	my @results = $dbh->selectSeveralColumns($sql);
+
+  if ($outputMode =~ /html/i){
+		print "Content-type:text/html\r\n\r\n";
+		foreach my $line (@page){
+			if($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
+				 $line =~ s/$1/ProteomeXchange Datasets/;
+				 print "$line\n";
+			}elsif($line =~ /class="node-inner-padding"/){
+				#$line =~ s/>/style="padding: 0">/g;
+				print "$line\n";
+			}elsif ($line =~ /^<!-- BEGIN main content -->/){
+				print "$line\n";
+					 my $str = qq~
+            <div class="wrapper">
+            <link rel="stylesheet" type="text/css" href="../javascript/ext/css/ext-all.css"/>
+            <link rel="stylesheet" type="text/css" href="../javascript/ext/css/grid.css"/>
+            <script type="text/javascript" src="../javascript/ext/jquery-1.8.0.min.js"></script> 
+            <script type="text/javascript" src="../javascript/ext/ext-4.0.7-gpl/bootstrap.js"></script>
+            <script type="text/javascript" src="../javascript/ext/RowExpander.js"></script>
+            <script type="text/javascript" src="../javascript/ext/AsyncRowExpander.js"></script>
+            <script type="text/javascript" src="../javascript/ext/grid.js"></script>
+						<div id="searchContainer">
+						<input type="text" id="field" id="s" name="q">
+						<div id="delete"><span id="x">x</span></div></input>
+						<input type="button" name="searchbtn" id="searchbtn" value="Search" />
+						</div>
+						<table cellpadding="0" width="100%" align="center" cellspacing="0" id="br1owseWrapper">
+						<tr>
+							<td valign="top">
+							 <div class="datagrid">
+								<div id="center"></div>
+								</div> 
+							</td>
+							</tr>
+						</table>
+            </div>
+            <div class="footer"  align="center">
+					~;
+        print "$str\n";
+      }elsif($line =~ /<\/body/){
+        print "</div>$line\n";
+      }else{
+        print "$line\n";
+      }
+		}
+  }elsif($outputMode=~ /xml/i){
+     print "Content-type:text/xml\r\n\r\n";
+     my $writer = new XML::Writer(DATA_MODE => 1, DATA_INDENT => 4,ENCODING=>'UTF-8',);
+     $writer->xmlDecl("UTF-8");
+     $writer->startTag("ProteomeXchangeDataset",
+        "xmlns:xsi"=>"http://www.w3.org/2001/XMLSchema-instance",
+        "xsi:noNamespaceSchemaLocation"=>"proteomeXchange-draft-05.xsd",
+        "formatVersion"=>"1.0.0",
+      );
+
+     foreach my $values (@results) {
+       $headings[0] =~ s/\s+/_/g; 
+       $writer->startTag($headings[0], ,id=>"$values->[0]");
+       for (my $i=1;$i<=$#headings;$i++){
+        $headings[$i] =~ s/\s+/_/g;
+        $writer->startTag($headings[$i],);
+        $writer->characters($values->[$i]);
+        $writer->endTag($headings[$i]);
+       }
+       $writer->endTag($headings[0]);
+     } 
+     $writer->endTag("ProteomeXchangeDataset");
+     $writer->end();
+  }elsif($outputMode=~ /tsv/i){
+    print "Content-type:text/plain\r\n\r\n";
+    foreach my $h (@headings){
+     print "$h\t";
+    }
+    print "\n";
+    foreach my $values (@results){
+     print join("\t", @$values);
+     print "\n";
+   }
+  }
+}
+
+
+###############################################################################
+# showDataset
+###############################################################################
+sub showDataset {
+  my %args = @_;
+  my $SUB_NAME = 'showDataset';
+
+  #### Decode the argument list
+  my $params = $args{'params'} || die("[$SUB_NAME] ERROR: params not passed");
+  my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
+  my $outputmode = $params->{outputMode} || '';
+  my $datasetID = $params->{ID} || die("[$SUB_NAME] ERROR: datasetID not passed");
+  my $test = $params->{test} || 'no';
+  my $table_name = 'dataset';
+  my $path = '/local/wwwspecial/proteomecentral/var/submissions';
+  my $teststr = '';
+  if ($test && ($test =~ /yes/i || $test =~ /true/i)){
+    $table_name = 'dataset_test';
+    $path .= "/testing";
+    $teststr = "?test=$test";
+  }
+
+  if ($datasetID =~ /^PXD/){
+    $datasetID =~ s/PXD//;
+    $datasetID =~ s/^0+//;
+  }
+  my ($title,$str,$id,$status,$announcementXML);
+
+  if ( $datasetID !~ /^\d+$/){
+    $str =  qq~
+       <b>The input ID is not valid and should be of the form 
+          PXDnnnnnn or numbers only.</b><BR><BR>
+    ~;
+   $title  = $params->{ID};
+  }else{
+    my $len = 9 - length($datasetID);
+    $title = substr ("PXD000001",0, $len) . "$datasetID";
+		my $dbh = new ProteomeXchange::Database;
+    my $sql = qq~ select announcementXML
+                 from $table_name where dataset_id=$datasetID;
+             ~;
+		my @results = $dbh->selectSeveralColumns($sql);
+    
+ 		if ( @results == 1){     
+      $announcementXML = $results[0]->[0];
+      my $parser = new ProteomeXchange::DatasetParser;
+      $parser->parse('uploadFilename' => $announcementXML, 'response' => $response, 'path'=> $path);
+      my $result = $response->{dataset};
+      my $header;
+      #foreach my $key (keys %{$result}){
+      $str .= "<p> <b>DataSet Summary</b> </p>\n<ul>";
+      foreach my $key (qw(PXPartner 
+                          announceDate
+                          announcementXML 
+                          DigitalObjectIdentifier
+                          ReviewLevel
+                          datasetOrigin
+                          RepositorySupport 
+													primarySubmitter 
+													title 
+													description 
+													speciesList
+                          modificationList
+                          instrument)){
+        
+        $header =  ucfirst($key);  
+        if ($header eq 'PXPartner'){
+          $header = 'HostingRepository'
+        } 
+        if ($key eq 'announcementXML'){
+          $str .= qq~
+                <li><b>$header</b>: <a href='http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$datasetID&outputMode=XML&test=$test'>$result->{$key}</a></li>
+                ~;
+        }elsif ($key eq 'DigitalObjectIdentifier'){
+          $str .= qq~<li><b>$header</b>: <a href="$result->{$key}">$result->{$key}</a></li>~;
+        }else{
+          $str .= qq~<li><b>$header</b>: $result->{$key}</li>
+                  ~;
+        }
+      }
+      $str .= "</ul>\n";
+      foreach my $key (qw (publicationList keywordList contactList fullDatasetLinkList)){
+				if ( defined $result->{$key}){
+          $header = ucfirst($key);
+          $header =~  s/([A-Z][a-z]+)/$1 /g;
+					$str .= "<p> <b>$header</b> </p>\n<ol>\n";     
+          if($key eq 'contactList'){
+            foreach my $id (keys %{$result->{contactList}}){
+              if ( defined $result->{contactList}{$id}{'contact name'}){
+                $str .= "<b>$result->{contactList}{$id}{'contact name'}</b>\n<ul>";
+              }else{
+                $str .= "<b>$id</b>\n<ul>";
+              }
+              foreach my $name (keys %{$result->{contactList}{$id}}){
+                next if($name eq 'contact name');
+                $str .= qq~<li>$name: $result->{contactList}{$id}{$name}</li> ~;
+              }
+              $str .= "</ul>\n";
+            }
+          }else{
+					  my @lists = split (";",  $result->{$key});
+					  foreach my $list(@lists){
+               next if ($list !~ /\w/);
+						   $str .= qq~<li>$list</li>~;
+					 }
+          }
+					$str .= "</ol>\n";
+        } 
+      }
+
+      if ( defined $result->{repositoryRecordList}){
+        my $key = "repositoryRecordList";
+        my $header = ucfirst($key);
+        $header =~  s/([A-Z][a-z]+)/$1 /g;
+        $str .= qq~<tr>
+                   <td><b>$header</b></td><td>
+                   <div id="less" onclick='toggle_more("less")' >[+]</div>
+                   <div id="more" onclick='toggle_less("more")' style='display: none'>[-]</div> 
+                    </td></tr> 
+                    <ul id="repositoryRecordList" style='display: none'>
+        ~;
+        
+        foreach my $repositoryid (keys %{$result->{repositoryRecordList}}){
+          $str .= "<li>$repositoryid<ol>";
+          foreach my $recordid (keys %{$result->{repositoryRecordList}{$repositoryid}}){
+            if (defined $result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}){
+               $str .= "<li><a href=\"$result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}\">$recordid</a><ol>"; 
+            }else{ 
+               $str .= "<li>$recordid<ol>";
+            }
+            foreach my $name (sort{$a cmp $b} keys %{$result->{repositoryRecordList}{$repositoryid}{$recordid}}){
+               next if($name =~ /Uri/);
+               $str .= "<li>$name: $result->{repositoryRecordList}{$repositoryid}{$recordid}{$name}</li>";
+            }           
+            $str .= "</ol></li>";
+          }
+          $str .= "</li>";
+        }
+        $str .= "</ul>\n";
+      }     
+		}else{
+        $str =  qq~
+           <b>The identifier $title has not yet been assigned;</b><BR><BR>
+        ~;
+   }
+  }
+  if (($outputmode !~ /XML/i && $status !~ /requested/) || 
+      ($outputmode =~ /XML/i && $status =~ /requested/) || $status =~ /requested/ ){
+		#print "Content-type:text/html charset=utf-8\r\n\r\n";
+    print header ( -type => 'text/html');
+		foreach my $line (@page){
+			if($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
+				 my $len = 9 - length($datasetID);
+				 $line =~ s/$1/ProteomeXchange Dataset $title/;
+				 print "$line\n";
+			}elsif($line =~ /class="node-inner-padding"/){
+				#$line =~ s/>/style="padding: 0">/g;
+				print "$line\n";
+			}elsif ($line =~ /^<!-- BEGIN main content -->/){
+         print qq~
+						<link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
+						<script type="text/javascript">
+							function toggle_more(id){
+							  var list = document.getElementById("repositoryRecordList");
+                list.style.display = '';
+                var x = document.getElementById(id);
+							  var y = document.getElementById('more');
+							  x.style.display='none';
+							  y.style.display='';
+						 }
+							function toggle_less(id){
+               var list = document.getElementById("repositoryRecordList");
+                list.style.display = 'none';
+							 var x = document.getElementById(id);
+							 var y = document.getElementById('less');
+							 x.style.display='none';
+							 y.style.display='';
+						 }
+
+						</script>
+
+							<div id="main">
+								<div id="primary" class="site-content">
+                  <div><a href='http://proteomecentral.proteomexchange.org/cgi/GetDataset$teststr'> << Full experiment listing </a></div>
+         ~;
+				 print "$line\n";
+
+         if ( $status !~ /requested/){
+           if ($str !~ /(has not yet been assigned|PXDnnnnnn)/){
+				     print qq~ <h1 class="entry-title"> $title </h1> ~;
+           }
+           print qq~
+                  <div class="entry-content">
+                  $str
+									 </div><!-- #content -->
+									 </div><!-- #primary .site-content -->
+									 </div><!-- #main -->
+                 ~;
+         }else{
+           print qq~
+             ProteomeXchange dataset $id has been reserved for the PRIDE repository for a dataset 
+             undergoing processing. <br>However, this dataset has not yet been released and announced to 
+             ProteomeXchange. <br>Please check back later to see this dataset, or contact PRIDE if you feel 
+             this message is in error. <br>
+             </div><!-- #primary .site-content -->
+             </div><!-- #main -->
+           ~;
+         }
+			}else{
+				print "$line\n";
+			}
+		}
+  }else{
+     if ( $announcementXML eq '' ) {
+       $response->{result} = "ERROR";
+       $response->{message} = "no submission found for $id\n";
+       sendResponse(response=>$response);
+     }else{
+       if ( -e "$path/$announcementXML" ) {
+          open (IN, "<$path/$announcementXML" ) ;
+          print "Content-type: text/plain\n\n";
+          while (my $line = <IN>){
+            print $line;
+          }
+          close IN;
+       }else{
+         $response->{result} = "ERROR";
+         $response->{message} = "cannot find submission file $announcementXML\n";
+         sendResponse(response=>$response);
+       }
+     }
+  }
+  
+  #$response->{result} = "SUCCESS";
+  #$response->{message} = "Show information for dataset ID $datasetID.";
+  #sendResponse(response=>$response);
+}
+sub build_SQL_columns_list {
+  my %args = @_;
+  my $METHOD = 'build_SQL_columns_list';
+  #### Process the arguments list
+  my $column_array_ref = $args{'column_array_ref'} ||
+    die "$METHOD: column_array_ref not passed!";
+  my $hidden_cols_ref = $args{'hidden_cols_ref'};
+  my $heading = $args{'heading'};
+
+  my $columns_clause = "";
+  my $element;
+  foreach $element (@{$column_array_ref}) {
+    next if ( defined $hidden_cols_ref->{$element->[1]});
+    $columns_clause .= "," if ($columns_clause);
+    $columns_clause .= "$element->[0]";
+    push @$heading , $element->[1];
+  }
+  #### Return result
+  return $columns_clause;
+
+} # end build_SQL_columns_list
+

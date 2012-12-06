@@ -1,0 +1,39 @@
+<HTML>
+<BODY>
+<form method="post" action="/cgi/Dataset" enctype="multipart/form-data" name="MainForm">
+
+<font color="red"><B>PXPartner</B></font><BR>
+<input type="text" name="PXPartner" value="" size=50 maxlength=80/><BR>
+
+<font color="red"><B>authentication</B></font><BR>
+<input type="password" name="authentication" value="" size=10 maxlength=50/><BR>
+
+<font color="red"><B>method</B></font><BR>
+<select name="method">
+  <option  value="serverStatus">serverStatus</option>
+  <option  value="requestID">requestID</option>
+  <option  value="submitDataset">submitDataset</option>
+</select><BR>
+
+<font color="red"><B>test</B></font><BR>
+<select name="test">
+  <option  value="no">no</option>
+  <option  value="yes">yes</option>
+</select><BR>
+
+<font color="red"><B>verbose</B></font><BR>
+<select name="verbose">
+  <option  value="no">no</option>
+  <option  value="yes">yes</option>
+</select><BR>
+
+<font color="red"><B>ProteomeXchangeXML</B></font><BR>
+<input type="file" name="ProteomeXchangeXML" value="" size=40 >
+<BR><BR>
+
+<INPUT TYPE="submit" NAME="submit" VALUE="SUBMIT">
+
+</form>
+
+</BODY>
+</HTML>
