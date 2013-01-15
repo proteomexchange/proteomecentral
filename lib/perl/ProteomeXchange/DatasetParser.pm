@@ -83,14 +83,19 @@ sub parse {
   my $dataset;
 
   use XML::TreeBuilder;
-  unless (open (FH, "<:encoding(UTF-8)", "$path/$uploadFilename")){
+
+  #### EWD removed UTF-8 pragma, okayed by Zhi 2013-01-15. Not needed and
+  #### can cause TreeBuilder to hang with some documents when used.
+  #unless (open (FH, "<:encoding(UTF-8)", "$path/$uploadFilename")){
+
+  unless (open (FH, "$path/$uploadFilename")){
     #### Unable to parse the XML for unknown reason
     $response->{message} = "Unable to parse the XML for unknown reason.";
     return($response);
   }
+
   my $doctree = XML::TreeBuilder->new();
   $doctree->parse(*FH);
-
 
   my ($datasetSummary) = $doctree->find_by_tag_name('DatasetSummary');
   $dataset->{title} = $datasetSummary->attr('title');
