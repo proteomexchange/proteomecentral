@@ -1,16 +1,26 @@
 #!/usr/local/bin/perl -w
 
 use strict;
-#use UNIVERSAL 'isa';
+
 use Data::Dumper;
 use FindBin;
 use lib "$FindBin::Bin/../perl";
-use ProteomeXchange::DatasetParser_z;
+use ProteomeXchange::DatasetParser;
 my $file = shift;
-my $parser = new ProteomeXchange::DatasetParser_z; 
-my $response = $parser -> parse (uploadFilename =>$file);
+my $parser = new ProteomeXchange::DatasetParser; 
+$! = 1;
 
-print Dumper(%$response);
+my $response;
+$response->{result} = "SUCCESS";
+$response->{message} = "Parsed";
+my @tmp = ('Initialize');
+$response->{info} = \@tmp;
+
+my $result = $parser -> parse (uploadFilename =>$file,
+  response => $response, path => '');
+
+print Dumper(%$result);
+
 #foreach my $key (keys %$response){
 #  if ( isa($response->{$key},'HASH')){
 #    print "$key\n";
