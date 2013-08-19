@@ -1,12 +1,23 @@
 #!/usr/local/bin/perl -w
 
 use strict;
-
 use Data::Dumper;
 use FindBin;
 use lib "$FindBin::Bin/../perl";
 use ProteomeXchange::DatasetParser;
+
 my $file = shift;
+unless ($file) {
+  print "Usage: ./testDatasetParser.pl FILENAME\n";
+  print " e.g.: ./testDatasetParser.pl /net/dblocal/wwwspecial/proteomecentral/var/submissions/testing/Submission_2013-01-15_08:35:30.xml\n";
+  exit;
+}
+
+unless (-e $file) {
+  print "ERROR: Unable to find file '$file'\n";
+  exit;
+}
+
 my $parser = new ProteomeXchange::DatasetParser; 
 $! = 1;
 
