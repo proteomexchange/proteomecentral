@@ -138,8 +138,8 @@ sub parse {
 
   foreach my $tag (qw (Species Instrument ModificationList DatasetOrigin)){
     my @lists = $doctree->find_by_tag_name($tag);
-    #foreach my $list ( @lists ) {
-    my  $list = $lists[0];
+    foreach my $list ( @lists ) {
+    #my  $list = $lists[0];
 			my @cvParams = $list->find_by_tag_name('cvParam');
 			foreach my $cvParam ( @cvParams ) {
         if ($cvParam->attr('value') ne ''){
@@ -168,7 +168,7 @@ sub parse {
           if ( $dataset->{lcfirst($tag)} eq ''){
             $dataset->{lcfirst($tag)} =  $cvParam->attr('name') ;
           }else{
-            $dataset->{lcfirst($tag)} .=  "; ". $cvParam->attr('name') ."; ";
+            $dataset->{lcfirst($tag)} .=  "; ". $cvParam->attr('name'); 
           }
         }
 
@@ -180,7 +180,7 @@ sub parse {
         #  $dataset->{instrument} .= $cvParam->attr('name') ."; ";
         #}
 			}
-    #}
+    }
   }
 
   unless ($dataset->{species}) {
