@@ -67,7 +67,7 @@ sub parse {
   my $params = $args{'announcementXML'};
   my $response = $args{'response'};
   my $uploadFilename = $args{'uploadFilename'};
-  my $path = $args{path};
+  my $path = $args{path} || '';
   #my $path = '/local/wwwspecial/proteomecentral/var/submissions';
 
   push(@{$response->{info}},"uploaded file path=$path");
@@ -81,6 +81,7 @@ sub parse {
   }
 
   my $dataset;
+  my @warnings;
 
   use XML::TreeBuilder;
 
@@ -96,6 +97,14 @@ sub parse {
 
   my $doctree = XML::TreeBuilder->new();
   $doctree->parse(*FH);
+
+  my @cvParams = $doctree->find_by_tag_name('cvParam');
+  foreach my $cvParam (@cvParams) {
+    my $paramAccession = $cvParam->attr('accession');
+    my $paramName = $cvParam->attr('name');
+    my $paramValue = $cvParam->attr('value');
+    $self->checkCvParam(paramAccession=>$paramAccession,paramName=>$paramName,paramValue=>$paramValue);
+  }
 
   my ($datasetSummary) = $doctree->find_by_tag_name('DatasetSummary');
   $dataset->{title} = $datasetSummary->attr('title');
@@ -115,6 +124,12 @@ sub parse {
         $dataset->{$str} = $cvParam->attr('name');
       }
     }
+  }
+
+  my ($changeLogEntry) = $doctree->find_by_tag_name('ChangeLogEntry');
+  if ($changeLogEntry) {
+    #print "ys!\n";
+    $dataset->{changeLogEntry} = $changeLogEntry->as_text();
   }
 
   my @datasetIdentifiers = $doctree->find_by_tag_name('DatasetIdentifier');
@@ -140,15 +155,15 @@ sub parse {
     my @lists = $doctree->find_by_tag_name($tag);
     foreach my $list ( @lists ) {
     #my  $list = $lists[0];
-			my @cvParams = $list->find_by_tag_name('cvParam');
-			foreach my $cvParam ( @cvParams ) {
-        if ($cvParam->attr('value') ne ''){
+    my @cvParams = $list->find_by_tag_name('cvParam');
+    foreach my $cvParam ( @cvParams ) {
+        if (defined($cvParam->attr('value')) && $cvParam->attr('value') ne ''){
           if ($tag eq 'Species'){
 						$dataset->{speciesList} .=  $cvParam->attr('name') . ": ";
 						$dataset->{speciesList} .= $cvParam->attr('value') . "; " ;
 						$dataset->{speciesList} =~ s/taxonomy://;
             if ($cvParam->attr('name') =~ /scientific name/i){
-              if ( $dataset->{species} ne '' ){
+              if ( defined($dataset->{species}) && $dataset->{species} ne '' ){
                 $dataset->{species} .=  ", ". $cvParam->attr('value');
               }else{
                 $dataset->{species} =  $cvParam->attr('value');
@@ -156,7 +171,7 @@ sub parse {
               $dataset->{species} =~ s/\(\w+\)//;
             }
           }else{
-            if (  $dataset->{lcfirst($tag)} eq ''){
+            if ( defined($dataset->{lcfirst($tag)}) && $dataset->{lcfirst($tag)} eq ''){
               $dataset->{lcfirst($tag)} .=  "; ". $cvParam->attr('name') . ": ";
               $dataset->{lcfirst($tag)} .= $cvParam->attr('value');
             }else{
@@ -165,7 +180,7 @@ sub parse {
             }
           }
         }else{
-          if ( $dataset->{lcfirst($tag)} eq ''){
+          if ( defined($dataset->{lcfirst($tag)}) && $dataset->{lcfirst($tag)} eq ''){
             $dataset->{lcfirst($tag)} =  $cvParam->attr('name') ;
           }else{
             $dataset->{lcfirst($tag)} .=  "; ". $cvParam->attr('name'); 
@@ -190,26 +205,47 @@ sub parse {
   }
 
   
-  my @contactLists = $doctree->find_by_tag_name('ContactList');
-  my $first = 1;
-  foreach my $contactList (@contactLists){
-    my @lists =  $contactList->find_by_tag_name('Contact');
-    foreach my $contact (@lists){
+  my @contactList = $doctree->find_by_tag_name('ContactList');
+  foreach my $contactListItem (@contactList){
+    my @contacts =  $contactListItem->find_by_tag_name('Contact');
+    foreach my $contact (@contacts){
       my $id = $contact->attr('id');
       my @cvParams = $contact->find_by_tag_name('cvParam');
+      my %contact;
+
       foreach my $cvParam ( @cvParams ) {
-        my $str =  $cvParam->attr('value');
-        chomp $str;
-        if ($cvParam->attr('name') eq "contact name" and $first) {
-         $first = 0;
-         $dataset->{primarySubmitter} = $cvParam->attr('value');
-        }
-        if($cvParam->attr('value') ne ''){
-          $dataset->{contactList}{$id}{$cvParam->attr('name')} = $cvParam->attr('value');
-        }
+	my $paramAccession = $cvParam->attr('accession');
+	my $paramName = $cvParam->attr('name');
+	my $paramValue = $cvParam->attr('value');
+        chomp $paramValue if (defined($paramValue)); # EWD might not be needed, but left it as found
+	$contact{$paramName} = $paramValue;
+	$dataset->{contactList}->{$id}->{$paramName} = $paramValue;
+      }
+
+      if (exists($contact{'dataset submitter'})) {
+	if ($dataset->{primarySubmitter}) {
+	  push(@warnings,'WARNING: There appears to be more than one dataset submitter. Only the first may appear in scalar uses.');
+	} else {
+	  $dataset->{primarySubmitter} = $contact{'contact name'};
+	}
+      }
+
+      if (exists($contact{'lab head'})) {
+	if ($dataset->{labHead}) {
+	  push(@warnings,'WARNING: There appears to be more than one lab head. Only the first may appear in scalar uses.');
+	} else {
+	  $dataset->{labHead} = $contact{'contact name'};
+	}
       }
     }
   }
+  unless ($dataset->{primarySubmitter}) {
+    push(@warnings,"WARNING: No contact had the designation 'primary submitter'");
+  }
+  unless ($dataset->{labHead}) {
+    push(@warnings,"WARNING: No contact had the designation 'lab head'");
+  }
+
 
   my %lists=();
   my @publicationLists = $doctree->find_by_tag_name('PublicationList');
@@ -229,13 +265,13 @@ sub parse {
    }
   }
   foreach my $id (%lists){
-    if ($lists{$id}{name} =~ /reference/i){
-      if (defined $lists{$id}{pubmedid} ){
+    if (defined($lists{$id}{name}) && $lists{$id}{name} =~ /reference/i){
+      if (defined $lists{$id}{pubmedid}){
         use ProteomeXchange::PubMedFetcher;
         my $PubMedFetcher = new ProteomeXchange::PubMedFetcher;
         my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(
           PubMedID=>$lists{$id}{pubmedid});
-        $dataset->{publicationList} .= $pubmed_info;
+        $dataset->{publicationList} .= $pubmed_info || '';
         $dataset->{publication} .= "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$lists{$id}{pubmedid}\">$pubname</a>";;  
       }else{
          if ( defined $dataset->{publication} ){
@@ -248,14 +284,15 @@ sub parse {
       }
     }else{
        my $str;
-       if ($lists{$id}{value} ne ''){ 
+       if (defined($lists{$id}{value}) && $lists{$id}{value} ne ''){ 
          $str = $lists{$id}{value};
        }else{
-         if ( $lists{$id}{name}  =~ /no associated published/){
+         if ( defined($lists{$id}{name}) && $lists{$id}{name}  =~ /no associated published/){
             $lists{$id}{name} = "no publication";
          }
          $str = $lists{$id}{name};
        }
+       next unless (defined($str));
        next if ($str eq '');
        if ( defined $dataset->{publication} ){
          $dataset->{publication} .= ";$str";
@@ -290,10 +327,11 @@ sub parse {
       if($cvParam->attr('value') ne '' ){
          if ( $cvParam->attr('name') =~ /URI/i || $cvParam->attr('name') =~ /FTP/i){
            if ($cvParam->attr('name') =~ /PRIDE experiment URI/i){
-             $cvParam->attr('value') =~ /.*=(\d+)/;
-             $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
-                                              '>'.  "PRIDE experiment $1 </a>;";
-           }else{
+             if ($cvParam->attr('value') =~ /.*=(\d+)/) {
+               $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
+                                                '>'.  "PRIDE experiment $1 </a>;";
+	     }
+           } else {
            $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
                                               '>'.  $cvParam->attr('name') .'</a>;';
            }
@@ -334,10 +372,148 @@ sub parse {
     }
   }
   $response->{dataset} = $dataset;
+  $response->{warnings} = \@warnings;
 
   return($response);
 }
 
-###############################################################################
-1;
 
+###############################################################################
+# checkCvParam
+###############################################################################
+sub checkCvParam {
+  my $METHOD = 'checkCvParam';
+  my $self = shift || die ("self not passed");
+  my %args = @_;
+
+  my $paramAccession = $args{paramAccession};
+  my $paramName = $args{paramName};
+  my $paramValue = $args{paramValue};
+
+  #### Check all the CV params
+  unless ($self->{cv}) {
+    my $infile = '/net/dblocal/wwwspecial/proteomecentral/devED/extern/PSI-MS/controlledVocabulary/psi-ms.obo';
+    $self->readControlledVocabularyFile(input_file=>$infile);
+    return unless ($self->{cv}->{status} eq 'read ok');
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/devED/extern/PRIDE/schema/pride_cv.obo';
+    $self->readControlledVocabularyFile(input_file=>$infile);
+  }
+
+  my $accession = $paramAccession;
+  my $name = $paramName;
+  my $value = $paramValue;
+
+      if ($self->{cv}->{terms}->{$accession}) {
+	if ($self->{cv}->{terms}->{$accession}->{name} eq $name) {
+	  #print "INFO: $accession = $name matches CV\n";
+	  $self->{cv}->{n_valid_terms}++;
+	} elsif ($self->{cv}->{terms}->{$accession}->{synonyms}->{$name}) {
+	  #print "INFO: $accession = $name matches CV\n";
+	  $self->{cv}->{n_valid_terms}++;
+	} else {
+	  print "WARNING: $accession should be ".
+	    "'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'\n";
+	  $self->{cv}->{mislabeled_terms}++;
+	  #print "replaceall.pl \"$name\" \"$self->{cv}->{terms}->{$accession}->{name}\" \$file\n";
+	}
+      } else {
+	print "WARNING: CV term $accession ('$name') is not in the cv\n";
+	$self->{cv}->{unrecognized_terms}++;
+      }
+
+
+      #### Assess the correct presence of a value attribute
+      my $shouldHaveValue = 0;
+      my $hasValue = 0;
+      if ($self->{cv}->{terms}->{$accession}->{datatypes}) {
+	$shouldHaveValue = 1;
+      }
+      if (defined($value) && $value ne '') {
+	$hasValue = 1;
+      }
+      if ($shouldHaveValue && $hasValue) {
+	$self->{cv}->{correctly_has_value}++
+      } elsif ($shouldHaveValue && ! $hasValue) {
+	print "ERROR: cvParam $name should have a value, but it does not!\n";
+	$self->{cv}->{is_missing_value}++
+      } elsif (! $shouldHaveValue && $hasValue) {
+	print "ERROR: cvParam $name has a value, but it should not!\n";
+	$self->{cv}->{incorrectly_has_value}++
+      } else {
+	$self->{cv}->{correctly_has_no_value}++
+      }
+
+}
+
+
+###############################################################################
+# readControlledVocabularyFile
+###############################################################################
+sub readControlledVocabularyFile {
+  my $METHOD = 'readControlledVocabularyFile';
+  my $self = shift || die ("self not passed");
+  my %args = @_;
+
+  my $input_file = $args{input_file};
+
+  $self->{cv}->{status} = 'initialized';
+
+  unless ($input_file) {
+    $input_file = 'psi-ms.obo';
+  }
+
+  #### Check to see if file exists
+  unless (-e $input_file) {
+    print "ERROR: controlled vocabulary file '$input_file' does not exist\n";
+    print "WARNING: NOT CHECKING CV TERMS!!!\n";
+    return;
+  }
+
+  #### Open file
+  unless (open(INFILE,$input_file)) {
+    print "ERROR: Unable to open controlled vocabulary file '$input_file'\n";
+    print "WARNING: NOT CHECKING CV TERMS!!!\n";
+    return;
+  }
+  #print "INFO: Reading cv file '$input_file'\n";
+
+
+  #### Read in file
+  #### Very simple reader with no sanity/error checking
+  my ($line,$id,$name,$synonym);
+  while ($line = <INFILE>) {
+    $line =~ s/[\r\n]//g;
+    if ($line =~ /^id: (\S+)\s*/) {
+      $id = $1;
+    }
+    if ($line =~ /^name: (.+)\s*$/) {
+      $name = $1;
+      $self->{cv}->{terms}->{$id}->{name} = $name;
+    }
+    if ($line =~ /^exact_synonym: \"(.+)\"\s*[\[\]]*\s*$/) {
+      $synonym = $1;
+      $self->{cv}->{terms}->{$id}->{synonyms}->{$synonym} = $synonym;
+    }
+    if ($line =~ /^relationship: has_units\s*(\S+) \! (.+)?\s*$/) {
+      my $unit = $1;
+      my $unitName = $2;
+      $self->{cv}->{terms}->{$id}->{units}->{$unit} = $unitName;
+    }
+    if ($line =~ /^xref: value-type:\s*(\S+)\s+\"/) {
+      my $datatype = $1;
+      $datatype =~ s/\\//g;
+      $self->{cv}->{terms}->{$id}->{datatypes}->{$datatype} = $datatype;
+    }
+  }
+
+
+  close(INFILE);
+  $self->{cv}->{status} = 'read ok';
+
+  return;
+
+}
+
+###############################################################################
+
+1;
