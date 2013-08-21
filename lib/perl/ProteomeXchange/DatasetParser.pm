@@ -206,6 +206,7 @@ sub parse {
 
   
   my @contactList = $doctree->find_by_tag_name('ContactList');
+  my %firstContact;
   foreach my $contactListItem (@contactList){
     my @contacts =  $contactListItem->find_by_tag_name('Contact');
     foreach my $contact (@contacts){
@@ -220,6 +221,10 @@ sub parse {
         chomp $paramValue if (defined($paramValue)); # EWD might not be needed, but left it as found
 	$contact{$paramName} = $paramValue;
 	$dataset->{contactList}->{$id}->{$paramName} = $paramValue;
+      }
+
+      unless (%firstContact) {
+	%firstContact = %contact;
       }
 
       if (exists($contact{'dataset submitter'})) {
@@ -240,7 +245,8 @@ sub parse {
     }
   }
   unless ($dataset->{primarySubmitter}) {
-    push(@warnings,"WARNING: No contact had the designation 'primary submitter'");
+    push(@warnings,"WARNING: No contact had the designation 'primary submitter'. Will assume that the first contact is the 'primary submitter'");
+    $dataset->{primarySubmitter} = $firstContact{'contact name'};
   }
   unless ($dataset->{labHead}) {
     push(@warnings,"WARNING: No contact had the designation 'lab head'");
