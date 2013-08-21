@@ -403,51 +403,57 @@ sub checkCvParam {
     return unless ($self->{cv}->{status} eq 'read ok');
     $infile = '/net/dblocal/wwwspecial/proteomecentral/devED/extern/PRIDE/schema/pride_cv.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/devED/extern/PSI-MOD/data/PSI-MOD.obo';
+    $self->readControlledVocabularyFile(input_file=>$infile);
   }
 
   my $accession = $paramAccession;
   my $name = $paramName;
   my $value = $paramValue;
 
-      if ($self->{cv}->{terms}->{$accession}) {
-	if ($self->{cv}->{terms}->{$accession}->{name} eq $name) {
-	  #print "INFO: $accession = $name matches CV\n";
-	  $self->{cv}->{n_valid_terms}++;
-	} elsif ($self->{cv}->{terms}->{$accession}->{synonyms}->{$name}) {
-	  #print "INFO: $accession = $name matches CV\n";
-	  $self->{cv}->{n_valid_terms}++;
-	} else {
-	  print "WARNING: $accession should be ".
-	    "'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'\n";
-	  $self->{cv}->{mislabeled_terms}++;
-	  #print "replaceall.pl \"$name\" \"$self->{cv}->{terms}->{$accession}->{name}\" \$file\n";
-	}
-      } else {
-	print "WARNING: CV term $accession ('$name') is not in the cv\n";
-	$self->{cv}->{unrecognized_terms}++;
-      }
+  unless ($name) {
+    print "WARNING: term '$accession' does not have a corresponding name specified.\n";
+  }
 
+  if ($self->{cv}->{terms}->{$accession}) {
+    if ($self->{cv}->{terms}->{$accession}->{name} eq $name) {
+      #print "INFO: $accession = $name matches CV\n";
+      $self->{cv}->{n_valid_terms}++;
+    } elsif ($self->{cv}->{terms}->{$accession}->{synonyms}->{$name}) {
+      #print "INFO: $accession = $name matches CV\n";
+      $self->{cv}->{n_valid_terms}++;
+    } else {
+      print "WARNING: $accession should be ".
+	"'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'\n";
+      $self->{cv}->{mislabeled_terms}++;
+      #print "replaceall.pl \"$name\" \"$self->{cv}->{terms}->{$accession}->{name}\" \$file\n";
+    }
 
-      #### Assess the correct presence of a value attribute
-      my $shouldHaveValue = 0;
-      my $hasValue = 0;
-      if ($self->{cv}->{terms}->{$accession}->{datatypes}) {
-	$shouldHaveValue = 1;
-      }
-      if (defined($value) && $value ne '') {
-	$hasValue = 1;
-      }
-      if ($shouldHaveValue && $hasValue) {
-	$self->{cv}->{correctly_has_value}++
-      } elsif ($shouldHaveValue && ! $hasValue) {
-	print "ERROR: cvParam $name should have a value, but it does not!\n";
-	$self->{cv}->{is_missing_value}++
-      } elsif (! $shouldHaveValue && $hasValue) {
-	print "ERROR: cvParam $name has a value, but it should not!\n";
-	$self->{cv}->{incorrectly_has_value}++
-      } else {
-	$self->{cv}->{correctly_has_no_value}++
-      }
+    #### Assess the correct presence of a value attribute
+    my $shouldHaveValue = 0;
+    my $hasValue = 0;
+    if ($self->{cv}->{terms}->{$accession}->{datatypes}) {
+      $shouldHaveValue = 1;
+    }
+    if (defined($value) && $value ne '') {
+      $hasValue = 1;
+    }
+    if ($shouldHaveValue && $hasValue) {
+      $self->{cv}->{correctly_has_value}++
+    } elsif ($shouldHaveValue && ! $hasValue) {
+      print "ERROR: cvParam $name should have a value, but it does not!\n";
+      $self->{cv}->{is_missing_value}++
+    } elsif (! $shouldHaveValue && $hasValue) {
+      print "ERROR: cvParam $name has a value, but it should not!\n";
+      $self->{cv}->{incorrectly_has_value}++
+    } else {
+      $self->{cv}->{correctly_has_no_value}++
+    }
+
+  } else {
+    print "WARNING: CV term $accession ('$name') is not in the cv\n";
+    $self->{cv}->{unrecognized_terms}++;
+  }
 
 }
 
