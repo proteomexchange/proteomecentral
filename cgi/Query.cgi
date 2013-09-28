@@ -19,7 +19,7 @@ my @tmp = ( 'Dataset service start' );
 $response->{info} = \@tmp;
 
 my $params;
-my @parameters = qw ( test verbose ID filterstr outputMode detailLevel limit start);
+my @parameters = qw ( test verbose ID filterstr outputMode detailLevel limit start sort);
 
 #### Extract CGI parameters
 foreach my $parameter ( @parameters ) {
@@ -110,11 +110,17 @@ sub  listDatasets {
         hidden_cols_ref => \%hidden_cols,
         heading => \@headings);
 
+  my $order_clause='DATASETIDENTIFIER DESC';
+  if ($params->{sort}){
+    $params->{sort} =~ /property.*:"(\w+)".*:"(\w+)".*/;
+    $order_clause = $1 ." " .$2; 
+  }
+ 
 	my $sql = qq~ select
                  $columns_clause 
                  from $table_name
                  $whereclause
-                 ORDER BY DATASETIDENTIFIER DESC
+                 ORDER BY $order_clause
              ~;
 
 	my @results = $dbh->selectSeveralColumns($sql);
@@ -157,9 +163,12 @@ sub  listDatasets {
   close IN;
 
   $hash ->{"QueryResponse" }{"counts"}{"dataset"} = $cnt;
+  $hash ->{"QueryResponse" }{"counts"}{"order_clause"} = $order_clause; 
+
   print  $cgi -> header('application/json');
   $json = $json->pretty([1]);
   print  $json->encode($hash);
+
 
 }
 sub showDataset {
@@ -263,7 +272,8 @@ sub build_SQL_columns_list {
   foreach $element (@{$column_array_ref}) {
     next if ( defined $hidden_cols_ref->{$element->[1]});
     $columns_clause .= "," if ($columns_clause);
-    $columns_clause .= "$element->[0]";
+    $columns_clause .= qq ~
+           $element->[0] AS "$element->[1]"~;
     push @$heading , $element->[1];
   }
   #### Return result
