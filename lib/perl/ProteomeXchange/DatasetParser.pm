@@ -152,48 +152,62 @@ sub parse {
   }
 
   foreach my $tag (qw (Species Instrument ModificationList DatasetOrigin)){
+
+
     my @lists = $doctree->find_by_tag_name($tag);
     foreach my $list ( @lists ) {
     #my  $list = $lists[0];
-    my @cvParams = $list->find_by_tag_name('cvParam');
-    foreach my $cvParam ( @cvParams ) {
-        if (defined($cvParam->attr('value')) && $cvParam->attr('value') ne ''){
-          if ($tag eq 'Species'){
-						$dataset->{speciesList} .=  $cvParam->attr('name') . ": ";
-						$dataset->{speciesList} .= $cvParam->attr('value') . "; " ;
-						$dataset->{speciesList} =~ s/taxonomy://;
-            if ($cvParam->attr('name') =~ /scientific name/i){
-              if ( defined($dataset->{species}) && $dataset->{species} ne '' ){
-                $dataset->{species} .=  ", ". $cvParam->attr('value');
-              }else{
-                $dataset->{species} =  $cvParam->attr('value');
-              }
-              $dataset->{species} =~ s/\(\w+\)//;
-            }
-          }else{
-            if ( defined($dataset->{lcfirst($tag)}) && $dataset->{lcfirst($tag)} eq ''){
-              $dataset->{lcfirst($tag)} .=  "; ". $cvParam->attr('name') . ": ";
-              $dataset->{lcfirst($tag)} .= $cvParam->attr('value');
-            }else{
-              $dataset->{lcfirst($tag)} =  $cvParam->attr('name') .": ";;
-              $dataset->{lcfirst($tag)} .= $cvParam->attr('value');
-            }
-          }
-        }else{
-          if ( defined($dataset->{lcfirst($tag)}) && $dataset->{lcfirst($tag)} eq ''){
-            $dataset->{lcfirst($tag)} =  $cvParam->attr('name') ;
-          }else{
-            $dataset->{lcfirst($tag)} .=  "; ". $cvParam->attr('name'); 
-          }
+      if($tag =~ /Modification/){
+        my $immediate_parent = ( $list->lineage_tag_names() )[0];
+        if ($immediate_parent =~ /RepositoryRecord/){
+           next;
         }
+      }
+			my @cvParams = $list->find_by_tag_name('cvParam');
+			foreach my $cvParam ( @cvParams ) {
+        my $name = $cvParam->attr('name');
+        my $value = $cvParam->attr('value');
+        $name =~ s/^\s+//;
+        $value =~ s/^\s+//;
+        $name =~ s/\s+$//;
+        $value =~ s/\s+$//;
+				if ($value){
+					if ($tag eq 'Species'){
+						$dataset->{speciesList} .=  $name . ": ";
+						$dataset->{speciesList} .= $value . "; " ;
+						$dataset->{speciesList} =~ s/taxonomy://;
+						if ($name =~ /scientific name/i){
+							if ( defined($dataset->{species}) && $dataset->{species} ne '' ){
+								$dataset->{species} .=  ", ". $value;
+							}else{
+								$dataset->{species} =  $value;
+							}
+							$dataset->{species} =~ s/\(\w+\)//;
+						}
+					}else{
+						if ( defined($dataset->{lcfirst($tag)})){
+							$dataset->{lcfirst($tag)} .=  "; ". $name . ": ";
+							$dataset->{lcfirst($tag)} .= $value;
+						}else{
+							$dataset->{lcfirst($tag)} =  $name .": ";;
+							$dataset->{lcfirst($tag)} .= $value;
+						}
+					}
+				}else{
+					if (not defined $dataset->{lcfirst($tag)}){
+						$dataset->{lcfirst($tag)} =  $name ;
+					}else{
+						$dataset->{lcfirst($tag)} .=  "; ". $name; 
+					}
+				}
 
 				#if ($cvParam->attr('accession') eq "MS:1001469") {
 				#	$dataset->{species} .= $cvParam->attr('value') ."; ";
-        #}elsif($cvParam->attr('accession') =~ /^MOD:/){
-        #  $dataset->{modification} .=  $cvParam->attr('name') ."; ";
-        #}else {
-        #  $dataset->{instrument} .= $cvParam->attr('name') ."; ";
-        #}
+				#}elsif($cvParam->attr('accession') =~ /^MOD:/){
+				#  $dataset->{modification} .=  $cvParam->attr('name') ."; ";
+				#}else {
+				#  $dataset->{instrument} .= $cvParam->attr('name') ."; ";
+				#}
 			}
     }
   }
