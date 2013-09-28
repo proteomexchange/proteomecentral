@@ -180,10 +180,13 @@ sub listDatasets {
             <script type="text/javascript" src="../javascript/ext/RowExpander.js"></script>
             <script type="text/javascript" src="../javascript/ext/AsyncRowExpander.js"></script>
             <script type="text/javascript" src="../javascript/ext/grid.js"></script>
-						<div id="searchContainer">
+            &nbsp;Below is a listing of publicly accessible ProteomeXchange datasets. Additional datasets will become visible as they are released.<BR><BR>
+						<div id="searchContainer"> 
+            Search metadata for ProteomeXchange datasets: (e.g. "liver", "musculus", "5600", etc.)<BR>
 						<input type="text" id="field" id="s" name="q">
 						<div id="delete"><span id="x">x</span></div></input>
-						<input type="button" name="searchbtn" id="searchbtn" value="Search" />
+						<input type="button" name="searchbtn" id="searchbtn" value="Search" /><BR>
+            Note: it is not yet possible to query for individual proteins contained in these datasets at ProteomeCentral.<BR>
 						</div>
 						<table cellpadding="0" width="100%" align="center" cellspacing="0" id="br1owseWrapper">
 						<tr>
