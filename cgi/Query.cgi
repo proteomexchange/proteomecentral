@@ -1,8 +1,10 @@
 #!/usr/local/bin/perl -w
 
 use strict;
+use FindBin;
+use lib "$FindBin::Bin/../lib/perl";
+
 use JSON;
-use lib "/local/wwwspecial/proteomecentral/lib/perl";
 use ProteomeXchange::Dataset;
 use ProteomeXchange::DatasetParser;
 $| = 1;
