@@ -1,7 +1,9 @@
 #!/usr/local/bin/perl -w
 
 use strict;
-use lib "/local/wwwspecial/proteomecentral/lib/perl";
+use FindBin;
+use lib "$FindBin::Bin/../lib/perl";
+
 use ProteomeXchange::Dataset;
 
 my $HTML_BASE_DIR = "/local/wwwspecial/proteomecentral";
@@ -79,7 +81,7 @@ if ($params->{method} eq 'codetest') {
 
 #### Handle testAuthorization method
 if ($params->{method} eq 'testAuthorization') {
-  $response = testAuthorization(params=>$params,response=>$response);
+  testAuthorization(params=>$params,response=>$response);
   sendResponse(response=>$response);
   exit;
 }
@@ -108,7 +110,6 @@ sub sendResponse {
   print "message=$response->{message}\n" if ($response->{result});
   print "identifier=$response->{identifier}\n" if ($response->{identifier});
 
-  #if ($response->{info} && $response->{verbose}) {
   if ($response->{info}) {
     foreach my $line (@{$response->{info}}) {
       print "info=$line\n";
@@ -159,8 +160,10 @@ sub authorize {
   my $authorization;
   $authorization->{result} = "FAILED";
   $authorization->{message} = "ERROR: Authorization failed with unspecified error E0002";
+  $authorization->{info} = [ "Attempting to authorize input" ];
 
   my %requesters;
+  push(@{$response->{info}},"Loading permitted authorization information");
   my $authorizations = loadAuthorizations();
   if ($authorizations->{result} eq 'SUCCESS') {
     %requesters = %{$authorizations->{authorizations}};
@@ -171,11 +174,13 @@ sub authorize {
 
   if (defined($params->{PXPartner}) && defined($params->{authentication})) {
     if (exists($requesters{$params->{PXPartner}})) {
-      if ($params->{authentication} eq $requesters{$params->{PXPartner}}) {
+      if ($params->{authentication} eq $requesters{$params->{PXPartner}}->{password}) {
         $authorization->{result} = "SUCCESS";
         $authorization->{message} = "Authorization succeeded";
-	  } else {
-	    $authorization->{result} = "FAILED";
+	push(@{$response->{info}},"Authorization succeeded");
+	$authorization->{testLevel} = $requesters{$params->{PXPartner}}->{testLevel};
+      } else {
+        $authorization->{result} = "FAILED";
         $authorization->{message} = "ERROR: Incorrect authentication for specified PXPartner";
       }
     } else {
@@ -207,8 +212,17 @@ sub requestID {
 
   #### If authorization succeeded, furnish a new identifier
   if ($authorization->{result} eq 'SUCCESS') {
+    #### Make sure this is not a user that always has to be test mode
+    if ($authorization->{testLevel} && $authorization->{testLevel} eq 'production' && $params->{test} eq 'no') {
+      $params->{test} = 'no';
+    } else {
+      $params->{test} = 'yes';
+      push(@{$response->{info}},"Operating in test mode. ID will be a test ID");
+    }
+
     my $dataset = new ProteomeXchange::Dataset;
     $dataset->setPXPartner($params->{PXPartner});
+    ####For testing: $response->{message} = "Would get new identifier in with test: $params->{test}";
     $response = $dataset->createNewIdentifier(test=>$params->{test});
   #### If authorization failed, return the authorization error message
   } else {
@@ -232,15 +246,21 @@ sub testAuthorization {
   my $params = $args{'params'} || die("[$SUB_NAME] ERROR: params not passed");
 
   #### Verify the authorization
+  push(@{$response->{info}},"Testing authorization for supplied parameters");
   my $authorization = authorize(params=>$params,response=>$response);
 
   #### If authorization succeeded, furnish a new identifier
   if ($authorization->{result} eq 'SUCCESS') {
-    $authorization->{message} = 'Authorization succeeded';
+    $response->{message} = 'Authorization succeeded';
+    push(@{$response->{info}},"This authorized user may operate in $authorization->{testLevel} mode");
+  } else {
+    $response->{result} = $authorization->{result};
+    $response->{message} = $authorization->{message};
+    push(@{$response->{info}},@{$authorization->{info}});
   }
 
   #### Return the response
-  sendResponse(response=>$authorization);
+  sendResponse(response=>$response);
   exit;
 }
 
@@ -363,7 +383,6 @@ sub loadAuthorizations {
   my %args = @_;
   my $SUB_NAME = 'loadAuthorizations';
 
-  my $response;
   my $authorizations;
 
   $response->{result} = 'FAILED';
@@ -387,14 +406,34 @@ sub loadAuthorizations {
   #### Store the authorizations
   while (my $line = <INFILE>) {
     $line =~ s/[\r\n]//g;
-    my ($name,$password) = split(/\t/,$line);
+    my ($name,$password,$testLevel) = split(/\t/,$line);
+
+    #### Check that there isn't a duplicate entry
     if ($authorizations->{$name}) {
-      $response->{message} = 'ERROR: LA004: Duplicate authorization in Authorizations';
+      $response->{message} = "ERROR: LA004: Duplicate authorization in Authorizations";
       sendResponse(response=>$response);
       exit;
     }
-    $authorizations->{$name} = $password;
-    #print "AUTH: $name=$password\n";
+
+    #### Store the password if it is present
+    if ($password) {
+      $authorizations->{$name}->{password} = $password;
+    } else {
+      $response->{message} = "ERROR: LA005: Missing password for authorization of $name";
+      sendResponse(response=>$response);
+      exit;
+    }
+
+    #### Store the test level if it is present
+    if ($testLevel) {
+      $authorizations->{$name}->{testLevel} = $testLevel;
+    } else {
+      $response->{message} = "ERROR: LA006: Missing testLevel for authorization of $name";
+      sendResponse(response=>$response);
+      exit;
+    }
+
+    ##push(@{$response->{info}},"Added authorized user $name with password $password and testLevel=$testLevel");
   }
 
   #### Close and prepare the response
