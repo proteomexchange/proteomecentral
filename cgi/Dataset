@@ -213,7 +213,7 @@ sub requestID {
   #### If authorization succeeded, furnish a new identifier
   if ($authorization->{result} eq 'SUCCESS') {
     #### Make sure this is not a user that always has to be test mode
-    if ($authorization->{testLevel} && $authorization->{testLevel} eq 'production' && $params->{test} eq 'no') {
+    if ($authorization->{testLevel} && $authorization->{testLevel} eq 'production' && ( $params->{test} eq 'no' || $params->{test} eq 'false' ) ) {
       $params->{test} = 'no';
     } else {
       $params->{test} = 'yes';
