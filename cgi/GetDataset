@@ -265,63 +265,57 @@ sub showDataset {
     $path .= "/testing";
     $teststr = "?test=$test";
   }
-
-  if ($datasetID =~ /^PXD/){
-    $datasetID =~ s/PXD//;
+  
+  if ($datasetID =~ /^PX[DT]/) {
+    $datasetID =~ s/PX[DT]//;
     $datasetID =~ s/^0+//;
   }
-  my ($title,$str,$id,$status,$announcementXML);
 
+  my ($title,$str,$id,$status,$PXPartner,$announcementXML,$identifierDate);
+
+  #### If a valid identifier was not obtained
   if ( $datasetID !~ /^\d+$/){
-    $str =  qq~
-       <b>The input ID is not valid and should be of the form 
-          PXDnnnnnn or numbers only.</b><BR><BR>
-    ~;
-   $title  = $params->{ID};
-  }else{
+    $str = "<b>The input ID is not valid and should be of the form PXDnnnnnn or numbers only.</b><BR><BR>";
+    $title  = $params->{ID};
+
+  #### If is does seem to be valid
+  } else {
     my $len = 9 - length($datasetID);
     $title = substr ("PXD000001",0, $len) . "$datasetID";
+
+    #### Fetch results from dataset table
     my $dbh = new ProteomeXchange::Database;
-    my $sql = qq~ select announcementXML
-                 from $table_name where dataset_id=$datasetID;
-             ~;
-		my @results = $dbh->selectSeveralColumns($sql);
+    my $sql = qq~ select status,PXPartner,announcementXML,identifierDate from $table_name where dataset_id=$datasetID~;
+    my @results = $dbh->selectSeveralColumns($sql);
     
- 		if ( @results == 1){     
-      $announcementXML = $results[0]->[0];
+    if ( scalar(@results) == 1) {
+      ($status,$PXPartner,$announcementXML,$identifierDate) = @{$results[0]};
+
       my $parser = new ProteomeXchange::DatasetParser;
       $parser->parse('uploadFilename' => $announcementXML, 'response' => $response, 'path'=> $path);
       my $result = $response->{dataset};
+
       my $header;
       #foreach my $key (keys %{$result}){
       $str .= "<p> <b>DataSet Summary</b> </p>\n<ul>";
-      foreach my $key (qw(PXPartner 
-                          announceDate
-                          announcementXML 
-                          DigitalObjectIdentifier
-                          ReviewLevel
-                          datasetOrigin
-                          RepositorySupport 
-													primarySubmitter 
-													title 
-													description 
-													speciesList
-                          modificationList
-                          instrument)){
+      foreach my $key ( qw( PXPartner announceDate announcementXML DigitalObjectIdentifier ReviewLevel datasetOrigin RepositorySupport 
+			    primarySubmitter title description speciesList modificationList instrument
+        ) ) {
         
         $header =  ucfirst($key);  
         if ($header eq 'PXPartner'){
-          $header = 'HostingRepository'
-        } 
+          $header = 'HostingRepository';
+	  $result->{$key} = $PXPartner unless ($result->{$key});
+        }
+
         if ($key eq 'announcementXML'){
           $str .= qq~
                 <li><b>$header</b>: <a href='http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$datasetID&outputMode=XML&test=$test'>$result->{$key}</a></li>
                 ~;
-        }elsif ($key eq 'DigitalObjectIdentifier'){
+        } elsif ($key eq 'DigitalObjectIdentifier') {
           $str .= qq~<li><b>$header</b>: <a href="$result->{$key}">$result->{$key}</a></li>~;
-        }else{
-          $str .= qq~<li><b>$header</b>: $result->{$key}</li>
-                  ~;
+        } else {
+          $str .= qq~<li><b>$header</b>: $result->{$key}</li>~;
         }
       }
       $str .= "</ul>\n";
@@ -333,15 +327,15 @@ sub showDataset {
 
       #### Provide information on several of the major data lists
       foreach my $key (qw (publicationList keywordList contactList fullDatasetLinkList)){
-				if ( defined $result->{$key}){
+	if ( defined $result->{$key}){
           $header = ucfirst($key);
           $header =~  s/([A-Z][a-z]+)/$1 /g;
-					$str .= "<p> <b>$header</b> </p>\n<ol>\n";     
-          if($key eq 'contactList'){
+	  $str .= "<p> <b>$header</b> </p>\n<ol>\n";     
+          if ($key eq 'contactList'){
             foreach my $id (keys %{$result->{contactList}}){
               if ( defined $result->{contactList}{$id}{'contact name'}){
                 $str .= "<b>$result->{contactList}{$id}{'contact name'}</b>\n<ul>";
-              }else{
+              } else {
                 $str .= "<b>$id</b>\n<ul>";
               }
               foreach my $name (keys %{$result->{contactList}{$id}}){
@@ -350,14 +344,14 @@ sub showDataset {
               }
               $str .= "</ul>\n";
             }
-          }else{
-					  my @lists = split (";",  $result->{$key});
-					  foreach my $list(@lists){
-               next if ($list !~ /\w/);
-						   $str .= qq~<li>$list</li>~;
-					 }
+          } else {
+	    my @lists = split (";",  $result->{$key});
+	    foreach my $list(@lists){
+	      next if ($list !~ /\w/);
+	      $str .= qq~<li>$list</li>~;
+	    }
           }
-					$str .= "</ol>\n";
+	  $str .= "</ol>\n";
         } 
       }
 
@@ -377,13 +371,13 @@ sub showDataset {
           $str .= "<li>$repositoryid<ol>";
           foreach my $recordid (keys %{$result->{repositoryRecordList}{$repositoryid}}){
             if (defined $result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}){
-               $str .= "<li><a href=\"$result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}\">$recordid</a><ol>"; 
+	      $str .= "<li><a href=\"$result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}\">$recordid</a><ol>"; 
             }else{ 
-               $str .= "<li>$recordid<ol>";
+	      $str .= "<li>$recordid<ol>";
             }
             foreach my $name (sort{$a cmp $b} keys %{$result->{repositoryRecordList}{$repositoryid}{$recordid}}){
-               next if($name =~ /Uri/);
-               $str .= "<li>$name: $result->{repositoryRecordList}{$repositoryid}{$recordid}{$name}</li>";
+	      next if($name =~ /Uri/);
+	      $str .= "<li>$name: $result->{repositoryRecordList}{$repositoryid}{$recordid}{$name}</li>";
             }           
             $str .= "</ol></li>";
           }
@@ -391,103 +385,113 @@ sub showDataset {
         }
         $str .= "</ul>\n";
       }     
-		}else{
-        $str =  qq~
-           <b>The identifier $title has not yet been assigned;</b><BR><BR>
-        ~;
-   }
-  }
+
+    #### Else if no row was returned, then this identifer must not have been assigned yet
+    } else {
+      $str = "<b>The identifier $title has not yet been assigned. Please check the identifier and type it in again.</b><BR><BR>";
+    }
+
+  } # end else
+
+
+  #### Now produce a page
   if (($outputmode !~ /XML/i && $status !~ /requested/) || 
       ($outputmode =~ /XML/i && $status =~ /requested/) || $status =~ /requested/ ){
-		#print "Content-type:text/html charset=utf-8\r\n\r\n";
     print header ( -type => 'text/html');
-		foreach my $line (@page){
-			if($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
-				 my $len = 9 - length($datasetID);
-				 $line =~ s/$1/ProteomeXchange Dataset $title/;
-				 print "$line\n";
-			}elsif($line =~ /class="node-inner-padding"/){
-				#$line =~ s/>/style="padding: 0">/g;
-				print "$line\n";
-			}elsif ($line =~ /^<!-- BEGIN main content -->/){
-         print qq~
+
+    #### Print the template
+    foreach my $line ( @page ){
+      if($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
+	my $len = 9 - length($datasetID);
+	$line =~ s/$1/ProteomeXchange Dataset $title/;
+	print "$line\n";
+      } elsif ($line =~ /class="node-inner-padding"/) {
+	#$line =~ s/>/style="padding: 0">/g;
+	print "$line\n";
+      } elsif ($line =~ /^<!-- BEGIN main content -->/) {
+	print qq~
 						<link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
 						<script type="text/javascript">
 							function toggle_more(id){
 							  var list = document.getElementById("repositoryRecordList");
-                list.style.display = '';
-                var x = document.getElementById(id);
+                                                          list.style.display = '';
+                                                          var x = document.getElementById(id);
 							  var y = document.getElementById('more');
 							  x.style.display='none';
 							  y.style.display='';
-						 }
+						        }
 							function toggle_less(id){
-               var list = document.getElementById("repositoryRecordList");
-                list.style.display = 'none';
-							 var x = document.getElementById(id);
-							 var y = document.getElementById('less');
-							 x.style.display='none';
-							 y.style.display='';
-						 }
-
+							  var list = document.getElementById("repositoryRecordList");
+							  list.style.display = 'none';
+							  var x = document.getElementById(id);
+							  var y = document.getElementById('less');
+							  x.style.display='none';
+							  y.style.display='';
+							}
 						</script>
 
-							<div id="main">
-								<div id="primary" class="site-content">
+						<div id="main">
+						<div id="primary" class="site-content">
                   <div><a href='http://proteomecentral.proteomexchange.org/cgi/GetDataset$teststr'> << Full experiment listing </a></div>
-         ~;
-				 print "$line\n";
+        ~;
+	print "$line\n";
 
-         if ( $status !~ /requested/){
-           if ($str !~ /(has not yet been assigned|PXDnnnnnn)/){
-				     print qq~ <h1 class="entry-title"> $title </h1> ~;
-           }
-           print qq~
+	#### Write out the information collected thus far
+	if ( $status && $status !~ /requested/){
+	  if ($str !~ /(has not yet been assigned|PXDnnnnnn)/){
+	    print qq~ <h1 class="entry-title"> $title </h1> ~;
+	  }
+	  print qq~
                   <div class="entry-content">
                   $str
 									 </div><!-- #content -->
 									 </div><!-- #primary .site-content -->
 									 </div><!-- #main -->
-                 ~;
-         }else{
-           print qq~
-             ProteomeXchange dataset $id has been reserved for the PRIDE repository for a dataset 
+          ~;
+	} else {
+	  print qq~<br>
+             ProteomeXchange dataset $title has been reserved by the $PXPartner repository for a dataset 
              undergoing processing. <br>However, this dataset has not yet been released and announced to 
-             ProteomeXchange. <br>Please check back later to see this dataset, or contact PRIDE if you feel 
-             this message is in error. <br>
+             ProteomeXchange. <br>Please check back later to see this dataset, or contact $PXPartner if you feel 
+             this message is in error. <br><br>
              </div><!-- #primary .site-content -->
              </div><!-- #main -->
-           ~;
-         }
-			}else{
-				print "$line\n";
-			}
-		}
-  }else{
-     if ( $announcementXML eq '' ) {
-       $response->{result} = "ERROR";
-       $response->{message} = "no submission found for $id\n";
-       sendResponse(response=>$response);
-     }else{
-       if ( -e "$path/$announcementXML" ) {
-          open (IN, "<$path/$announcementXML" ) ;
-          print "Content-type: text/plain\n\n";
-          while (my $line = <IN>){
-            print $line;
-          }
-          close IN;
-       }else{
-         $response->{result} = "ERROR";
-         $response->{message} = "cannot find submission file $announcementXML\n";
-         sendResponse(response=>$response);
-       }
-     }
+	  ~;
+	}
+      } else {
+	print "$line\n";
+      }
+
+    }
+
+  #### Otherwise, if 1 row was not received  
+  } else {
+    if ( !defined($announcementXML) || $announcementXML eq '' ) {
+      $response->{result} = "ERROR";
+      $response->{message} = "no submission found for $id\n";
+      sendResponse(response=>$response);
+    } else {
+      if ( -e "$path/$announcementXML" ) {
+	open (IN, "<$path/$announcementXML" ) ;
+	print "Content-type: text/plain\n\n";
+	while (my $line = <IN>){
+	  print $line;
+	}
+	close IN;
+      } else {
+	$response->{result} = "ERROR";
+	$response->{message} = "cannot find submission file $announcementXML\n";
+	sendResponse(response=>$response);
+      }
+    }
   }
   
-  #$response->{result} = "SUCCESS";
-  #$response->{message} = "Show information for dataset ID $datasetID.";
-  #sendResponse(response=>$response);
-}
+} # end showDataset
+
+
+###############################################################################
+# build_SQL_columns_list
+###############################################################################
 sub build_SQL_columns_list {
   my %args = @_;
   my $METHOD = 'build_SQL_columns_list';
@@ -530,6 +534,8 @@ sub showDatasetHistory {
   $tableName .= "_test" if ($test =~ /yes|true/i);
 
   $str .= "<p><b>Dataset History</b></p>\n";
+  #$str .= "test=$test  tableName=$tableName<BR>\n";
+
   $str .= "<table class=\"table\" cellpadding=\"2\">\n";
 
   my $sql = "SELECT dataset_id,datasetIdentifier,identifierVersion,isLatestVersion,PXPartner,status,primarySubmitter,title,species,instrument,publication,keywordList,announcementXML,identifierDate,submissionDate,revisionDate,changeLogEntry FROM $tableName WHERE dataset_id = $dataset_id";
