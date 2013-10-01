@@ -17,7 +17,7 @@ sub main {
 
   unless ($command) {
     print "maintainDatabase.pl <command>\n";
-    print "  Supported commands: TEST, CREATE, DROP\n\n";
+    print "  Supported commands: TEST, CREATE, DROP, MODIFY, INSERT, SELECT\n\n";
     return(0);
   }
 
@@ -41,6 +41,11 @@ sub main {
   } elsif (uc($command) eq 'DROP_YES') {
     print "Dropping database tables...\n";
     $db->dropTables();
+    return(1);
+
+  } elsif (uc($command) eq 'MODIFY') {
+    print "Modifying database tables...\n";
+    $db->modifyTables();
     return(1);
 
   } elsif (uc($command) eq 'INSERT') {
