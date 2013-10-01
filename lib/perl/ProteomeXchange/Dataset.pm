@@ -9,7 +9,7 @@ package ProteomeXchange::Dataset;
 ###############################################################################
 
 use strict;
-use lib "/local/wwwspecial/proteomecentral/lib/perl";
+
 use ProteomeXchange::Database;
 use ProteomeXchange::DatasetParser;
 use ProteomeXchange::EMailProcessor;
@@ -204,15 +204,20 @@ sub updateRecord{
     'primarySubmitter' => $result->{primarySubmitter}, 
     'title' => $result->{title},
     'identifierVersion' => $result->{identifierVersion},
+    'isLatestVersion' => 'Y',
+    'status' => 'announced',
     'instrument' => $result->{instrument},
     'publication' => $result->{publication},
     'species' => $result->{species},
     'keywordList' => $result->{keywordList},
     'announcementXML' => $result->{announcementXML},
-    'status' => 'announced',
   ); 
+
+  #### If there is already a previously recorded submissionDate, then this is a revision
   if ( $submissionDate =~ /\d+/){ 
     $rowdata{revisionDate} = 'CURRENT_TIMESTAMP';
+
+  #### Else this is a new submission
   } else{
      $rowdata{submissionDate} = 'CURRENT_TIMESTAMP' ; 
   }
@@ -228,9 +233,27 @@ sub updateRecord{
     $response->{result} = "Success";
     $response->{'link'} = "http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$dataset_id&test=$test";
 
+    #### Now add to the history table
+
+    $rowdata{dataset_id} = $dataset_id;
+    $rowdata{datasetIdentifier} = $datasetidentifier;
+
+    $value = $db->updateOrInsertRow(
+				     insert => 1,
+				     table_name => "${table_name}_history",
+				     rowdata_ref => \%rowdata,
+				     );
+
+    if ($value == 1 ) {
+      $response->{result} = "Success";
+    } else {
+      $response->{result} = "ERROR";
+      $response->{message} = "ERROR: failed to update history table for record $datasetidentifier. $value";
+    }
+
   } else {
     $response->{result} = "ERROR";
-    $response->{message} = "ERROR: fail to update record $datasetidentifier. $value";
+    $response->{message} = "ERROR: failed to update record $datasetidentifier. $value";
   }
 
   return $response;
@@ -248,10 +271,19 @@ sub createNewIdentifier {
 
   #### Decode the argument list
   my $test = $args{'test'};
+  my $response = $args{response};
 
-  my $response;
+  my $table_name = 'dataset';
+  my $testPhrase = "";
+  my $accessionTemplate = 'PXD000000';
+  if ($test && ($test =~ /yes/i || $test =~ /true/i)) {
+    $table_name = 'dataset_test';
+    $testPhrase = "Test ";
+    $accessionTemplate = 'PXT000000';
+  }
+
   $response->{result} = "ERROR";
-  $response->{message} = "Unable to create a new identifier";
+  $response->{message} = "Unable to create a new ${testPhrase}identifier";
 
   #### Make sure we have the required information
   my $PXPartner = $self->getPXPartner();
@@ -266,74 +298,67 @@ sub createNewIdentifier {
     $response->{result} = "ERROR";
     $response->{message} = "Dataset object already has an identifier. Cannot request a new one";
 
+
   #### Else create a new one
   } else {
     my $datasetIdentifier;
 
-    if ($test && ($test =~ /yes/i || $test =~ /true/i)) {
-      $datasetIdentifier = 'PXT000001';
-      $response->{result} = "SUCCESS";
-      $response->{identifier} = $datasetIdentifier;
-      $response->{message} = "Identifier $datasetIdentifier granted to $PXPartner";
-    } else {
+    #### Set database row fields
+    my %rowdata = (
+      PXPartner => $PXPartner,
+      status => 'ID requested',
+      identifierDate => 'CURRENT_TIMESTAMP',
+    );
+    push(@{$response->{info}},"Preparing to request the next ID from table '$table_name' via testMode='$test'");
 
-      #print "Content-type: text/html\n\n";
-      #print "test mode=$test<BR>\n";
-      #print "Halting right before the assignment of a new real ID\n";
-      #exit;
+    if ( 0 ) {
+      $response->{result} = "ERROR";
+      $response->{message} = "DEBUGHALT: Halting right before the assignment of ID into $table_name with testMode=$test";
+      return $response;
+    }
 
-      #### Set database row fields
-      my %rowdata = (
-        PXPartner => $PXPartner,
-        status => 'ID requested',
-        identifierDate => 'CURRENT_TIMESTAMP',
-      );
+    #### Insert the new record
+    my $dataset_id = $db->updateOrInsertRow(
+      insert => 1,
+      table_name => $table_name,
+      rowdata_ref => \%rowdata,
+      return_PK => 1,
+    );
 
-      #### Insert the new record
-      my $dataset_id = $db->updateOrInsertRow(
-        insert => 1,
-        table_name => 'dataset',
-        rowdata_ref => \%rowdata,
-        return_PK => 1,
-      );
+    if ($dataset_id) {
+      if ($dataset_id >=1 && $dataset_id < 1000000) {
+	my $datasetIdentifier = substr($accessionTemplate,0,length($accessionTemplate)-length($dataset_id)).$dataset_id;
 
-      if ($dataset_id) {
-        if ($dataset_id >=1 && $dataset_id < 1000000) {
-          my $template = 'PXD000000';
-	  my $datasetIdentifier = substr($template,0,length($template)-length($dataset_id)).$dataset_id;
+	#### Set database row fields
+	my %rowdata = (
+          datasetIdentifier => $datasetIdentifier,
+        );
 
-	  #### Set database row fields
-	  my %rowdata = (
-            datasetIdentifier => $datasetIdentifier,
-          );
+	#### Insert the new record
+	$db->updateOrInsertRow(
+          update => 1,
+          table_name => $table_name,
+          rowdata_ref => \%rowdata,
+          PK => 'dataset_id',
+          PK_value => $dataset_id,
+        );
 
-	  #### Insert the new record
-	  $db->updateOrInsertRow(
-            update => 1,
-            table_name => 'dataset',
-            rowdata_ref => \%rowdata,
-            PK => 'dataset_id',
-            PK_value => $dataset_id,
-          );
+	#### Return a successful message
+	$response->{result} = "SUCCESS";
+	$response->{identifier} = $datasetIdentifier;
+	$response->{dataset_id} = $dataset_id;
+	$response->{message} = "${testPhrase}Identifier $datasetIdentifier granted to $PXPartner";
 
-	  #### Return a successful message
-	  $response->{result} = "SUCCESS";
-	  $response->{identifier} = $datasetIdentifier;
-    $response->{dataset_id} = $dataset_id;
-	  $response->{message} = "Identifier $datasetIdentifier granted to $PXPartner";
-
-	#### Report a database problem
-	} else {
-	  $response->{result} = "ERROR";
-	  $response->{message} = "Illegal dataset_id '$dataset_id' returned from database";
-	}
-
-      #### Otherwise Insert failed
+      #### Report a database problem
       } else {
 	$response->{result} = "ERROR";
-	$response->{message} = "Unable to insert new dataset row in database";
+	$response->{message} = "Illegal dataset_id '$dataset_id' returned from database";
       }
 
+    #### Otherwise Insert failed
+    } else {
+      $response->{result} = "ERROR";
+      $response->{message} = "Unable to insert new dataset row in database";
     }
 
   }
