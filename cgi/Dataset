@@ -27,7 +27,7 @@ my @parameters = qw ( query PXPartner authentication method ProteomeXchangeXML t
 foreach my $parameter ( @parameters ) {
   if ($cgi->param($parameter)) {
     $params->{$parameter} = $cgi->param($parameter);
-	push(@{$response->{info}},"Found input parameter $parameter=$params->{$parameter}") if ($cgi->param('verbose'));
+	push(@{$response->{info}},"Found input parameter $parameter='$params->{$parameter}'") if ($cgi->param('verbose'));
   }
 }
 
@@ -39,7 +39,7 @@ foreach my $arg ( @ARGV ) {
 	foreach my $parameter ( @parameters ) {
       if ($key eq $parameter) {
          $params->{$parameter} = $value;
-  	     push(@{$response->{info}},"Found input parameter $key=$value");
+  	     push(@{$response->{info}},"Found input parameter $key='$value'");
       }
     }
   } else {
@@ -114,7 +114,7 @@ sub sendResponse {
 
   if ($response->{info}) {
     foreach my $line (@{$response->{info}}) {
-      $buffer .= "info=$line=\n";
+      $buffer .= "info=$line\n";
 	  }
   }
   ## print out things parsed from xml
@@ -236,7 +236,7 @@ sub requestID {
     my $dataset = new ProteomeXchange::Dataset;
     $dataset->setPXPartner($params->{PXPartner});
     #### For testing $response->{message} = "Would get new identifier in with test: $params->{test}";
-    $response = $dataset->createNewIdentifier(test=>$params->{test});
+    $response = $dataset->createNewIdentifier(test=>$params->{test},response=>$response);
   #### If authorization failed, return the authorization error message
   } else {
     $response->{message} = $authorization->{message};
