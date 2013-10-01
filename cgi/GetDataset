@@ -281,7 +281,7 @@ sub showDataset {
   }else{
     my $len = 9 - length($datasetID);
     $title = substr ("PXD000001",0, $len) . "$datasetID";
-		my $dbh = new ProteomeXchange::Database;
+    my $dbh = new ProteomeXchange::Database;
     my $sql = qq~ select announcementXML
                  from $table_name where dataset_id=$datasetID;
              ~;
@@ -325,6 +325,13 @@ sub showDataset {
         }
       }
       $str .= "</ul>\n";
+
+
+      #### Display the dataset history
+      $str .= showDatasetHistory(dataset_id => $datasetID, test => $test);
+
+
+      #### Provide information on several of the major data lists
       foreach my $key (qw (publicationList keywordList contactList fullDatasetLinkList)){
 				if ( defined $result->{$key}){
           $header = ucfirst($key);
@@ -502,4 +509,68 @@ sub build_SQL_columns_list {
   return $columns_clause;
 
 } # end build_SQL_columns_list
+
+
+###############################################################################
+# showDatasetHistory
+###############################################################################
+sub showDatasetHistory {
+  my %args = @_;
+  my $SUB_NAME = 'showDatasetHistory';
+
+  print "Content-type: text/html\n\n";
+
+  #### Decode the argument list
+  my $outputMode = $args{outputMode} || '';
+  my $test = $args{test} || 'no';
+  my $dataset_id = $args{dataset_id} || die("[$SUB_NAME] ERROR: dataset_id not passed");
+  my $str = '';
+
+  my $tableName = "datasetHistory";
+  $tableName .= "_test" if ($test =~ /yes|true/i);
+
+  $str .= "<p><b>Dataset History</b></p>\n";
+  $str .= "<table class=\"table\" cellpadding=\"2\">\n";
+
+  my $sql = "SELECT dataset_id,datasetIdentifier,identifierVersion,isLatestVersion,PXPartner,status,primarySubmitter,title,species,instrument,publication,keywordList,announcementXML,identifierDate,submissionDate,revisionDate,changeLogEntry FROM $tableName WHERE dataset_id = $dataset_id";
+
+  my $db = new ProteomeXchange::Database;
+
+  #### Get the data from the database
+  #### If the table is missing, this leads to a silent crash! FIXME
+  my @rows = $db->selectSeveralColumns($sql);
+
+  my $nRows = scalar(@rows);
+  if (@rows) {
+    #print "Successfully selected $nRows rows\n";
+  } else {
+    $str .= "<tr><td>History information is not currently available for this dataset</td></tr>\n";
+    $str .= "</table>\n";
+    return $str;
+  }
+
+  $str .= "<tr>";
+  foreach my $item ( 'Version','Datetime','Status','ChangeLog Entry' ) {
+    $str .= "<td class=\"tableTitle\">$item</td>";
+  }
+  $str .= "</tr>\n";
+
+  foreach my $row ( @rows ) {
+    my ( $dataset_id,$datasetIdentifier,$identifierVersion,$isLatestVersion,$PXPartner,$status,$primarySubmitter,$title,$species,$instrument,$publication,$keywordList,$announcementXML,$identifierDate,$submissionDate,$revisionDate,$changeLogEntry ) = @{$row};
+
+    $str .= "<tr>";
+    foreach my $item ( $identifierVersion,$revisionDate||$submissionDate||$identifierDate,$status,$changeLogEntry ) {
+      $str .= "<td class=\"tableText\">$item</td>";
+    }
+    $str .= "</tr>\n";
+
+  }
+  $str .= "</table>\n";
+
+  return $str;
+}
+
+
+
+
 
