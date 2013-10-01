@@ -100,16 +100,40 @@ sub createTables {
     PXPartner           varchar(50) NOT NULL,
     status              varchar(50) NOT NULL,
     primarySubmitter    varchar(255) NULL,
+    labHead             varchar(255) NULL,
     title               varchar(255) NULL,
-    species             varchar(255) NOT NULL,
-    instrument          varchar(255) NOT NULL default 'UNKNOWN',
-    publication         varchar(255),
-    keywordList         varchar(255), 
-    announcementXML     varchar(255) default NULL,
+    species             varchar(255) NULL,
+    instrument          varchar(255) NULL,
+    publication         varchar(255) NULL,
+    keywordList         varchar(255) NULL, 
+    announcementXML     varchar(255) NULL,
     identifierDate      datetime NOT NULL,
     submissionDate      datetime NULL,
     revisionDate        datetime NULL,
     PRIMARY KEY (dataset_id)
+  ) ENGINE=InnoDB;
+
+  CREATE TABLE datasetHistory (
+    datasetHistory_id   int AUTO_INCREMENT NOT NULL,
+    dataset_id          int NOT NULL,
+    datasetIdentifier   varchar(50) NOT NULL,
+    identifierVersion   int NOT NULL,
+    isLatestVersion     char(1) NOT NULL,
+    PXPartner           varchar(50) NULL,
+    status              varchar(50) NOT NULL,
+    primarySubmitter    varchar(255) NULL,
+    labHead             varchar(255) NULL,
+    title               varchar(255) NULL,
+    species             varchar(255) NULL,
+    instrument          varchar(255) NULL,
+    publication         varchar(255) NULL,
+    keywordList         varchar(255) NULL, 
+    announcementXML     varchar(255) NULL,
+    identifierDate      datetime NULL,
+    submissionDate      datetime NULL,
+    revisionDate        datetime NULL,
+    changeLogEntry      varchar(255) NULL,
+    PRIMARY KEY (datasetHistory_id)
   ) ENGINE=InnoDB;
 
   ~;
@@ -125,6 +149,7 @@ sub createTables {
   }
 
 }
+
 
 ###############################################################################
 # dropTables: Drop the database tables. Careful!
@@ -148,6 +173,68 @@ sub dropTables {
     print "Error dropping tables\n";
     return(0);
   }
+
+}
+
+
+###############################################################################
+# modifyTables: Modify the database tables during development. Not for production
+###############################################################################
+sub modifyTables {
+  my $self = shift;
+  die("ERROR: No database connection yet") unless ($dbh);
+
+  my $ddl = qq~
+
+  DROP TABLE datasetHistory_test;
+
+  ~;
+
+  my $result = 1;
+  #my $result = $self->executeSQL(sql=>$ddl);
+
+  if ($result) {
+    print "Table successfully dropped.\n";
+  } else {
+    print "Error dropping table\n";
+  }
+
+  $ddl = qq~
+
+  CREATE TABLE datasetHistory (
+    datasetHistory_id   int AUTO_INCREMENT NOT NULL,
+    dataset_id          int NOT NULL,
+    datasetIdentifier   varchar(50) NOT NULL,
+    identifierVersion   int NOT NULL,
+    isLatestVersion     char(1) NOT NULL,
+    PXPartner           varchar(50) NULL,
+    status              varchar(50) NOT NULL,
+    primarySubmitter    varchar(255) NULL,
+    labHead             varchar(255) NULL,
+    title               varchar(255) NULL,
+    species             varchar(255) NULL,
+    instrument          varchar(255) NULL,
+    publication         varchar(255) NULL,
+    keywordList         varchar(255) NULL, 
+    announcementXML     varchar(255) NULL,
+    identifierDate      datetime NULL,
+    submissionDate      datetime NULL,
+    revisionDate        datetime NULL,
+    changeLogEntry      varchar(255) NULL,
+    PRIMARY KEY (datasetHistory_id)
+  ) ENGINE=InnoDB;
+
+  ~;
+
+  $result = $self->executeSQL(sql=>$ddl);
+
+  if ($result) {
+    print "Tables successfully modified.\n";
+  } else {
+    print "Error modifying tables\n";
+  }
+
+  return(1);
 
 }
 
