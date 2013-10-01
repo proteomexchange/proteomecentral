@@ -190,8 +190,8 @@ sub modifyTables {
 
   ~;
 
-  my $result = 1;
-  #my $result = $self->executeSQL(sql=>$ddl);
+  #my $result = 1;
+  my $result = $self->executeSQL(sql=>$ddl);
 
   if ($result) {
     print "Table successfully dropped.\n";
@@ -201,7 +201,7 @@ sub modifyTables {
 
   $ddl = qq~
 
-  CREATE TABLE datasetHistory (
+  CREATE TABLE datasetHistory_test (
     datasetHistory_id   int AUTO_INCREMENT NOT NULL,
     dataset_id          int NOT NULL,
     datasetIdentifier   varchar(50) NOT NULL,
