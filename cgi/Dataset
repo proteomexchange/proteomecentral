@@ -106,23 +106,36 @@ sub sendResponse {
 
   print "Content-type: text/plain\n\n";
 
-  print "result=$response->{result}\n";
-  print "message=$response->{message}\n" if ($response->{result});
-  print "identifier=$response->{identifier}\n" if ($response->{identifier});
+  my $buffer = '';
+
+  $buffer .= "result=$response->{result}\n";
+  $buffer .= "message=$response->{message}\n" if ($response->{result});
+  $buffer .= "identifier=$response->{identifier}\n" if ($response->{identifier});
 
   if ($response->{info}) {
     foreach my $line (@{$response->{info}}) {
-      print "info=$line\n";
+      $buffer .= "info=$line=\n";
 	  }
   }
   ## print out things parsed from xml
-  if ( $response->{dataset}){
-     print "\n\nInformation parsed from xml file:\n";
+  if ( 0 && $response->{dataset} ){
+     $buffer .= "\n\nInformation parsed from xml file:\n";
      foreach my $key (keys %{$response->{dataset}}){
-       print "$key=$response->{dataset}{$key}\n";
+       $buffer .= "$key=$response->{dataset}{$key}\n";
      } 
   }
-	
+
+  #### Send the output of the buffer to stdout
+  print $buffer;
+
+  #### Also write the response to a log file for later examination
+  if (open(OUTFILE,">>/net/dblocal/wwwspecial/proteomecentral/log/Dataset.log")) {
+    print OUTFILE "==========================================================================\n";
+    print OUTFILE `date`;
+    print OUTFILE $buffer;
+    close OUTFILE;
+  }
+
   exit;
 }
 
@@ -213,7 +226,7 @@ sub requestID {
   #### If authorization succeeded, furnish a new identifier
   if ($authorization->{result} eq 'SUCCESS') {
     #### Make sure this is not a user that always has to be test mode
-    if ($authorization->{testLevel} && $authorization->{testLevel} eq 'production' && ( $params->{test} eq 'no' || $params->{test} eq 'false' ) ) {
+    if ($authorization->{testLevel} && $authorization->{testLevel} eq 'production' && ( $params->{test} =~ /^no$/i || $params->{test} =~ /^false$/i ) ) {
       $params->{test} = 'no';
     } else {
       $params->{test} = 'yes';
@@ -222,7 +235,7 @@ sub requestID {
 
     my $dataset = new ProteomeXchange::Dataset;
     $dataset->setPXPartner($params->{PXPartner});
-    ####For testing: $response->{message} = "Would get new identifier in with test: $params->{test}";
+    #### For testing $response->{message} = "Would get new identifier in with test: $params->{test}";
     $response = $dataset->createNewIdentifier(test=>$params->{test});
   #### If authorization failed, return the authorization error message
   } else {
