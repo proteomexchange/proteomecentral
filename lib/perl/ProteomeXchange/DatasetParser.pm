@@ -156,17 +156,18 @@ sub parse {
 
     my @lists = $doctree->find_by_tag_name($tag);
     foreach my $list ( @lists ) {
-    #my  $list = $lists[0];
+      #my  $list = $lists[0];
       if($tag =~ /Modification/){
         my $immediate_parent = ( $list->lineage_tag_names() )[0];
         if ($immediate_parent =~ /RepositoryRecord/){
-           next;
+	  next;
         }
       }
-			my @cvParams = $list->find_by_tag_name('cvParam');
-			foreach my $cvParam ( @cvParams ) {
-        my $name = $cvParam->attr('name');
-        my $value = $cvParam->attr('value');
+
+      my @cvParams = $list->find_by_tag_name('cvParam');
+      foreach my $cvParam ( @cvParams ) {
+        my $name = $cvParam->attr('name') || '';
+        my $value = $cvParam->attr('value') || '';
         $name =~ s/^\s+//;
         $value =~ s/^\s+//;
         $name =~ s/\s+$//;
@@ -286,6 +287,7 @@ sub parse {
   }
   foreach my $id (%lists){
     if (defined($lists{$id}{name}) && $lists{$id}{name} =~ /reference/i){
+      #if ( 0 ){    ##### !!!!!!!!!!!!!!!!!!!!!!!!!!! DISABLED
       if (defined $lists{$id}{pubmedid}){
         use ProteomeXchange::PubMedFetcher;
         my $PubMedFetcher = new ProteomeXchange::PubMedFetcher;
