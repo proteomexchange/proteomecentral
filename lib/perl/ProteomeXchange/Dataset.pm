@@ -273,11 +273,14 @@ sub createNewIdentifier {
   my $test = $args{'test'};
   my $response = $args{response};
 
-  my $table_name = 'dataset';
+  my $mainTableName = 'dataset';
+  my $historyTableName = 'datasetHistory';
+
   my $testPhrase = "";
   my $accessionTemplate = 'PXD000000';
   if ($test && ($test =~ /yes/i || $test =~ /true/i)) {
-    $table_name = 'dataset_test';
+    $mainTableName .= '_test';
+    $historyTableName .= '_test';
     $testPhrase = "Test ";
     $accessionTemplate = 'PXT000000';
   }
@@ -306,21 +309,23 @@ sub createNewIdentifier {
     #### Set database row fields
     my %rowdata = (
       PXPartner => $PXPartner,
+      identifierVersion => 0,
+      isLatestVersion => 'Y',
       status => 'ID requested',
       identifierDate => 'CURRENT_TIMESTAMP',
     );
-    push(@{$response->{info}},"Preparing to request the next ID from table '$table_name' via testMode='$test'");
+    push(@{$response->{info}},"Preparing to request the next ID from table '$mainTableName' via testMode='$test'");
 
     if ( 0 ) {
       $response->{result} = "ERROR";
-      $response->{message} = "DEBUGHALT: Halting right before the assignment of ID into $table_name with testMode=$test";
+      $response->{message} = "DEBUGHALT: Halting right before the assignment of ID into $mainTableName with testMode=$test";
       return $response;
     }
 
     #### Insert the new record
     my $dataset_id = $db->updateOrInsertRow(
       insert => 1,
-      table_name => $table_name,
+      table_name => $mainTableName,
       rowdata_ref => \%rowdata,
       return_PK => 1,
     );
@@ -328,6 +333,7 @@ sub createNewIdentifier {
     if ($dataset_id) {
       if ($dataset_id >=1 && $dataset_id < 1000000) {
 	my $datasetIdentifier = substr($accessionTemplate,0,length($accessionTemplate)-length($dataset_id)).$dataset_id;
+	push(@{$response->{info}},"Obtained identifier $datasetIdentifier");
 
 	#### Set database row fields
 	my %rowdata = (
@@ -337,11 +343,31 @@ sub createNewIdentifier {
 	#### Insert the new record
 	$db->updateOrInsertRow(
           update => 1,
-          table_name => $table_name,
+          table_name => $mainTableName,
           rowdata_ref => \%rowdata,
           PK => 'dataset_id',
           PK_value => $dataset_id,
         );
+
+	#### Prepare to update the history table
+	%rowdata = (
+	  dataset_id => $dataset_id,
+	  datasetIdentifier => $datasetIdentifier,
+	  identifierVersion => 0,
+	  isLatestVersion => 'Y',
+          PXPartner => $PXPartner,
+          status => 'ID requested',
+          identifierDate => 'CURRENT_TIMESTAMP',
+        );
+
+	#### Insert the new record
+	my $datasetHistory_id = $db->updateOrInsertRow(
+           insert => 1,
+           table_name => $historyTableName,
+           rowdata_ref => \%rowdata,
+           return_PK => 1,
+        );
+	push(@{$response->{info}},"Updated history table and received datasetHistory_id=$datasetHistory_id");
 
 	#### Return a successful message
 	$response->{result} = "SUCCESS";
