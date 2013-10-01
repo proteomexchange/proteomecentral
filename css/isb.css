@@ -251,13 +251,33 @@ body { font: 13px arial, sans-serif; color: #12313a; margin: 0; padding: 0; heig
   background-color: #f3f1e4;
   padding: 3px;}
 
-	
+
+
 .table{
 	background-color: #FFFFFF;
 	border-color: #1d3887;
+	width: auto !important;
 	border-width: 1px 1px 1px 1px;
 	border-style: solid;
 	margin-bottom: 8px}
+
+.tableTitle {
+	font-family: Arial, Helvetica, Verdana, sans-serif;
+	font-size:14px;
+	font-weight:bold;
+	color:#F39712;
+	background-color: #dddddd;
+	line-height:30px;}
+
+.tableText{
+	font-family: Arial, Helvetica, Verdana, sans-serif;
+	font-size:12px;
+	color:#000000;
+	background-color: #eeeeee;
+	line-height:20px;}
+
+
+
 
 .tableopenhouse{
 	
