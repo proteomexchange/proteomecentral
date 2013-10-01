@@ -277,6 +277,11 @@ sub createNewIdentifier {
       $response->{message} = "Identifier $datasetIdentifier granted to $PXPartner";
     } else {
 
+      #print "Content-type: text/html\n\n";
+      #print "test mode=$test<BR>\n";
+      #print "Halting right before the assignment of a new real ID\n";
+      #exit;
+
       #### Set database row fields
       my %rowdata = (
         PXPartner => $PXPartner,
