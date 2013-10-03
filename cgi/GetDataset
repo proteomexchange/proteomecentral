@@ -472,12 +472,14 @@ sub showDataset {
       sendResponse(response=>$response);
     } else {
       if ( -e "$path/$announcementXML" ) {
-	open (IN, "<$path/$announcementXML" ) ;
-	print "Content-type: text/plain\n\n";
-	while (my $line = <IN>){
-	  print $line;
-	}
-	close IN;
+	open (INFILE, "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
+	print "Content-type: text/xml\n\n";
+	my $inline;
+	while ($inline = <INFILE>) {
+	  print $inline;
+        }
+	close(INFILE);
+
       } else {
 	$response->{result} = "ERROR";
 	$response->{message} = "cannot find submission file $announcementXML\n";
@@ -566,6 +568,7 @@ sub showDatasetHistory {
 
     $str .= "<tr>";
     foreach my $item ( $identifierVersion,$revisionDate||$submissionDate||$identifierDate,$status,$changeLogEntry ) {
+      $item = '' unless (defined($item));
       $str .= "<td class=\"tableText\">$item</td>";
     }
     $str .= "</tr>\n";
