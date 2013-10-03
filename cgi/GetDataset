@@ -271,15 +271,19 @@ sub showDataset {
     $datasetID =~ s/^0+//;
   }
 
-  my ($title,$str,$id,$status,$PXPartner,$announcementXML,$identifierDate);
+  my ($title,$status,$PXPartner,$announcementXML,$identifierDate);
+
+  my $pageStatus = 'OK';
+  my $str = '';
+  $title  = $params->{ID};
 
   #### If a valid identifier was not obtained
   if ( $datasetID !~ /^\d+$/){
-    $str = "<b>The input ID is not valid and should be of the form PXDnnnnnn or numbers only.</b><BR><BR>";
-    $title  = $params->{ID};
+    $str = "The input identifier is not valid and should be of the form PXDnnnnnn or numbers only.";
+    $pageStatus = 'ERROR';
+  }
 
-  #### If is does seem to be valid
-  } else {
+  if ($pageStatus eq 'OK') {
     my $len = 9 - length($datasetID);
     $title = substr ("PXD000001",0, $len) . "$datasetID";
 
@@ -287,16 +291,30 @@ sub showDataset {
     my $dbh = new ProteomeXchange::Database;
     my $sql = qq~ select status,PXPartner,announcementXML,identifierDate from $table_name where dataset_id=$datasetID~;
     my @results = $dbh->selectSeveralColumns($sql);
-    
-    if ( scalar(@results) == 1) {
+
+
+    #### If no row was returned, then this identifer must not have been assigned yet
+    if ( scalar(@results) == 0) {
+      $str = "The identifier $title has not yet been assigned. Please check the identifier and type it in again.";
+      $pageStatus = 'ERROR';
+    }
+    #### If more than one row is returned, this suggests database corruption or some other problem
+    if ( scalar(@results) > 1) {
+      $str = "Too many rows returned. Please report error GDSsD0001 to administrator.";
+      $pageStatus = 'ERROR';
+    }
+
+    if ( $pageStatus eq 'OK' ) {
       ($status,$PXPartner,$announcementXML,$identifierDate) = @{$results[0]};
+
+      #### FIXME There are lots of errors generated during parsing. What to do??
 
       my $parser = new ProteomeXchange::DatasetParser;
       $parser->parse('uploadFilename' => $announcementXML, 'response' => $response, 'path'=> $path);
       my $result = $response->{dataset};
 
       my $header;
-      #foreach my $key (keys %{$result}){
+
       $str .= "<p> <b>DataSet Summary</b> </p>\n<ul>";
       foreach my $key ( qw( PXPartner announceDate announcementXML DigitalObjectIdentifier ReviewLevel datasetOrigin RepositorySupport 
 			    primarySubmitter title description speciesList modificationList instrument
@@ -310,7 +328,7 @@ sub showDataset {
 
         if ($key eq 'announcementXML'){
           $str .= qq~
-                <li><b>$header</b>: <a href='http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$datasetID&outputMode=XML&test=$test'>$result->{$key}</a></li>
+                <li><b>$header</b>: <a href='GetDataset?ID=$datasetID&outputMode=XML&test=$test'>$result->{$key}</a></li>
                 ~;
         } elsif ($key eq 'DigitalObjectIdentifier') {
           $str .= qq~<li><b>$header</b>: <a href="$result->{$key}">$result->{$key}</a></li>~;
@@ -386,18 +404,62 @@ sub showDataset {
         $str .= "</ul>\n";
       }     
 
-    #### Else if no row was returned, then this identifer must not have been assigned yet
-    } else {
-      $str = "<b>The identifier $title has not yet been assigned. Please check the identifier and type it in again.</b><BR><BR>";
     }
 
   } # end else
 
 
-  #### Now produce a page
-  if (($outputmode !~ /XML/i && $status !~ /requested/) || 
-      ($outputmode =~ /XML/i && $status =~ /requested/) || $status =~ /requested/ ){
+  if ( $pageStatus eq 'OK' && $status =~ /requested/ ) {
+    $str = "ProteomeXchange dataset $title has been reserved by the $PXPartner repository for a dataset undergoing processing. However, this dataset has not yet been publicly released and announced to ProteomeXchange. Please check back later to see this dataset, or contact $PXPartner if you feel this message is in error and/or this dataset should have been released.";
+    $pageStatus = 'ERROR';
+  }
+
+
+  #### Special handling if the output mode is XML
+  if ( $outputmode =~ /XML/i ) {
+    if ( $pageStatus eq 'OK' ) {
+
+      #### If there's no filename available, error out
+      if ( !defined($announcementXML) || $announcementXML eq '' ) {
+	$response->{result} = "ERROR";
+	$response->{message} = "no submission found for $params->{ID}\n";
+	sendResponse(response=>$response);
+
+      #### Else open and dump the file
+      } else {
+
+	#### If the file exists
+	if ( -e "$path/$announcementXML" ) {
+	  open (INFILE, "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
+	  print "Content-type: text/plain\n\n";
+	  my $inline;
+	  while ($inline = <INFILE>) {
+	    print $inline;
+	  }
+	  close(INFILE);
+
+	#### Or if the file doesn't exist, error out
+	} else {
+	  $response->{result} = "ERROR";
+	  $response->{message} = "cannot find submission file $announcementXML\n";
+	  sendResponse(response=>$response);
+	  return;
+	}
+      }
+    } else {
+      $response->{result} = "ERROR";
+      $response->{message} = $str;
+      sendResponse(response=>$response);
+      return;
+    }
+
+  #### Otherwise present the information as an HTML page
+  } else {
     print header ( -type => 'text/html');
+
+    if ($pageStatus eq 'ERROR') {
+      $str = "<br><b>$str</b></br></br>";
+    }
 
     #### Print the template
     foreach my $line ( @page ){
@@ -409,6 +471,7 @@ sub showDataset {
 	#$line =~ s/>/style="padding: 0">/g;
 	print "$line\n";
       } elsif ($line =~ /^<!-- BEGIN main content -->/) {
+	print "$line\n";
 	print qq~
 						<link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
 						<script type="text/javascript">
@@ -434,60 +497,24 @@ sub showDataset {
 						<div id="primary" class="site-content">
                   <div><a href='http://proteomecentral.proteomexchange.org/cgi/GetDataset$teststr'> << Full experiment listing </a></div>
         ~;
-	print "$line\n";
 
 	#### Write out the information collected thus far
-	if ( $status && $status !~ /requested/){
-	  if ($str !~ /(has not yet been assigned|PXDnnnnnn)/){
-	    print qq~ <h1 class="entry-title"> $title </h1> ~;
-	  }
-	  print qq~
+	print qq~ <h1 class="entry-title"> $title </h1> ~;
+	print qq~
                   <div class="entry-content">
                   $str
 									 </div><!-- #content -->
 									 </div><!-- #primary .site-content -->
 									 </div><!-- #main -->
-          ~;
-	} else {
-	  print qq~<br>
-             ProteomeXchange dataset $title has been reserved by the $PXPartner repository for a dataset 
-             undergoing processing. <br>However, this dataset has not yet been released and announced to 
-             ProteomeXchange. <br>Please check back later to see this dataset, or contact $PXPartner if you feel 
-             this message is in error. <br><br>
-             </div><!-- #primary .site-content -->
-             </div><!-- #main -->
-	  ~;
-	}
+        ~;
+
       } else {
 	print "$line\n";
       }
 
     }
-
-  #### Otherwise, if 1 row was not received  
-  } else {
-    if ( !defined($announcementXML) || $announcementXML eq '' ) {
-      $response->{result} = "ERROR";
-      $response->{message} = "no submission found for $id\n";
-      sendResponse(response=>$response);
-    } else {
-      if ( -e "$path/$announcementXML" ) {
-	open (INFILE, "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
-	print "Content-type: text/xml\n\n";
-	my $inline;
-	while ($inline = <INFILE>) {
-	  print $inline;
-        }
-	close(INFILE);
-
-      } else {
-	$response->{result} = "ERROR";
-	$response->{message} = "cannot find submission file $announcementXML\n";
-	sendResponse(response=>$response);
-      }
-    }
   }
-  
+
 } # end showDataset
 
 
@@ -523,8 +550,6 @@ sub build_SQL_columns_list {
 sub showDatasetHistory {
   my %args = @_;
   my $SUB_NAME = 'showDatasetHistory';
-
-  print "Content-type: text/html\n\n";
 
   #### Decode the argument list
   my $outputMode = $args{outputMode} || '';
