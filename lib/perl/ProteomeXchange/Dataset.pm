@@ -171,9 +171,11 @@ sub updateRecord{
   my $test = $args{test} || 'no';
   my $datasetidentifier = $result->{identifier};
 
-  my $table_name = 'dataset';
+  my $mainTableName = 'dataset';
+  my $historyTableName = 'datasetHistory';
   if ($test && ($test =~ /yes/i || $test =~ /true/i)) {
-    $table_name = 'dataset_test';
+    $mainTableName .= '_test';
+    $historyTableName .= '_test';
   }
 
   if ( $datasetidentifier eq '' ){
@@ -182,7 +184,7 @@ sub updateRecord{
      return;
   }
 
-  my $sql = "select dataset_id, SubmissionDate from $table_name where datasetIdentifier='$datasetidentifier'";
+  my $sql = "select dataset_id, SubmissionDate from $mainTableName where datasetIdentifier='$datasetidentifier'";
   my @rows = $db->selectSeveralColumns($sql);
 
   if(@rows > 1){
@@ -198,12 +200,12 @@ sub updateRecord{
   my $dataset_id = $rows[0]->[0];
   my $submissionDate = $rows[0]->[1];
 
-  ## need to check if the version number is same as the one in the database. if not
+  ## FIXME need to check if the version number is same as the one in the database. if not
   ## might need to do something.
   my %rowdata = (
     'primarySubmitter' => $result->{primarySubmitter}, 
     'title' => $result->{title},
-    'identifierVersion' => $result->{identifierVersion},
+    'identifierVersion' => $result->{identifierVersion} || 1,
     'isLatestVersion' => 'Y',
     'status' => 'announced',
     'instrument' => $result->{instrument},
@@ -224,7 +226,7 @@ sub updateRecord{
 
   my $value = $db->updateOrInsertRow(
 				     update => 1,
-				     table_name => $table_name,
+				     table_name => $mainTableName,
 				     rowdata_ref => \%rowdata,
 				     PK => 'dataset_id',
 				     PK_value => $dataset_id,
@@ -240,7 +242,7 @@ sub updateRecord{
 
     $value = $db->updateOrInsertRow(
 				     insert => 1,
-				     table_name => "${table_name}_history",
+				     table_name => $historyTableName,
 				     rowdata_ref => \%rowdata,
 				     );
 
