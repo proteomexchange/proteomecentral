@@ -95,6 +95,13 @@ sub submitAnnouncement {
 	  $parser -> parse ('uploadFilename' => $uploadFilename, 'response' => $response, 'path' => $path);
 	  my $result = $response->{dataset};
 
+	  #### If there are cvErrors, put them in info
+	  if ($parser->{cvErrors}) {
+	    foreach my $error ( @{$parser->{cvErrors}} ) {
+	      push(@{$response->{cvErrors}},$error);
+	    }
+	  }
+
 	  ### If the PXPartner does not match the one in XML file, report an error
 	  if ($params->{PXPartner} ne $result->{PXPartner} ){
 	    $response->{result} = "ERROR";
