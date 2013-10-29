@@ -449,11 +449,20 @@ sub submitAnnouncement {
 
 	#### If the file is valid XML
 	if ($nLines == 1 && $result[0] =~ /elems,/) {
-	  push(@{$response->{info}},"Submitted XML is valid.");
+	  push(@{$response->{info}},"Submitted XML is valid according to the XSD.");
 
 	  my $parser = new ProteomeXchange::DatasetParser;
 	  $parser -> parse ('uploadFilename' => $uploadFilename, 'response' => $response, 'path' => $path);
 	  my $result = $response->{dataset};
+
+	  #### If there are cvErrors, put them in info
+	  if ($parser->{cvErrors}) {
+	    foreach my $error ( @{$parser->{cvErrors}} ) {
+	      my $count = $parser->{cvErrorHash}->{$error}->{count} || 0;
+	      $error .= " ($count times)" if ($count != 1);
+	      push(@{$response->{info}},$error);
+	    }
+	  }
 
 	  ### If the PXPartner does not match the one in XML file, report an error
 	  if ($params->{PXPartner} ne $result->{PXPartner} ){
@@ -463,6 +472,15 @@ sub submitAnnouncement {
 	  #### Else everything is okay, so record the result and email the announcement
 	  } else {
 	    push(@{$response->{info}},"Ready to update database record");
+
+	    #### For debugging, escape out here for no database change or email
+	    if (0 == 1) {
+	      push(@{$response->{info}},"The database would be updated here and an email sent, but escape for test.");
+	      $response->{result} = "TESTSUCCESSFUL";
+	      $response->{message} = "Test processing was successful, although no database changes occurred.";
+	      return($response);
+	    }
+
 	    $self -> updateRecord ('result' => $result, 'response' => $response, 'test' => $params->{test});
 	    push(@{$response->{info}},"Update returned '$response->{result}'");
 	    if ( $response->{result} ne "ERROR" ) {
