@@ -103,7 +103,8 @@ sub parse {
     my $paramAccession = $cvParam->attr('accession');
     my $paramName = $cvParam->attr('name');
     my $paramValue = $cvParam->attr('value');
-    $self->checkCvParam(paramAccession=>$paramAccession,paramName=>$paramName,paramValue=>$paramValue);
+    my $paramCvRef = $cvParam->attr('cvRef');
+    $self->checkCvParam(paramAccession=>$paramAccession,paramName=>$paramName,paramValue=>$paramValue,paramCvRef=>$paramCvRef);
   }
 
   my ($datasetSummary) = $doctree->find_by_tag_name('DatasetSummary');
@@ -411,24 +412,38 @@ sub checkCvParam {
   my $paramAccession = $args{paramAccession};
   my $paramName = $args{paramName};
   my $paramValue = $args{paramValue};
+  my $paramCvRef = $args{paramCvRef};
 
   #### Check all the CV params
   unless ($self->{cv}) {
-    my $infile = '/net/dblocal/wwwspecial/proteomecentral/devED/extern/PSI-MS/controlledVocabulary/psi-ms.obo';
+    my $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/PSI-MS/controlledVocabulary/psi-ms.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
     return unless ($self->{cv}->{status} eq 'read ok');
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/devED/extern/PRIDE/schema/pride_cv.obo';
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/PRIDE/schema/pride_cv.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/devED/extern/PSI-MOD/data/PSI-MOD.obo';
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/PSI-MOD/data/PSI-MOD.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CELL/ontology/cl.obo';
+    $self->readControlledVocabularyFile(input_file=>$infile);
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/BRENDA/BrendaTissueOBO';
+    $self->readControlledVocabularyFile(input_file=>$infile);
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/DOID/doid.obo';
+    $self->readControlledVocabularyFile(input_file=>$infile);
+    my @tmp = ();
+    $self->{cvErrors} = \@tmp;
   }
 
   my $accession = $paramAccession;
   my $name = $paramName;
   my $value = $paramValue;
 
+  if ($accession =~ /\s/) {
+    $self->addCvError(errorMessage=>"WARNING: term '$accession' has whitespace in it. This is not good.");
+    $accession =~ s/\s//g;
+  }
+
   unless ($name) {
-    print "WARNING: term '$accession' does not have a corresponding name specified.\n";
+    $self->addCvError(errorMessage=>"WARNING: term '$accession' does not have a corresponding name specified.");
   }
 
   if ($self->{cv}->{terms}->{$accession}) {
@@ -439,8 +454,8 @@ sub checkCvParam {
       #print "INFO: $accession = $name matches CV\n";
       $self->{cv}->{n_valid_terms}++;
     } else {
-      print "WARNING: $accession should be ".
-	"'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'\n";
+      $self->addCvError(errorMessage=>"WARNING: $accession should be ".
+	"'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'");
       $self->{cv}->{mislabeled_terms}++;
       #print "replaceall.pl \"$name\" \"$self->{cv}->{terms}->{$accession}->{name}\" \$file\n";
     }
@@ -457,20 +472,48 @@ sub checkCvParam {
     if ($shouldHaveValue && $hasValue) {
       $self->{cv}->{correctly_has_value}++
     } elsif ($shouldHaveValue && ! $hasValue) {
-      print "ERROR: cvParam $name should have a value, but it does not!\n";
+      $self->addCvError(errorMessage=>"ERROR: cvParam $accession ('$name') should have a value, but it does not!");
       $self->{cv}->{is_missing_value}++
     } elsif (! $shouldHaveValue && $hasValue) {
-      print "ERROR: cvParam $name has a value, but it should not!\n";
+      $self->addCvError(errorMessage=>"ERROR: cvParam $accession ('$name') has a value, but it should not!");
       $self->{cv}->{incorrectly_has_value}++
     } else {
       $self->{cv}->{correctly_has_no_value}++
     }
 
   } else {
-    print "WARNING: CV term $accession ('$name') is not in the cv\n";
-    $self->{cv}->{unrecognized_terms}++;
+    #### Exceptions
+    if ($paramCvRef eq 'NEWT') {
+      #### Skip for now
+    } else {
+      $self->addCvError(errorMessage=>"WARNING: CV term $accession ('$name') is not in the cv");
+      $self->{cv}->{unrecognized_terms}++;
+    }
   }
 
+}
+
+
+###############################################################################
+# addCvError
+###############################################################################
+sub addCvError {
+  my $METHOD = 'addCvError';
+  my $self = shift || die ("self not passed");
+  my %args = @_;
+
+  my $errorMessage = $args{errorMessage};
+
+  if ($self->{cvErrorHash} && $self->{cvErrorHash}->{$errorMessage}) {
+    # It exists already, nothing to do
+  } else {
+    push(@{$self->{cvErrors}},$errorMessage);
+  }
+
+  #### Create or increment the counter
+  $self->{cvErrorHash}->{$errorMessage}->{count}++;
+
+  return;
 }
 
 
