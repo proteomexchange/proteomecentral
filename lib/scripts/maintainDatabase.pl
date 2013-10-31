@@ -2,7 +2,9 @@
 
 use strict;
 
-use lib "../perl";
+use FindBin;
+use lib "$FindBin::Bin/../perl";
+
 use ProteomeXchange::Database;
 
 my $command = shift;
