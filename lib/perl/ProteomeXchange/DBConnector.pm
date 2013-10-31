@@ -10,8 +10,10 @@ package ProteomeXchange::DBConnector;
 ###############################################################################
 
 use strict;
+use warnings;
 
 use DBI;
+use ProteomeXchange::Configuration qw( %CONFIG );
 
 use vars qw($dbh);
 
@@ -209,12 +211,12 @@ sub connect {
   my $password = $args{'password'} || $self->{getPassword};
 
   #### Set the default parameters
-  $serverName = 'mysql' unless ($serverName);
-  $databaseName = 'ProteomeCentral' unless ($databaseName);
-  $userName = 'proteomecentral' unless ($userName);
-  $password = '?' unless ($password);
-  my $databaseType = 'mysql';
-  my $databaseAdmin = 'edeutsch@systemsbiology.org';
+  $serverName = $CONFIG{DB_serverName};
+  $databaseName = $CONFIG{DB_databaseName};
+  $userName = $CONFIG{DB_userName};
+  $password = $CONFIG{DB_password};
+  my $databaseType = $CONFIG{DB_databaseType};
+  my $databaseAdmin = $CONFIG{DB_databaseAdmin};
   my $driverString = 'DBI:$databaseType:$databaseName:$serverName';
 
   $self->setServerName($serverName);
