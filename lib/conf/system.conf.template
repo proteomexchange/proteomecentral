@@ -1,0 +1,25 @@
+##
+## Configuration file for the ProteomeXchange ProteomeCentral system
+##
+
+#### Relational database settings
+DB_databaseType=mysql
+DB_serverName=mysql
+DB_databaseName=ProteomeCentral
+DB_userName=proteomecentral
+DB_password=<Specify Password Here>
+DB_adminName=Eric Deutsch
+DB_adminEmail=edeutsch@systemsbiology.org
+
+#### Server mode: may be "production" or "backup"
+mode=backup
+
+#### Server state: may be "live" or "test"
+state=test
+
+#### Base URL that the server appears to be
+baseUrl=http://proteomecentral.proteomexchange.org
+
+#### Base path on the local filesystem that corresponds to the URL above
+basePath=/net/dblocal/wwwspecial/proteomecentral
+
