@@ -2,14 +2,17 @@
 
 use strict;
 use Data::Dumper;
+
 use FindBin;
 use lib "$FindBin::Bin/../perl";
+
+use ProteomeXchange::Configuration qw( %CONFIG );
 use ProteomeXchange::DatasetParser;
 
 my $file = shift;
 unless ($file) {
   print "Usage: ./testDatasetParser.pl FILENAME\n";
-  print " e.g.: ./testDatasetParser.pl /net/dblocal/wwwspecial/proteomecentral/var/submissions/testing/Submission_2013-01-15_08:35:30.xml\n";
+  print " e.g.: ./testDatasetParser.pl $CONFIG{basePath}/var/submissions/testing/Submission_2013-01-15_08:35:30.xml\n";
   exit;
 }
 
