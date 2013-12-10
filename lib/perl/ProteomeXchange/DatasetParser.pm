@@ -66,16 +66,13 @@ sub parse {
   #### Decode the argument list
   my $params = $args{'announcementXML'};
   my $response = $args{'response'};
-  my $uploadFilename = $args{'uploadFilename'};
-  my $path = $args{path} || '';
-  #my $path = '/local/wwwspecial/proteomecentral/var/submissions';
+  my $filename = $args{'filename'};
 
-  push(@{$response->{info}},"uploaded file path=$path");
+  #### Set a default error message in case something goes wrong
   $response->{result} = "ERROR";
-  $response->{message} = "Unable to process announcement: Unknown error";
-  push(@{$response->{info}},"File has been uploaded. Begin processing it");
+  $response->{message} = "Unable to parse file: Unknown error";
 
-  if ( ! -f "$path/$uploadFilename" ) {
+  if ( ! -f "$filename" ) {
     $response->{message} = "Unable to parse file. Does not exist!";
     return($response);
   }
@@ -83,21 +80,18 @@ sub parse {
   my $dataset;
   my @warnings;
 
-  use XML::TreeBuilder;
-
-  #### EWD removed UTF-8 pragma, okayed by Zhi 2013-01-15. Not needed and
-  #### can cause TreeBuilder to hang with some documents when used.
-  #unless (open (FH, "<:encoding(UTF-8)", "$path/$uploadFilename")){
-
-  unless (open (FH, "$path/$uploadFilename")){
-    #### Unable to parse the XML for unknown reason
-    $response->{message} = "Unable to parse the XML for unknown reason.";
+  #### Open the file
+  unless (open(FH,$filename)){
+    $response->{message} = "Unable to open the document '$filename'";
     return($response);
   }
 
+  use XML::TreeBuilder;
   my $doctree = XML::TreeBuilder->new();
   $doctree->parse(*FH);
 
+  #### Check all the cvParams that they do not conflict with the CV
+  push(@{$response->{info}},"Checking the cvParams in the document");
   my @cvParams = $doctree->find_by_tag_name('cvParam');
   foreach my $cvParam (@cvParams) {
     my $paramAccession = $cvParam->attr('accession');
@@ -107,12 +101,19 @@ sub parse {
     $self->checkCvParam(paramAccession=>$paramAccession,paramName=>$paramName,paramValue=>$paramValue,paramCvRef=>$paramCvRef);
   }
 
+  #### Extract all the needed pieces of information
+
   my ($datasetSummary) = $doctree->find_by_tag_name('DatasetSummary');
   $dataset->{title} = $datasetSummary->attr('title');
   $dataset->{broadcaster} = $datasetSummary->attr('broadcaster');
   $dataset->{announceDate} = $datasetSummary->attr('announceDate');
   $dataset->{PXPartner} = $datasetSummary->attr('hostingRepository');
-  $dataset->{announcementXML} = $uploadFilename;
+
+  $dataset->{announcementXML} = $filename;
+  if ($filename =~ /\//) {
+    $filename =~ /^(.+)\/(.+?)$/;
+    $dataset->{announcementXML} = $2;
+  }
 
   my ($description) = $datasetSummary->find_by_tag_name('Description');
   $dataset->{description} = $description->as_text();
@@ -129,7 +130,6 @@ sub parse {
 
   my ($changeLogEntry) = $doctree->find_by_tag_name('ChangeLogEntry');
   if ($changeLogEntry) {
-    #print "ys!\n";
     $dataset->{changeLogEntry} = $changeLogEntry->as_text();
   }
 
@@ -215,9 +215,8 @@ sub parse {
   }
 
   unless ($dataset->{species}) {
-    $response->{message} = "Unable to extract species from the submitted document";
+    $response->{message} = "Unable to extract species from the document";
     return($response);
-    #### Error: Unable to extract species from the submitted document
   }
 
   
@@ -502,7 +501,8 @@ sub addCvError {
   my $self = shift || die ("self not passed");
   my %args = @_;
 
-  my $errorMessage = $args{errorMessage};
+  my $errorMessage = $args{errorMessage} || '?? Unknown Error ??';
+  $errorMessage = "CV $errorMessage";
 
   if ($self->{cvErrorHash} && $self->{cvErrorHash}->{$errorMessage}) {
     # It exists already, nothing to do
