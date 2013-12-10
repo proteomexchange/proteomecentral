@@ -1,39 +1,41 @@
-<HTML>
-<BODY>
-<form method="post" action="/cgi/Dataset" enctype="multipart/form-data" name="MainForm">
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"></head><body>
+<form method="post" action="cgi/Dataset" enctype="multipart/form-data" name="MainForm">
 
-<font color="red"><B>PXPartner</B></font><BR>
-<input type="text" name="PXPartner" value="" size=50 maxlength=80/><BR>
+<font color="red"><b>PXPartner</b></font><br>
+<input name="PXPartner" value="" size="50" maxlength="80/" type="text"><br>
 
-<font color="red"><B>authentication</B></font><BR>
-<input type="password" name="authentication" value="" size=10 maxlength=50/><BR>
+<font color="red"><b>authentication</b></font><br>
+<input name="authentication" value="" size="10" maxlength="50/" type="password"><br>
 
-<font color="red"><B>method</B></font><BR>
+<font color="red"><b>method</b></font><br>
 <select name="method">
-  <option  value="serverStatus">serverStatus</option>
-  <option  value="requestID">requestID</option>
-  <option  value="submitDataset">submitDataset</option>
-</select><BR>
+  <option value="serverStatus">serverStatus</option>
+  <option value="testAuthorization">testAuthorization</option>
+  <option value="requestID">requestID</option>
+  <option value="submitDataset">submitDataset</option>
+</select><br>
 
-<font color="red"><B>test</B></font><BR>
+<font color="red"><b>test</b></font><br>
 <select name="test">
-  <option  value="no">no</option>
-  <option  value="yes">yes</option>
-</select><BR>
+  <option value="no">no</option>
+  <option value="yes">yes</option>
+</select><br>
 
-<font color="red"><B>verbose</B></font><BR>
+<font color="red"><b>verbose</b></font><br>
 <select name="verbose">
-  <option  value="no">no</option>
-  <option  value="yes">yes</option>
-</select><BR>
+  <option value="no">no</option>
+  <option value="yes">yes</option>
+</select><br>
 
-<font color="red"><B>ProteomeXchangeXML</B></font><BR>
-<input type="file" name="ProteomeXchangeXML" value="" size=40 >
-<BR><BR>
+<font color="red"><b>ProteomeXchangeXML</b></font><br>
+<input name="ProteomeXchangeXML" value="" size="40" type="file">
+<br><br>
 
-<INPUT TYPE="submit" NAME="submit" VALUE="SUBMIT">
+<input name="submit" value="SUBMIT" type="submit">
 
 </form>
 
-</BODY>
-</HTML>
+
+
+</body></html>
