@@ -169,6 +169,11 @@ sub updateRecord{
   my $result = $args{result}; 
   my $response = $args{response};
   my $test = $args{test} || 'no';
+  my $noDatabaseUpdate = $args{noDatabaseUpdate};
+
+  $test = 'no' if (!defined($test));
+  $noDatabaseUpdate = 0 if (!defined($noDatabaseUpdate));
+
   my $datasetidentifier = $result->{identifier};
 
   my $mainTableName = 'dataset';
@@ -184,28 +189,62 @@ sub updateRecord{
      return;
   }
 
-  my $sql = "select dataset_id, SubmissionDate from $mainTableName where datasetIdentifier='$datasetidentifier'";
+  #### Query the information for the current record
+  push(@{$response->{info}},"Checking current database record for '$datasetidentifier'");
+  my $sql = "select dataset_id,SubmissionDate,identifierVersion from $mainTableName where datasetIdentifier='$datasetidentifier'";
   my @rows = $db->selectSeveralColumns($sql);
 
-  if(@rows > 1){
+  if (@rows > 1){
     $response->{result} = "ERROR";
     $response->{message} = "more than one record found for identifier \"$datasetidentifier\".\n";
     return;
-  }elsif(@rows == 0 ){
+  } elsif (@rows == 0 ) {
     $response->{result} = "ERROR";
     $response->{message} ="no record found for identifier \"$datasetidentifier\". Please request ID first.\n";
     return;
   }
-    
-  my $dataset_id = $rows[0]->[0];
-  my $submissionDate = $rows[0]->[1];
 
-  ## FIXME need to check if the version number is same as the one in the database. if not
-  ## might need to do something.
+  #### Extract the current-row information
+  my @row = @{$rows[0]};
+  my ($dataset_id,$submissionDate,$identifierVersion) = @row;
+  
+  my $changeLogEntry = $result->{changeLogEntry};
+
+  #### Verify that the ChangeLogEntry information is appropriate
+  #### If this should be a new submission
+  push(@{$response->{info}},"Current database identifierVersion is $identifierVersion");
+  if ($identifierVersion == 0) {
+    if ($changeLogEntry) {
+      $response->{result} = "ERROR";
+      $response->{message} = "This should be an initial submission for \"$datasetidentifier\" and should not have a ChangeLogEntry\n";
+      return;
+    }
+  #### Otherwise this should be a revision with a Changlog
+  } else {
+    unless ($changeLogEntry) {
+      $response->{result} = "ERROR";
+      $response->{message} = "There was already an announcement for this dataset, and thus, this submission is a revision, which must have a ChangeLogEntry. Yet it does not. Please add a ChangeLogEntry to make it clear how this record has been altered in this revised submission.";
+      return;
+    }
+  }
+
+  #### Increment and check the identifier versions
+  $identifierVersion++;
+  if ($result->{identifierVersion}) {
+    if ($result->{identifierVersion} eq $identifierVersion) {
+      push(@{$response->{info}},"The identifierVersion in the document is correct at $identifierVersion");
+    } else {
+      push(@{$response->{info}},"The identifierVersion in the document is incorrect. It should be '$identifierVersion', but instead is '$result->{identifierVersion}'. Will force it to '$identifierVersion'. Please correct the mismatch.");
+    }
+  } else {
+    push(@{$response->{info}},"The document has no identifierVersion. It should be '$identifierVersion', Will force it to '$identifierVersion'.");
+  }
+
+
   my %rowdata = (
     'primarySubmitter' => $result->{primarySubmitter}, 
     'title' => $result->{title},
-    'identifierVersion' => $result->{identifierVersion} || 1,
+    'identifierVersion' => $identifierVersion,
     'isLatestVersion' => 'Y',
     'status' => 'announced',
     'instrument' => $result->{instrument},
@@ -224,30 +263,42 @@ sub updateRecord{
      $rowdata{submissionDate} = 'CURRENT_TIMESTAMP' ; 
   }
 
+  #### If we asked not to do the update, set to test_only and verbose
+  my @testFlags = ();
+  if ($noDatabaseUpdate) {
+    push(@{$response->{info}},"Will pretend to update database, but won't really do it because noDatabaseUpdate=$noDatabaseUpdate.");
+    @testFlags = ( testonly=>1,verbose=>1 );
+  }
+
   my $value = $db->updateOrInsertRow(
 				     update => 1,
 				     table_name => $mainTableName,
 				     rowdata_ref => \%rowdata,
 				     PK => 'dataset_id',
 				     PK_value => $dataset_id,
+                                     @testFlags,
 				     );
   if ($value == 1 ) {
     $response->{result} = "Success";
-    $response->{'link'} = "http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$dataset_id&test=$test";
+    $response->{message} = "Database was updated. ";
+    $response->{link} = "http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$dataset_id&test=$test";
 
     #### Now add to the history table
 
     $rowdata{dataset_id} = $dataset_id;
     $rowdata{datasetIdentifier} = $datasetidentifier;
+    $rowdata{changeLogEntry} = $changeLogEntry;
 
     $value = $db->updateOrInsertRow(
 				     insert => 1,
 				     table_name => $historyTableName,
 				     rowdata_ref => \%rowdata,
+                                     @testFlags,
 				     );
 
     if ($value == 1 ) {
       $response->{result} = "Success";
+      $response->{message} = "Database was updated. History table was updated.";
     } else {
       $response->{result} = "ERROR";
       $response->{message} = "ERROR: failed to update history table for record $datasetidentifier. $value";
@@ -407,16 +458,33 @@ sub submitAnnouncement {
   my $params = $args{'params'};
   my $response = $args{'response'};
   my $uploadFilename = $args{'uploadFilename'};
+
   my $test = $params->{test};
-  my $path = '/local/wwwspecial/proteomecentral/var/submissions';
-  $path .= "/testing" if ($test && ($test =~ /yes/i || $test =~ /true/i));
+  my $noDatabaseUpdate = $params->{noDatabaseUpdate};
 
+  $test = 'no' if (!defined($test));
+  $noDatabaseUpdate = 0 if (!defined($noDatabaseUpdate));
+
+  my $noEmail = 1;
+
+  #### Set a default path to look in
+  my $path = '/local/wwwspecial/proteomecentral/var/submissions/';
+  $path .= "/testing/" if ($test && ($test =~ /yes/i || $test =~ /true/i));
+
+  #### Set a default error message in case something goes wrong
   $response->{result} = "ERROR";
-  $response->{message} = "Unable to process announcement: Unknown error";
-  push(@{$response->{info}},"File has been uploaded. Begin processing it");
+  $response->{message} = "Unable to process announcement: Unknown error.";
 
-  if ( -f "$path/$uploadFilename" ) {
-    if (open(INFILE,"$path/$uploadFilename")) {
+  push(@{$response->{info}},"File has been uploaded. Begin processing it.");
+
+  #### If we can't find the file as specified, try with a prepended path
+  my $filename = $uploadFilename;
+  unless ( -f $uploadFilename ) {
+    $filename = "$path$uploadFilename";
+  }
+
+  if ( -f "$filename" ) {
+    if (open(INFILE,$filename)) {
       my $nLines = 0;
       my $info;
       while ($nLines < 50) {
@@ -427,7 +495,7 @@ sub submitAnnouncement {
 	}
 	if ($line && $line =~ /SchemaLocation=\"(.+?)\"/) {
 	  if ($1 eq 'proteomeXchange-draft-07.xsd' || $1 eq 'proteomeXchange-1.1.0.xsd') {
-	    push(@{$response->{info}},"File has the correct XSD");
+	    push(@{$response->{info}},"File has as acceptable XSD $1");
 	    $info->{hasRightXSD} = 'passed';
 	  } else {
 	    $response->{result} = "ERROR";
@@ -443,7 +511,7 @@ sub submitAnnouncement {
           $info->{hasRightXSD} && $info->{hasRightXSD} eq 'passed') {
 
 	push(@{$response->{info}},"Validating XML...");
-	my @result = `export LD_LIBRARY_PATH=/tools/src/Xerces/xerces-c-src_2_7_0/lib; /tools/src/Xerces/xerces-c-src_2_7_0/bin/SAX2Count -v=always $path/$uploadFilename 2>&1`;
+	my @result = `export LD_LIBRARY_PATH=/tools/src/Xerces/xerces-c-src_2_7_0/lib; /tools/src/Xerces/xerces-c-src_2_7_0/bin/SAX2Count -v=always $filename 2>&1`;
 
 	my $nLines = scalar(@result);
 
@@ -452,13 +520,13 @@ sub submitAnnouncement {
 	  push(@{$response->{info}},"Submitted XML is valid according to the XSD.");
 
 	  my $parser = new ProteomeXchange::DatasetParser;
-	  $parser -> parse ('uploadFilename' => $uploadFilename, 'response' => $response, 'path' => $path);
+	  $parser -> parse (filename=>$filename,response=>$response);
 	  my $result = $response->{dataset};
 
 	  #### If there are cvErrors, put them in info
 	  if ($parser->{cvErrors}) {
 	    foreach my $error ( @{$parser->{cvErrors}} ) {
-	      my $count = $parser->{cvErrorHash}->{$error}->{count} || 0;
+	      my $count = $parser->{cvErrorHash}->{$error}->{count} || -1;
 	      $error .= " ($count times)" if ($count != 1);
 	      push(@{$response->{info}},$error);
 	    }
@@ -467,7 +535,7 @@ sub submitAnnouncement {
 	  ### If the PXPartner does not match the one in XML file, report an error
 	  if ($params->{PXPartner} ne $result->{PXPartner} ){
 	    $response->{result} = "ERROR";
-	    $response->{message} = "PXPartner in input, $params->{PXPartner}, and in xml, $result->{PXPartner}, doesn't match.";
+	    $response->{message} = "PXPartners in input ($params->{PXPartner}) and in xml ($result->{PXPartner}) don't match.";
 
 	  #### Else everything is okay, so record the result and email the announcement
 	  } else {
@@ -481,8 +549,15 @@ sub submitAnnouncement {
 	      return($response);
 	    }
 
-	    $self -> updateRecord ('result' => $result, 'response' => $response, 'test' => $params->{test});
+	    $self -> updateRecord (
+              result => $result,
+              response => $response,
+              test => $params->{test},
+              noDatabaseUpdate => $noDatabaseUpdate,
+            );
 	    push(@{$response->{info}},"Update returned '$response->{result}'");
+
+	    #### If the dataset update did not return an error, then send an email
 	    if ( $response->{result} ne "ERROR" ) {
 	      my @toRecipients;
 	      my $testFlag = '';
@@ -505,14 +580,20 @@ sub submitAnnouncement {
 	      my $modeClause = '&outputMode=XML';
 	      my $description = $result->{description} || '???';
 	      $description =~ s/[\r\n]//g;
-	      my $emailProcessor = new ProteomeXchange::EMailProcessor;
-	      $emailProcessor -> sendEmail(
+
+	      #### If emailing has be temporarily disable
+	      if ($noEmail) {
+		push(@{$response->{info}},"Will pretend to send around an email, but won't really do it because noEmail=$noEmail.");
+	      } else {
+		my $emailProcessor = new ProteomeXchange::EMailProcessor;
+	        $emailProcessor -> sendEmail(
 					   toRecipients=>\@toRecipients,
 					   ccRecipients=>\@ccRecipients,
 					   bccRecipients=>\@bccRecipients,
 					   subject=>"New ProteomeXchange dataset $identifier$testFlag",
 					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType\nIdentifier: $identifier\nSpecies: $result->{species}\nTitle: $result->{title}\nDescription: $description\nSubmitter: $result->{primarySubmitter}\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
 					   );
+	      }
 	    }
 	  }
 
