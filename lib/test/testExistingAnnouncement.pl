@@ -22,8 +22,10 @@ unless (-e $file) {
 }
 
 my $dataset = new ProteomeXchange::Dataset;
-my $response = $dataset->submitAnnouncement(
+my $response = $dataset->processAnnouncement(
   params => { test=>'yes',PXPartner=>'TestRepo' },
+  method => 'validateXML',
+  path => 'none',
   response => { seed => 1 },
   uploadFilename => $file,
   noDatabaseUpdate => 0,
