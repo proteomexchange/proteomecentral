@@ -325,6 +325,7 @@ sub createNewIdentifier {
   #### Decode the argument list
   my $test = $args{'test'};
   my $response = $args{response};
+  my $reprocessed = $args{reprocessed};
 
   my $mainTableName = 'dataset';
   my $historyTableName = 'datasetHistory';
@@ -336,6 +337,18 @@ sub createNewIdentifier {
     $historyTableName .= '_test';
     $testPhrase = "Test ";
     $accessionTemplate = 'PXT000000';
+  }
+
+  #### Prepend R in front of PXD if this is a reprocessed dataset
+  if ($reprocessed) {
+    if ($reprocessed =~ /yes/i || $reprocessed =~ /true/i) {
+      $accessionTemplate = 'R'.$accessionTemplate;
+    } elsif ($reprocessed =~ /no/i && $reprocessed =~ /false/i) {
+    } else {
+      $response->{result} = "ERROR";
+      $response->{message} = "Unrecognized value '$reprocessed' for reprocessed flag";
+      return($response);
+    }
   }
 
   $response->{result} = "ERROR";
@@ -447,17 +460,19 @@ sub createNewIdentifier {
 
 
 ###############################################################################
-# submitAnnouncement: Submit an announcement XML to ProteomeCentral
+# processAnnouncement: Process an announcement XML by ProteomeCentral
 ###############################################################################
-sub submitAnnouncement {
+sub processAnnouncement {
   my $self = shift;
   my %args = @_;
-  my $SUB_NAME = 'submitAnnouncement';
+  my $SUB_NAME = 'processAnnouncement';
 
   #### Decode the argument list
-  my $params = $args{'params'};
-  my $response = $args{'response'};
-  my $uploadFilename = $args{'uploadFilename'};
+  my $method = $args{'method'} || die("[$SUB_NAME] ERROR:method  not passed");
+  my $path = $args{'path'} || die("[$SUB_NAME] ERROR:path  not passed");
+  my $params = $args{'params'} || die("[$SUB_NAME] ERROR:params  not passed");
+  my $response = $args{'response'} || die("[$SUB_NAME] ERROR:response  not passed");
+  my $uploadFilename = $args{'uploadFilename'} || die("[$SUB_NAME] ERROR: uploadFilename not passed");
 
   my $test = $params->{test};
   my $noDatabaseUpdate = $params->{noDatabaseUpdate};
@@ -467,20 +482,16 @@ sub submitAnnouncement {
 
   my $noEmail = 1;
 
-  #### Set a default path to look in
-  my $path = '/local/wwwspecial/proteomecentral/var/submissions/';
-  $path .= "/testing/" if ($test && ($test =~ /yes/i || $test =~ /true/i));
-
   #### Set a default error message in case something goes wrong
   $response->{result} = "ERROR";
-  $response->{message} = "Unable to process announcement: Unknown error.";
+  $response->{message} = "Unable to process XML: Unknown error.";
 
   push(@{$response->{info}},"File has been uploaded. Begin processing it.");
 
   #### If we can't find the file as specified, try with a prepended path
   my $filename = $uploadFilename;
   unless ( -f $uploadFilename ) {
-    $filename = "$path$uploadFilename";
+    $filename = "$path/$uploadFilename";
   }
 
   if ( -f "$filename" ) {
@@ -524,21 +535,40 @@ sub submitAnnouncement {
 	  my $result = $response->{dataset};
 
 	  #### If there are cvErrors, put them in info
+	  my $nCvErrors = 0;
 	  if ($parser->{cvErrors}) {
 	    foreach my $error ( @{$parser->{cvErrors}} ) {
 	      my $count = $parser->{cvErrorHash}->{$error}->{count} || -1;
 	      $error .= " ($count times)" if ($count != 1);
+	      $nCvErrors++;
 	      push(@{$response->{info}},$error);
 	    }
 	  }
+	  push(@{$response->{info}},"There was a total of $nCvErrors different CV errors or warnings.");
+
 
 	  ### If the PXPartner does not match the one in XML file, report an error
 	  if ($params->{PXPartner} ne $result->{PXPartner} ){
-	    $response->{result} = "ERROR";
-	    $response->{message} = "PXPartners in input ($params->{PXPartner}) and in xml ($result->{PXPartner}) don't match.";
+	    if ($method eq 'validateXML') {
+	      push(@{$response->{info}},"WARNING: PXPartners in input ($params->{PXPartner}) and in xml ($result->{PXPartner}) don't match.");
+	    } else {
+	      $response->{result} = "ERROR";
+	      $response->{message} = "PXPartners in input ($params->{PXPartner}) and in xml ($result->{PXPartner}) don't match.";
+	      return($response);
+	    }
+	  }
 
 	  #### Else everything is okay, so record the result and email the announcement
-	  } else {
+	  if ( 1 ) {
+
+	    #### If the method is just to test the XML, then we're done
+	    if ($method eq 'validateXML') {
+	      push(@{$response->{info}},"XML and CV validation complete.");
+	      $response->{result} = "SUCCESS";
+	      $response->{message} = "XML validation complete. See INFO lines for validation problems.";
+	      return($response);
+	    }
+
 	    push(@{$response->{info}},"Ready to update database record");
 
 	    #### For debugging, escape out here for no database change or email
@@ -549,6 +579,7 @@ sub submitAnnouncement {
 	      return($response);
 	    }
 
+	    #### If we're not just validating, then begin the database update and announcement
 	    $self -> updateRecord (
               result => $result,
               response => $response,
