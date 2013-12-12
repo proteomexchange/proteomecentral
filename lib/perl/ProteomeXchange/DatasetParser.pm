@@ -98,6 +98,7 @@ sub parse {
     my $paramName = $cvParam->attr('name');
     my $paramValue = $cvParam->attr('value');
     my $paramCvRef = $cvParam->attr('cvRef');
+    #print "Checking $paramAccession==$paramName\n";
     $self->checkCvParam(paramAccession=>$paramAccession,paramName=>$paramName,paramValue=>$paramValue,paramCvRef=>$paramCvRef);
   }
 
