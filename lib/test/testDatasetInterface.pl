@@ -18,23 +18,38 @@ exit;
 sub main {
 
   unless ($ARGV[0]) {
-    print "Usage: testDatasetInterface.pl\n";
-    print " e.g.: testDatasetInterface serverStatus\n\n";
+    print "Usage: testDatasetInterface.pl <command> <command> <command>\n";
+    print " e.g.: testDatasetInterface serverStatus\n";
+    print " Supported commands:\n";
+    print "   serverStatus         Test to see if the remote server is alive and functioning\n";
+    print "   testAuthorization    Test to see if the supplied credentials will validate\n";
+    print "   requestID            Request a new ProteomeXchange identifier for a new dataset\n";
+    print "   requestRID           Request a new ProteomeXchange identifier for a reprocessed dataset\n";
+    print "   submitDataset=file   Submit a the PX XML file specified to the system\n";
+    print "   validateXML=file     Send and validate the specified PX XML file\n";
+    print "\n";
     exit;
   }
 
-  my @authParameters = ( PXPartner => 'TestRepo', authentication => '', test => 'yes' );
-  my $url = 'http://proteomecentral.proteomexchange.org/backup/cgi/Dataset';
+  my @authParameters = ( PXPartner => 'TestRepo', authentication => 'foon8000', test => 'yes' );
+  my $url = 'http://proteomecentral.proteomexchange.org/devED/cgi/Dataset';
 
   foreach my $arg ( @ARGV ) {
     print "==============================================================\n";
-    if ($arg eq 'serverStatus' || $arg eq 'testAuthorization' || $arg eq 'requestID') {
+    if ($arg eq 'serverStatus' || $arg eq 'testAuthorization' || $arg eq 'requestID' || $arg eq 'requestRID') {
       print "INFO: Processing argument: $arg\n";
       my $userAgent = LWP::UserAgent->new();
 
+      #### Hack for testing a request for a reprocessed ID
+      my @additionalParameters = ();
+      if ($arg eq 'requestRID') {
+	$arg = 'requestID';
+	@additionalParameters = ( reprocessed => 'true', verbose => 'true' );
+      }
+
       my $response = $userAgent->request(
         POST $url,
-        [method => $arg, @authParameters],
+        [method => $arg, @authParameters, @additionalParameters],
       );
 
       if ($response->is_success) {
@@ -45,8 +60,10 @@ sub main {
         print STDERR $response->status_line, "\n";
       }
 
-    } elsif ($arg =~ /^submitDataset=(\S+)$/) {
-      my $filename = $1;
+    #### Or if the command is one that sends a file
+    } elsif ($arg =~ /^(submitDataset)=(\S+)$/ || $arg =~ /^(validateXML)=(\S+)$/) {
+      my $command = $1;
+      my $filename = $2;
       unless (-e $filename) {
 	die("ERROR: Filename $filename not found");
       }
@@ -56,7 +73,7 @@ sub main {
       my $response = $userAgent->request(
         POST $url,
         Content_Type => 'multipart/form-data',
-        Content => [ ProteomeXchangeXML => [ $filename ], method => 'submitDataset', @authParameters],
+        Content => [ ProteomeXchangeXML => [ $filename ], method => $command, @authParameters],
       );
 
       if ($response->is_success) {
