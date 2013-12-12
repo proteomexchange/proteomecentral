@@ -1,6 +1,7 @@
 #!/usr/local/bin/perl -w
 
 use strict;
+
 use FindBin;
 use lib "$FindBin::Bin/../lib/perl";
 
@@ -16,12 +17,12 @@ my $cgi = new CGI;
 my $response;
 $response->{result} = "ERROR";
 $response->{message} = "ERROR: Unhandled exception E001";
-my @tmp = ( 'Dataset service start' );
+my @tmp = ( 'Dataset service received request' );
 $response->{info} = \@tmp;
 
 my $params;
 
-my @parameters = qw ( query PXPartner authentication method ProteomeXchangeXML test verbose );
+my @parameters = qw ( query PXPartner authentication method ProteomeXchangeXML reprocessed test verbose );
 
 #### Extract CGI parameters
 foreach my $parameter ( @parameters ) {
@@ -35,18 +36,31 @@ foreach my $parameter ( @parameters ) {
 foreach my $arg ( @ARGV ) {
   if ( $arg =~ /(\S+)=(\S+)/) {
     my $key = $1;
-	my $value = $2;
-	foreach my $parameter ( @parameters ) {
+    my $value = $2;
+    my $isValidParameter = 0;
+    foreach my $parameter ( @parameters ) {
       if ($key eq $parameter) {
-         $params->{$parameter} = $value;
-  	     push(@{$response->{info}},"Found input parameter $key='$value'");
+	$params->{$parameter} = $value;
+	push(@{$response->{info}},"Found input parameter $key='$value'");
+	$isValidParameter = 1;
       }
     }
+
+    #### Check to make sure the parameter was known
+    unless ($isValidParameter) {
+      $response->{result} = "ERROR";
+      $response->{message} = "ERROR: Specified parameter '$key' is not recognized";
+      sendResponse(response=>$response);
+    }
+
   } else {
-    print "ERROR: Unable to parse method line parameter '$arg'\n";
-	exit;
+    $response->{result} = "ERROR";
+    $response->{message} = "ERROR: Unable to parse parameter '$arg'";
+    sendResponse(response=>$response);
   }
+
 }
+
 
 $response->{verbose} = $params->{verbose};
 
@@ -67,24 +81,30 @@ if ($params->{method} eq 'requestID') {
   requestID(params=>$params,response=>$response);
 }
 
-#### Handle requestID method
-if ($params->{method} eq 'submitDataset') {
-  submitDataset(params=>$params,response=>$response);
-}
-
-#### Handle codetest method
-if ($params->{method} eq 'codetest') {
-  $response = loadAuthorizations();
-  sendResponse(response=>$response);
-  exit;
-}
-
 #### Handle testAuthorization method
 if ($params->{method} eq 'testAuthorization') {
   testAuthorization(params=>$params,response=>$response);
   sendResponse(response=>$response);
   exit;
 }
+
+#### Handle submitDataset method
+if ($params->{method} eq 'submitDataset') {
+  handleDataset(params=>$params,response=>$response,method=>$params->{method});
+}
+
+#### Handle validateXML method
+if ($params->{method} eq 'validateXML') {
+  handleDataset(params=>$params,response=>$response,method=>$params->{method});
+}
+
+#### Handle codetest method. Used only for special debugging purposes
+if ($params->{method} eq 'codetest') {
+  $response = loadAuthorizations();
+  sendResponse(response=>$response);
+  exit;
+}
+
 
 #### Otherwise an invalid method was sent
 $response->{result} = "ERROR";
@@ -236,7 +256,11 @@ sub requestID {
     my $dataset = new ProteomeXchange::Dataset;
     $dataset->setPXPartner($params->{PXPartner});
     #### For testing $response->{message} = "Would get new identifier in with test: $params->{test}";
-    $response = $dataset->createNewIdentifier(test=>$params->{test},response=>$response);
+    $response = $dataset->createNewIdentifier(
+      test=>$params->{test},
+      reprocessed=>$params->{reprocessed},
+      response=>$response
+    );
   #### If authorization failed, return the authorization error message
   } else {
     $response->{message} = $authorization->{message};
@@ -279,18 +303,25 @@ sub testAuthorization {
 
 
 ###############################################################################
-# submitDataset
+# handleDataset
 ###############################################################################
-sub submitDataset {
+sub handleDataset {
   my %args = @_;
-  my $SUB_NAME = 'submitDataset';
+  my $SUB_NAME = 'handleDataset';
 
   #### Decode the argument list
   my $params = $args{'params'} || die("[$SUB_NAME] ERROR: params not passed");
   my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
   my $test = $params->{test};
+  my $method = $args{'method'} || die("[$SUB_NAME] ERROR: method not passed");
+
+  #### Configure the location of where the uploaded file will go
   my $path = '/local/wwwspecial/proteomecentral/var/submissions';
-  $path .= "/testing" if ($test && ($test =~ /yes/i || $test =~ /true/i));
+  if ($method eq 'validateXML') {
+    $path .= "/validateOnly";
+  } elsif ($test && ($test =~ /yes/i || $test =~ /true/i)) {
+    $path .= "/testing";
+  }
 
   #### Verify the authorization
   my $authorization = authorize(params=>$params,response=>$response);
@@ -321,7 +352,7 @@ sub submitDataset {
 	$response->{result} = "SUCCESS";
 	$response->{message} = "Submission received with $byteCount bytes of content";
 
-	#### ***** right here we need to write the XML file to a store and process the result
+	#### Write the XML file to a store and process the result
 	my $attempts = 0;
 	my $uploadFilename;
 	while ($attempts < 5) {
@@ -351,7 +382,9 @@ sub submitDataset {
 	#### The file was successfully store. Figure out what to do
 	if ($uploadFilename) {
 	  my $dataset = new ProteomeXchange::Dataset;
-	  $response = $dataset->submitAnnouncement(
+	  $response = $dataset->processAnnouncement(
+            method => $method,
+            path => $path,
             params => $params,
             response => $response,
             uploadFilename => $uploadFilename,
