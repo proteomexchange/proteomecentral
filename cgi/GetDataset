@@ -257,17 +257,19 @@ sub showDataset {
   my $outputmode = $params->{outputMode} || '';
   my $datasetID = $params->{ID} || die("[$SUB_NAME] ERROR: datasetID not passed");
   my $test = $params->{test} || 'no';
+
   my $table_name = 'dataset';
   my $path = '/local/wwwspecial/proteomecentral/var/submissions';
   my $teststr = '';
+
   if ($test && ($test =~ /yes/i || $test =~ /true/i)){
     $table_name = 'dataset_test';
     $path .= "/testing";
     $teststr = "?test=$test";
   }
   
-  if ($datasetID =~ /^PX[DT]/) {
-    $datasetID =~ s/PX[DT]//;
+  if ($datasetID =~ /^[R]PX[DT]/) {
+    $datasetID =~ s/[R]PX[DT]//;
     $datasetID =~ s/^0+//;
   }
 
@@ -289,7 +291,7 @@ sub showDataset {
 
     #### Fetch results from dataset table
     my $dbh = new ProteomeXchange::Database;
-    my $sql = qq~ select status,PXPartner,announcementXML,identifierDate from $table_name where dataset_id=$datasetID~;
+    my $sql = qq~ select status,PXPartner,announcementXML,identifierDate,datasetIdentifier from $table_name where dataset_id=$datasetID~;
     my @results = $dbh->selectSeveralColumns($sql);
 
 
@@ -305,12 +307,16 @@ sub showDataset {
     }
 
     if ( $pageStatus eq 'OK' ) {
-      ($status,$PXPartner,$announcementXML,$identifierDate) = @{$results[0]};
+      my $datasetIdentifier;
+      ($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier) = @{$results[0]};
 
-      #### FIXME There are lots of errors generated during parsing. What to do??
+      $title = $datasetIdentifier;
+
+      #print "Content-Type: text/html\n\nLooking for data file <BR>\n";
+      #print "Looking for data file $path/$announcementXML<BR>\n";
 
       my $parser = new ProteomeXchange::DatasetParser;
-      $parser->parse('uploadFilename' => $announcementXML, 'response' => $response, 'path'=> $path);
+      $parser->parse('uploadFilename' => $announcementXML, 'response' => $response, filename=> "$path/$announcementXML" );
       my $result = $response->{dataset};
 
       my $header;
