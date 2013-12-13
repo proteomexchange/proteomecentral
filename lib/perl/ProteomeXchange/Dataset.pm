@@ -476,11 +476,11 @@ sub processAnnouncement {
 
   my $test = $params->{test};
   my $noDatabaseUpdate = $params->{noDatabaseUpdate};
+  my $noEmailBroadcast = $params->{noEmailBroadcast};
 
   $test = 'no' if (!defined($test));
   $noDatabaseUpdate = 0 if (!defined($noDatabaseUpdate));
-
-  my $noEmail = 1;
+  $noEmailBroadcast = 0 if (!defined($noEmailBroadcast));
 
   #### Set a default error message in case something goes wrong
   $response->{result} = "ERROR";
@@ -613,10 +613,11 @@ sub processAnnouncement {
 	      my $description = $result->{description} || '???';
 	      $description =~ s/[\r\n]//g;
 
-	      #### If emailing has be temporarily disable
-	      if ($noEmail) {
-		push(@{$response->{info}},"Will pretend to send around an email, but won't really do it because noEmail=$noEmail.");
+	      #### If emailing has be temporarily disabled
+	      if ($noEmailBroadcast) {
+		push(@{$response->{info}},"Will pretend to send around an email to ".join(',',@toRecipients)." but won't really do it because noEmailBroadcast=$noEmailBroadcast.");
 	      } else {
+		push(@{$response->{info}},"Sending an announcement email to ".join(',',@toRecipients));
 		my $emailProcessor = new ProteomeXchange::EMailProcessor;
 	        $emailProcessor -> sendEmail(
 					   toRecipients=>\@toRecipients,
