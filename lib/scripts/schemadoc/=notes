@@ -1,0 +1,12 @@
+
+Notes creating some nice ProteomeXchange XML schema documentation
+
+cd /net/dblocal/wwwspecial/proteomecentral/devED/lib/scripts/schemadoc
+
+./generateSchemaDocumentation.pl --start ProteomeXchangeDataset --nice \
+  --cvFile ../../../extern/PSI-MS/controlledVocabulary/psi-ms.obo \
+  --examplesFile /net/dblocal/wwwspecial/proteomecentral/devED/lib/test/ProteomeXchange_submission_PXD0000622_fixed.xml \
+  --cvMappingFile ../../schemas/proteomeXchange-1.1.0_mappingFile.xml \
+  ../../schemas/proteomeXchange-1.1.0.xsd
+
+
