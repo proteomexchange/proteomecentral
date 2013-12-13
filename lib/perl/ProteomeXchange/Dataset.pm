@@ -511,6 +511,7 @@ sub processAnnouncement {
 	  } else {
 	    $response->{result} = "ERROR";
 	    $response->{message} = "File has unexpected XSD '$1'. Cannot process this file. Sorry.";
+	    push(@{$response->{info}},"File has unexpected XSD '$1'. Cannot process this file. Sorry.");
 	    $info->{hasRightXSD} = 'failed';
 	  }
 	}
