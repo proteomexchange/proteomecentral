@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="ProteomeXchangeDataset" type="ProteomeXchangeDatasetType"/>
+  
+  <xs:complexType name="ProteomeXchangeDatasetType">
+    <xs:sequence>
+      <xs:element name="ChangeLog" type="ChangeLogType" minOccurs="0"/>
+      <xs:element name="DatasetSummary" type="DatasetSummaryType"/>
+      <xs:element name="DatasetIdentifierList" type="DatasetIdentifierListType"/>
+      <xs:element name="DatasetOriginList" type="DatasetOriginListType"/>
+      <xs:element name="SpeciesList" type="SpeciesListType"/>
+      <xs:element name="InstrumentList" type="InstrumentListType"/>
+      <xs:element name="ModificationList" type="ModificationListType"/>
+      <xs:element name="ContactList" type="ContactListType"/>
+      <xs:element name="PublicationList" type="PublicationListType"/>
+      <xs:element name="KeywordList" type="KeywordListType"/>
+      <xs:element name="FullDatasetLinkList" type="FullDatasetLinkListType"/>
+      <xs:element name="DatasetFileList" type="DatasetFileListType" minOccurs="0"/>
+      <xs:element name="RepositoryRecordList" type="RepositoryRecordListType" minOccurs="0"/>
+      <xs:element name="AdditionalInformation" type="AdditionalInformationType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" use="required" type="xs:string"/>
+    <xs:attribute name="formatVersion" type="versionRegex" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="AdditionalInformationType">
+    <xs:annotation>
+      <xs:documentation>A place for all additional information that may be added to the 
+        broadcast message and that could not be fitted into another location. Here should 
+        also go references to other ProteomeXchange submissions.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="userParam" type="UserParamType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ChangeLogType">
+    <xs:annotation>
+      <xs:documentation>A collection of all change log messages to record the changes and updates related to this dataset.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="ChangeLogEntry" type="ChangeLogEntryType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ChangeLogEntryType">
+    <xs:annotation>
+      <xs:documentation>A single change log entry giving providing the date on the change, a new version number of the dataset and a description of the change/update.</xs:documentation>
+    </xs:annotation>
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="version" type="xs:string"/>
+        <xs:attribute name="date" type="xs:date"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ContactListType">
+    <xs:annotation>
+      <xs:documentation>List of contacts related to the ProteomeXchange dataset.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Contact" type="ContactType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ContactType">
+    <xs:annotation>
+      <xs:documentation>Contact person related to the ProteomeXchange dataset.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required">
+      <xs:annotation>
+        <xs:documentation>Identifier for the contact to be used for referencing within a document.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>  
+  <xs:complexType name="DatasetFileListType">
+    <xs:annotation>
+      <xs:documentation>The list of ALL files comprising this ProteomeXchange submission.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="DatasetFile" type="DatasetFileType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="DatasetFileType">
+    <xs:annotation>
+      <xs:documentation>Description of the source file, including location and type.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required">
+      <xs:annotation>
+        <xs:documentation>Identifier for the sourceFile to be used for referencing within a document.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>Name of the source file, without reference to location (either URI or local path).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:complexType name="DatasetIdentifierListType">
+    <xs:sequence>
+      <xs:element name="DatasetIdentifier" type="DatasetIdentifierType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="DatasetIdentifierType">
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="DatasetOriginListType">
+    <xs:annotation>
+      <xs:documentation>A list of the origins of this dataset. This list can link to other ProteomeXchange datasets or other resources. 
+        If this dataset contains previously unreported data, then a 'new dataset' annotation should be used.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="DatasetOrigin" type="DatasetOriginType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="DatasetOriginType">
+    <!-- ToDo: cvParams needed -->
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="DatasetSummaryType">
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string"/>
+      <xs:element name="ReviewLevel" type="ReviewLevelType">
+        <xs:annotation>
+          <xs:documentation>Level of review on this dataset/associated paper.</xs:documentation>
+          <!-- ToDo: cvparams needed -->
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="RepositorySupport" type="RepositorySupportType">
+        <xs:annotation>
+          <xs:documentation>To what extend the data is supported in the hosting repository.</xs:documentation>
+          <!-- ToDo: cvparams needed -->
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="announceDate" type="xs:date" use="required"/>
+    <xs:attribute name="hostingRepository" type="HostingRepositoryType" use="required">
+      <xs:annotation>
+        <xs:documentation>The broadcaster who send out this ProteomeXchange message.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="title" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>A descriptive title for the dataset.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:complexType name="ReviewLevelType">
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="RepositorySupportType">
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="FullDatasetLinkListType">
+    <xs:annotation>
+      <xs:documentation>A list of links to the complete ProteomeXchange dataset.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="FullDatasetLink" type="FullDatasetLinkType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="FullDatasetLinkType">
+    <xs:annotation>
+      <xs:documentation>A single link to the full dataset.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="InstrumentListType">
+    <xs:annotation>
+      <xs:documentation>List of instruments on which the data generation was performed.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Instrument" type="InstrumentType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>  
+  <xs:complexType name="InstrumentType">
+    <xs:annotation>
+      <xs:documentation>Instrument on which the data has been generated.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required">
+      <xs:annotation>
+        <xs:documentation>Identifier for the instrument to be used for referencing within a document</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType> 
+  <xs:complexType name="KeywordListType">
+    <xs:annotation>
+      <xs:documentation>Keywords defined by controlled vocabulary or free text categorised by a controlled vocabolary term 
+        (e.g. 'journal article keyword', 'submitter keyword' or 'curator keyword').</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ModificationListType">
+    <xs:annotation>
+      <xs:documentation>A list of PTMs defined as cvParams.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="PublicationListType">
+    <xs:annotation>
+      <xs:documentation>List of publications from which the dataset was collected or wherein it is published</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Publication" type="PublicationType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>  
+  <xs:complexType name="PublicationType">
+    <xs:annotation>
+      <xs:documentation>Reference to a publication in which the dataset is published.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required">
+      <xs:annotation>
+        <xs:documentation>Identifier for the publication to be used for referencing within a document</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>  
+  <xs:complexType name="RepositoryRecordListType">
+    <xs:annotation>
+      <xs:documentation>The list of records as found in the repository the data was submitted to (for example PRIDE experiment records).</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="RepositoryRecord" type="RepositoryRecordType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="RepositoryRecordType">
+    <xs:sequence>
+      <xs:element name="SourceFileRef" type="RefType" minOccurs="0" maxOccurs="unbounded">
+        <xs:annotation>
+          <xs:documentation>to reference the 'id' of a 'DatasetFile' within this submission</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="PublicationRef" type="RefType" minOccurs="0" maxOccurs="unbounded">
+        <xs:annotation>
+          <xs:documentation>to reference the 'id' of a 'Publication' within this submission</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="InstrumentRef" type="RefType" maxOccurs="unbounded">
+        <xs:annotation>
+          <xs:documentation>to reference the 'id' of an 'Instrument' within this submission</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="SampleList" type="SampleListType" maxOccurs="unbounded"/>
+      <xs:element name="ModificationList" type="ModificationListType" minOccurs="0"/>
+      <xs:element name="AnnotationList" type="AdditionalInformationType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>Any additional annotation of the record/experiment that the 
+            submitter/generator of the message deems important enough to announce.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="label" type="xs:string"/>
+    <xs:attribute name="recordID" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>A unique identifier for the record within the repository.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="repositoryID" type="HostingRepositoryType" use="required">
+      <xs:annotation>
+        <xs:documentation>Identifier that uniquely defines the hosting repository which holds the data records.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="uri" type="xs:anyURI" use="required"/>
+  </xs:complexType>
+  <xs:complexType name="SampleListType">
+    <xs:sequence>
+      <xs:element name="Sample" type="SampleType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="SampleType">
+    <xs:annotation>
+      <xs:documentation>A summary of the sample describtion. This should be a (sub) sellection 
+        of cvParams used to describe the sample. Minimally this should contain information like 
+        species, tissue, etc..., but could also contain sample preparation information.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+  </xs:complexType>
+  <xs:complexType name="SpeciesListType">
+    <xs:annotation>
+      <xs:documentation>The list of species from which the data has been generated.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Species" type="SpeciesType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="SpeciesType">
+    <xs:annotation>
+      <xs:documentation>The species from which the data has been generated.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  
+  <xs:complexType name="AbstractParamType" abstract="true">
+    <xs:annotation>
+      <xs:documentation>Abstract entity allowing either cvParam or userParam to be referenced in other schemas.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="name" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>The name of the parameter.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="value" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>The user-entered value of the parameter.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="unitAccession" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>An accession number identifying the unit within the OBO foundry Unit CV.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="unitName" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>The name of the unit.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="unitCvRef" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>If a unit term is referenced, this attribute must refer to the CV 'id' attribute
+          defined in the cvList in this file.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:complexType name="UserParamType">
+    <xs:annotation>
+      <xs:documentation>A single user-defined parameter.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="AbstractParamType"/>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="CvParamType">
+    <xs:annotation>
+      <xs:documentation>A single entry from an ontology or a controlled vocabulary.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="AbstractParamType">
+        <xs:attribute name="cvRef" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>A reference to the cv element from which this term originates.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accession" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>The accession or ID number of this CV term in the source CV.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="RefType">
+    <xs:attribute name="ref" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+  
+  <xs:simpleType name="HostingRepositoryType">
+    <xs:annotation>
+      <xs:documentation>The allowed values for the ProteomeXchange hosting repository.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="PRIDE"/>
+      <xs:enumeration value="PeptideAtlas"/>
+      <xs:enumeration value="PASSEL"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="versionRegex">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(1\.0\.?\d?)"/>
+    </xs:restriction>
+  </xs:simpleType>
+  
+</xs:schema>
