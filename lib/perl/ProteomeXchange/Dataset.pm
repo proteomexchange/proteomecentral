@@ -230,6 +230,7 @@ sub updateRecord{
 
   #### Increment and check the identifier versions
   $identifierVersion++;
+  $response->{identifierVersion} = $identifierVersion;
   if ($result->{identifierVersion}) {
     if ($result->{identifierVersion} eq $identifierVersion) {
       push(@{$response->{info}},"The identifierVersion in the document is correct at $identifierVersion");
@@ -608,7 +609,11 @@ sub processAnnouncement {
 	      my @ccRecipients = ();
 	      my @bccRecipients = ();
 	      my $identifier = $result->{identifier} || '??';
-	      my $messageType = 'new' || 'revision to a';
+	      my %messageType = ( status=> 'new', titleIntro => 'New', midSentence => 'new' );
+	      if ($response->{identifierVersion} && $response->{identifierVersion} > 1) {
+		%messageType = ( status => 'revision', titleIntro => 'Updated information for', midSentence => 'revision to a' );
+	      }
+
 	      my $modeClause = '&outputMode=XML';
 	      my $description = $result->{description} || '???';
 	      $description =~ s/[\r\n]//g;
@@ -623,8 +628,8 @@ sub processAnnouncement {
 					   toRecipients=>\@toRecipients,
 					   ccRecipients=>\@ccRecipients,
 					   bccRecipients=>\@bccRecipients,
-					   subject=>"New ProteomeXchange dataset $identifier$testFlag",
-					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType\nIdentifier: $identifier\nSpecies: $result->{species}\nTitle: $result->{title}\nDescription: $description\nSubmitter: $result->{primarySubmitter}\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
+					   subject=>"$messageType{titleIntro} ProteomeXchange dataset $identifier$testFlag",
+					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
 					   );
 	      }
 	    }
