@@ -174,6 +174,10 @@ sub parse {
         $value =~ s/^\s+//;
         $name =~ s/\s+$//;
         $value =~ s/\s+$//;
+        if($value =~ /PXD\d+/ && $value !~ /href/ && $name =~ /ProteomeXchange accession/){
+          $value =~ s#(PXD\d+)#<a href="http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$1">$1<\/a>#;
+        }
+
 				if ($value){
 					if ($tag eq 'Species'){
 						$dataset->{speciesList} .=  $name . ": ";
