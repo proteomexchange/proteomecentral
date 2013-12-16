@@ -9,7 +9,7 @@ use HTTP::Request::Common;
 my $filename = shift or die("ERROR Must supply 1 argument which is file to validate");
 die("ERROR: Filename $filename not found") unless (-e $filename);
 
-my @authParameters = ( PXPartner => 'PRIDE', authentication => 'XXXX', test => 'yes' );
+my @authParameters = ( PXPartner => 'TestRepo', authentication => 'XXXX', test => 'yes' );
 my $url = 'http://proteomecentral.proteomexchange.org/beta/cgi/Dataset';
 
 my $userAgent = LWP::UserAgent->new();
