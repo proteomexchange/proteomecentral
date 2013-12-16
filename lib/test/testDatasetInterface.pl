@@ -31,7 +31,7 @@ sub main {
     exit;
   }
 
-  my @authParameters = ( PXPartner => 'TestRepo', authentication => 'foon8000', test => 'yes' );
+  my @authParameters = ( PXPartner => 'TestRepo', authentication => 'XXXX', test => 'yes' );
   my $url = 'http://proteomecentral.proteomexchange.org/devED/cgi/Dataset';
 
   foreach my $arg ( @ARGV ) {
