@@ -227,6 +227,7 @@ sub updateRecord{
       return;
     }
   }
+  $response->{changeLogEntry} = $changeLogEntry;
 
   #### Increment and check the identifier versions
   $identifierVersion++;
@@ -623,13 +624,17 @@ sub processAnnouncement {
 		push(@{$response->{info}},"Will pretend to send around an email to ".join(',',@toRecipients)." but won't really do it because noEmailBroadcast=$noEmailBroadcast.");
 	      } else {
 		push(@{$response->{info}},"Sending an announcement email to ".join(',',@toRecipients));
+		my $changeLogEntry = '';
+		if ($result->{changeLogEntry}) {
+		  $changeLogEntry = "Changes: $result->{changeLogEntry}\n";
+		}
 		my $emailProcessor = new ProteomeXchange::EMailProcessor;
 	        $emailProcessor -> sendEmail(
 					   toRecipients=>\@toRecipients,
 					   ccRecipients=>\@ccRecipients,
 					   bccRecipients=>\@bccRecipients,
 					   subject=>"$messageType{titleIntro} ProteomeXchange dataset $identifier$testFlag",
-					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
+					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}Species: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
 					   );
 	      }
 	    }
