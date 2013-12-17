@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet href="https://psidev.svn.sourceforge.net/svnroot/psidev/psi/tools/current/xsl/cv-mapping/CvMappingRules.xsl" type="text/xsl"?>
-<!-- Incomplete start for a ProteomeXchange XML 1.1.0 mapping file created by EWD -->
+<!-- Incomplete start for a ProteomeXchange XML 1.2.0 mapping file created by EWD -->
 <CvMapping xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:noNamespaceSchemaLocation="http://www.psidev.info/sites/default/files/CvMapping.xsd" modelName="proteomeXchange-1.1.0.xsd" modelURI="http://proteomecentral.proteomexchage.org/schemas/proteomeXchange-1.1.0.xsd" modelVersion="1.1.0">
+           xsi:noNamespaceSchemaLocation="http://www.psidev.info/sites/default/files/CvMapping.xsd" modelName="proteomeXchange-1.2.0.xsd" modelURI="http://proteomecentral.proteomexchage.org/schemas/proteomeXchange-1.2.0.xsd" modelVersion="1.2.0">
 
     <CvReferenceList>
       <CvReference cvName="PSI-MS" cvIdentifier="MS"/>

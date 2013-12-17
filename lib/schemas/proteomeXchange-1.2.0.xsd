@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
   <xs:element name="ProteomeXchangeDataset" type="ProteomeXchangeDatasetType"/>
-  
   <xs:complexType name="ProteomeXchangeDatasetType">
+    <xs:annotation>
+      <xs:documentation>Top-level element for a ProteomeXchange XML document describing a dataset.</xs:documentation>
+    </xs:annotation>
     <xs:sequence>
       <xs:element name="CvList" type="CvListType"/>
       <xs:element name="ChangeLog" type="ChangeLogType" minOccurs="0"/>
@@ -20,8 +22,16 @@
       <xs:element name="RepositoryRecordList" type="RepositoryRecordListType" minOccurs="0"/>
       <xs:element name="AdditionalInformation" type="AdditionalInformationType" minOccurs="0"/>
     </xs:sequence>
-    <xs:attribute name="id" use="required" type="xs:string"/>
-    <xs:attribute name="formatVersion" type="versionRegex" use="required"/>
+    <xs:attribute name="id" use="required" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>Unique identifier for this ProteomeXchange XML document.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="formatVersion" type="versionRegex" use="required">
+      <xs:annotation>
+        <xs:documentation>Version number of this ProteomeXchange XML format.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
   </xs:complexType>
 
   <xs:complexType name="AdditionalInformationType">
@@ -49,8 +59,16 @@
     </xs:annotation>
     <xs:simpleContent>
       <xs:extension base="xs:string">
-        <xs:attribute name="version" type="xs:string"/>
-        <xs:attribute name="date" type="xs:date"/>
+        <xs:attribute name="version" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The version number of this document. The first change would be version 2 here. This is largely handled by the central ProteomeXchange service anyway, and is largly ignored.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="date" type="xs:date">
+          <xs:annotation>
+            <xs:documentation>The date of this entry. This is largely handled by the central ProteomeXchange service anyway, and is largly ignored.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
@@ -128,7 +146,11 @@
   </xs:complexType>
   <xs:complexType name="DatasetSummaryType">
     <xs:sequence>
-      <xs:element name="Description" type="xs:string"/>
+      <xs:element name="Description" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>A brief description of the dataset, usually about one paragraph long.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
       <xs:element name="ReviewLevel" type="ReviewLevelType">
         <xs:annotation>
           <xs:documentation>Level of review on this dataset/associated paper.</xs:documentation>
@@ -142,10 +164,14 @@
         </xs:annotation>
       </xs:element>
     </xs:sequence>
-    <xs:attribute name="announceDate" type="xs:date" use="required"/>
+    <xs:attribute name="announceDate" type="xs:date" use="required">
+      <xs:annotation>
+        <xs:documentation>The date that this announcement was prepared.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
     <xs:attribute name="hostingRepository" type="HostingRepositoryType" use="required">
       <xs:annotation>
-        <xs:documentation>The broadcaster who send out this ProteomeXchange message.</xs:documentation>
+        <xs:documentation>The hosting repository that handled this dataset and that prepared this ProteomeXchange message.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
     <xs:attribute name="title" type="xs:string" use="required">
@@ -326,7 +352,7 @@
       <xs:documentation>The list of controlled vocabularies used in the file.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
-      <xs:element name="CV" type="CvType" maxOccurs="unbounded"/>
+      <xs:element name="Cv" type="CvType" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="CvType">
@@ -350,7 +376,7 @@
     </xs:attribute>
     <xs:attribute name="id" type="xs:ID" use="required">
       <xs:annotation>
-        <xs:documentation>The unique identifier of this cv within the document to be referenced by cvParam elements. </xs:documentation>
+        <xs:documentation>The unique identifier of this CV within the document to be referenced by cvParam elements. </xs:documentation>
       </xs:annotation>
     </xs:attribute>
   </xs:complexType>
@@ -429,11 +455,14 @@
       <xs:enumeration value="PRIDE"/>
       <xs:enumeration value="PeptideAtlas"/>
       <xs:enumeration value="PASSEL"/>
+      <xs:enumeration value="TestRepo"/>
+      <xs:enumeration value="MassIVE"/>
+      <xs:enumeration value="iProX"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="versionRegex">
     <xs:restriction base="xs:string">
-      <xs:pattern value="(1\.1\.?\d?)"/>
+      <xs:pattern value="(1\.2\.?\d?)"/>
     </xs:restriction>
   </xs:simpleType>
   
