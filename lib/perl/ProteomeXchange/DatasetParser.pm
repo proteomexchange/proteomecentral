@@ -73,8 +73,11 @@ sub parse {
   $response->{message} = "Unable to parse file: Unknown error";
 
   if ( ! -f "$filename" ) {
-    $response->{message} = "Unable to parse file. Does not exist!";
-    return($response);
+    $filename =~ s/local/net\/dblocal/;
+    if ( ! -f "$filename" ) {
+      $response->{message} = "Unable to parse file. Does not exist!";
+      return($response);
+    }
   }
 
   my $dataset;
@@ -174,10 +177,9 @@ sub parse {
         $value =~ s/^\s+//;
         $name =~ s/\s+$//;
         $value =~ s/\s+$//;
-        if($value =~ /PXD\d+/ && $value !~ /href/ && $name =~ /ProteomeXchange accession/){
-          $value =~ s#(PXD\d+)#<a href="http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$1">$1<\/a>#;
+        if($name =~ /accession/){
+          push @{$dataset->{datasetOriginAccession}} , $value;
         }
-
 				if ($value){
 					if ($tag eq 'Species'){
 						$dataset->{speciesList} .=  $name . ": ";
@@ -218,7 +220,6 @@ sub parse {
 			}
     }
   }
-
   unless ($dataset->{species}) {
     $response->{message} = "Unable to extract species from the document";
     return($response);
@@ -235,32 +236,32 @@ sub parse {
       my %contact;
 
       foreach my $cvParam ( @cvParams ) {
-	my $paramAccession = $cvParam->attr('accession');
-	my $paramName = $cvParam->attr('name');
-	my $paramValue = $cvParam->attr('value');
-        chomp $paramValue if (defined($paramValue)); # EWD might not be needed, but left it as found
-	$contact{$paramName} = $paramValue;
-	$dataset->{contactList}->{$id}->{$paramName} = $paramValue;
+				my $paramAccession = $cvParam->attr('accession');
+				my $paramName = $cvParam->attr('name');
+				my $paramValue = $cvParam->attr('value');
+				chomp $paramValue if (defined($paramValue)); # EWD might not be needed, but left it as found
+				$contact{$paramName} = $paramValue;
+				$dataset->{contactList}->{$id}->{$paramName} = $paramValue;
       }
 
       unless (%firstContact) {
-	%firstContact = %contact;
+				%firstContact = %contact;
       }
 
       if (exists($contact{'dataset submitter'})) {
-	if ($dataset->{primarySubmitter}) {
-	  push(@warnings,'WARNING: There appears to be more than one dataset submitter. Only the first may appear in scalar uses.');
-	} else {
-	  $dataset->{primarySubmitter} = $contact{'contact name'};
-	}
+				if ($dataset->{primarySubmitter}) {
+					push(@warnings,'WARNING: There appears to be more than one dataset submitter. Only the first may appear in scalar uses.');
+				} else {
+					$dataset->{primarySubmitter} = $contact{'contact name'};
+				}
       }
 
       if (exists($contact{'lab head'})) {
-	if ($dataset->{labHead}) {
-	  push(@warnings,'WARNING: There appears to be more than one lab head. Only the first may appear in scalar uses.');
-	} else {
-	  $dataset->{labHead} = $contact{'contact name'};
-	}
+				if ($dataset->{labHead}) {
+					push(@warnings,'WARNING: There appears to be more than one lab head. Only the first may appear in scalar uses.');
+				} else {
+					$dataset->{labHead} = $contact{'contact name'};
+				}
       }
     }
   }
@@ -271,7 +272,6 @@ sub parse {
   unless ($dataset->{labHead}) {
     push(@warnings,"WARNING: No contact had the designation 'lab head'");
   }
-
 
   my %lists=();
   my @publicationLists = $doctree->find_by_tag_name('PublicationList');

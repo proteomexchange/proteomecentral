@@ -12,6 +12,9 @@ $| = 1;
 use CGI qw/:standard/;
 my $cgi = new CGI;
 
+our $CGI_BASE_DIR = $cgi->new->url();
+$CGI_BASE_DIR =~ s/cgi.*/cgi/;
+
 my $response = {};
 $response->{result} = "ERROR";
 $response->{message} = "ERROR: Unhandled exception E001";
@@ -106,7 +109,7 @@ sub sendResponse {
 sub listDatasets {
   my %args = @_;
   my $SUB_NAME = 'listDatasets';
-
+   
   #### Decode the argument list
   my $params = $args{'params'}; 
   my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
@@ -139,6 +142,7 @@ sub listDatasets {
         ["PXPartner","Repository"],
         ["status","Status"],
         ["primarySubmitter","Primary Submitter"],
+        ["labHead", "LabHead"],
         ["title","Title"],
         ["species","Species"],
         ["instrument","Instrument"],
@@ -173,13 +177,13 @@ sub listDatasets {
 				print "$line\n";
 					 my $str = qq~
             <div class="wrapper">
-            <link rel="stylesheet" type="text/css" href="../javascript/ext/css/ext-all.css"/>
-            <link rel="stylesheet" type="text/css" href="../javascript/ext/css/grid.css"/>
-            <script type="text/javascript" src="../javascript/ext/jquery-1.8.0.min.js"></script> 
-            <script type="text/javascript" src="../javascript/ext/ext-4.0.7-gpl/bootstrap.js"></script>
-            <script type="text/javascript" src="../javascript/ext/RowExpander.js"></script>
-            <script type="text/javascript" src="../javascript/ext/AsyncRowExpander.js"></script>
-            <script type="text/javascript" src="../javascript/ext/grid.js"></script>
+            <link rel="stylesheet" type="text/css" href="$CGI_BASE_DIR/../javascript/ext/css/ext-all.css"/>
+            <link rel="stylesheet" type="text/css" href="$CGI_BASE_DIR/../javascript/ext/css/grid.css"/>
+            <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/ext/jquery-1.8.0.min.js"></script> 
+            <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/ext/ext-4.0.7-gpl/bootstrap.js"></script>
+            <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/ext/RowExpander.js"></script>
+            <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/ext/AsyncRowExpander.js"></script>
+            <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/ext/grid.js"></script>
             &nbsp;Below is a listing of publicly accessible ProteomeXchange datasets. Additional datasets will become visible as they are released.<BR><BR>
 						<div id="searchContainer"> 
             Search metadata for ProteomeXchange datasets: (e.g. "liver", "musculus", "5600", etc.)<BR>
@@ -267,9 +271,12 @@ sub showDataset {
     $path .= "/testing";
     $teststr = "?test=$test";
   }
-  
-  if ($datasetID =~ /^[R]PX[DT]/) {
-    $datasetID =~ s/[R]PX[DT]//;
+ 
+  my $prefix = ''; 
+  if (($datasetID =~ /^(R?PXD)/ && $teststr eq '') || 
+      ($datasetID =~ /^(R?PXT)/ && $teststr ne '')) {
+    $prefix = $1;
+    $datasetID =~ s/$prefix//;
     $datasetID =~ s/^0+//;
   }
 
@@ -287,14 +294,30 @@ sub showDataset {
 
   if ($pageStatus eq 'OK') {
     my $len = 9 - length($datasetID);
-    $title = substr ("PXD000001",0, $len) . "$datasetID";
-
+    $title = substr ($prefix."000001",0, $len) . "$datasetID";
     #### Fetch results from dataset table
     my $dbh = new ProteomeXchange::Database;
-    my $sql = qq~ select status,PXPartner,announcementXML,identifierDate,datasetIdentifier from $table_name where dataset_id=$datasetID~;
+    my $sql = qq~
+               select datasetIdentifier
+               from $table_name 
+               where dataset_id in (
+               select dataset_id
+               from $table_name 
+               where datasetOrigin like '%$title%')
+              ~;
+    my @derivedDatasets = $dbh->selectOneColumn($sql);
+    $sql = qq~ 
+                  select status,
+                        PXPartner,
+                        announcementXML,
+                       identifierDate,
+                       datasetIdentifier,
+                       datasetOrigin
+                  from $table_name 
+                  where dataset_id=$datasetID
+              ~;
     my @results = $dbh->selectSeveralColumns($sql);
-
-
+    
     #### If no row was returned, then this identifer must not have been assigned yet
     if ( scalar(@results) == 0) {
       $str = "The identifier $title has not yet been assigned. Please check the identifier and type it in again.";
@@ -309,27 +332,38 @@ sub showDataset {
     if ( $pageStatus eq 'OK' ) {
       my $datasetIdentifier;
       ($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier) = @{$results[0]};
-
       $title = $datasetIdentifier;
 
       #print "Content-Type: text/html\n\nLooking for data file <BR>\n";
       #print "Looking for data file $path/$announcementXML<BR>\n";
 
       my $parser = new ProteomeXchange::DatasetParser;
-      $parser->parse('uploadFilename' => $announcementXML, 'response' => $response, filename=> "$path/$announcementXML" );
+      $parser->parse('announcementXML' => $announcementXML, 'response' => $response, filename=> "$path/$announcementXML" );
       my $result = $response->{dataset};
 
       my $header;
 
       $str .= "<p> <b>DataSet Summary</b> </p>\n<ul>";
-      foreach my $key ( qw( PXPartner announceDate announcementXML DigitalObjectIdentifier ReviewLevel datasetOrigin RepositorySupport 
-			    primarySubmitter title description speciesList modificationList instrument
+      foreach my $key ( qw( PXPartner 
+           announceDate 
+           announcementXML 
+           DigitalObjectIdentifier 
+           ReviewLevel 
+           datasetOrigin 
+           derivedDataset 
+           RepositorySupport 
+			     primarySubmitter 
+           title 
+           description 
+           speciesList 
+           modificationList 
+           instrument
         ) ) {
         
         $header =  ucfirst($key);  
         if ($header eq 'PXPartner'){
           $header = 'HostingRepository';
-	  $result->{$key} = $PXPartner unless ($result->{$key});
+					$result->{$key} = $PXPartner unless ($result->{$key});
         }
 
         if ($key eq 'announcementXML'){
@@ -338,7 +372,20 @@ sub showDataset {
                 ~;
         } elsif ($key eq 'DigitalObjectIdentifier') {
           $str .= qq~<li><b>$header</b>: <a href="$result->{$key}">$result->{$key}</a></li>~;
-        } else {
+        }elsif ($key eq 'derivedDataset'){
+           if(@derivedDatasets){
+             $str .= '<li><b>Reprocessed datasets that are derived from this dataset</b>: ';
+             foreach my $acc (@derivedDatasets){
+               $str .=  "<a href=\"GetDataset?ID=$acc&test=$test\">$acc<\/a> " ;
+             }
+             $str .='</li>';
+           }
+        }elsif($key eq 'datasetOrigin'){
+           if($result->{$key} =~ /ProteomeXchange accession.*PXD\d+/i){
+             $result->{$key} =~ s#(PXD\d+)#<a href="GetDataset?ID=$1&test=$test">$1<\/a>#;
+           }
+           $str .= qq~<li><b>$header</b>: $result->{$key}</li>~;
+        }else {
           $str .= qq~<li><b>$header</b>: $result->{$key}</li>~;
         }
       }
@@ -351,10 +398,10 @@ sub showDataset {
 
       #### Provide information on several of the major data lists
       foreach my $key (qw (publicationList keywordList contactList fullDatasetLinkList)){
-	if ( defined $result->{$key}){
+				if ( defined $result->{$key}){
           $header = ucfirst($key);
           $header =~  s/([A-Z][a-z]+)/$1 /g;
-	  $str .= "<p> <b>$header</b> </p>\n<ol>\n";     
+					$str .= "<p> <b>$header</b> </p>\n<ol>\n";     
           if ($key eq 'contactList'){
             foreach my $id (keys %{$result->{contactList}}){
               if ( defined $result->{contactList}{$id}{'contact name'}){
@@ -369,13 +416,13 @@ sub showDataset {
               $str .= "</ul>\n";
             }
           } else {
-	    my @lists = split (";",  $result->{$key});
-	    foreach my $list(@lists){
-	      next if ($list !~ /\w/);
-	      $str .= qq~<li>$list</li>~;
-	    }
+						my @lists = split (";",  $result->{$key});
+						foreach my $list(@lists){
+							next if ($list !~ /\w/);
+							$str .= qq~<li>$list</li>~;
+						}
           }
-	  $str .= "</ol>\n";
+					$str .= "</ol>\n";
         } 
       }
 
@@ -395,13 +442,13 @@ sub showDataset {
           $str .= "<li>$repositoryid<ol>";
           foreach my $recordid (keys %{$result->{repositoryRecordList}{$repositoryid}}){
             if (defined $result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}){
-	      $str .= "<li><a href=\"$result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}\">$recordid</a><ol>"; 
+							$str .= "<li><a href=\"$result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}\">$recordid</a><ol>"; 
             }else{ 
-	      $str .= "<li>$recordid<ol>";
+							$str .= "<li>$recordid<ol>";
             }
             foreach my $name (sort{$a cmp $b} keys %{$result->{repositoryRecordList}{$repositoryid}{$recordid}}){
-	      next if($name =~ /Uri/);
-	      $str .= "<li>$name: $result->{repositoryRecordList}{$repositoryid}{$recordid}{$name}</li>";
+							next if($name =~ /Uri/);
+							$str .= "<li>$name: $result->{repositoryRecordList}{$repositoryid}{$recordid}{$name}</li>";
             }           
             $str .= "</ol></li>";
           }
@@ -501,7 +548,7 @@ sub showDataset {
 
 						<div id="main">
 						<div id="primary" class="site-content">
-                  <div><a href='http://proteomecentral.proteomexchange.org/cgi/GetDataset$teststr'> << Full experiment listing </a></div>
+                  <div><a href='$CGI_BASE_DIR/GetDataset$teststr'> << Full experiment listing </a></div>
         ~;
 
 	#### Write out the information collected thus far
@@ -542,6 +589,7 @@ sub build_SQL_columns_list {
     next if ( defined $hidden_cols_ref->{$element->[1]});
     $columns_clause .= "," if ($columns_clause);
     $columns_clause .= "$element->[0]";
+
     push @$heading , $element->[1];
   }
   #### Return result

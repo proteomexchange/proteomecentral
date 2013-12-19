@@ -39,6 +39,8 @@ sub new {
          revisionDate => $parameters{revisionDate},
 				 password => $parameters{password},
 				 announcementXML => $parameters{announcementXML},
+         labHead => $parameters{labHead},
+         datasetOrigin => $parameters{datasetOriginAccession},
 	};
 
   bless $self => $class;
@@ -242,7 +244,7 @@ sub updateRecord{
     push(@{$response->{info}},"The document has no identifierVersion. It should be '$identifierVersion', Will force it to '$identifierVersion'.");
   }
 
-
+  my $datasetOrigin = join(",", @{$result->{datasetOriginAccession}});
   my %rowdata = (
     'primarySubmitter' => $result->{primarySubmitter}, 
     'title' => $result->{title},
@@ -254,6 +256,8 @@ sub updateRecord{
     'species' => $result->{species},
     'keywordList' => $result->{keywordList},
     'announcementXML' => $result->{announcementXML},
+    'labHead' => $result->{labHead},
+    'datasetOrigin' => $datasetOrigin, 
   ); 
 
   #### If there is already a previously recorded submissionDate, then this is a revision
@@ -295,7 +299,7 @@ sub updateRecord{
 				     insert => 1,
 				     table_name => $historyTableName,
 				     rowdata_ref => \%rowdata,
-                                     @testFlags,
+             @testFlags,
 				     );
 
     if ($value == 1 ) {
@@ -400,16 +404,16 @@ sub createNewIdentifier {
 
     if ($dataset_id) {
       if ($dataset_id >=1 && $dataset_id < 1000000) {
-	my $datasetIdentifier = substr($accessionTemplate,0,length($accessionTemplate)-length($dataset_id)).$dataset_id;
-	push(@{$response->{info}},"Obtained identifier $datasetIdentifier");
+				my $datasetIdentifier = substr($accessionTemplate,0,length($accessionTemplate)-length($dataset_id)).$dataset_id;
+				push(@{$response->{info}},"Obtained identifier $datasetIdentifier");
 
-	#### Set database row fields
-	my %rowdata = (
+				#### Set database row fields
+				my %rowdata = (
           datasetIdentifier => $datasetIdentifier,
         );
 
-	#### Insert the new record
-	$db->updateOrInsertRow(
+				#### Insert the new record
+				$db->updateOrInsertRow(
           update => 1,
           table_name => $mainTableName,
           rowdata_ref => \%rowdata,
@@ -417,36 +421,36 @@ sub createNewIdentifier {
           PK_value => $dataset_id,
         );
 
-	#### Prepare to update the history table
-	%rowdata = (
-	  dataset_id => $dataset_id,
-	  datasetIdentifier => $datasetIdentifier,
-	  identifierVersion => 0,
-	  isLatestVersion => 'Y',
+				#### Prepare to update the history table
+				%rowdata = (
+					dataset_id => $dataset_id,
+					datasetIdentifier => $datasetIdentifier,
+					identifierVersion => 0,
+					isLatestVersion => 'Y',
           PXPartner => $PXPartner,
           status => 'ID requested',
           identifierDate => 'CURRENT_TIMESTAMP',
         );
 
-	#### Insert the new record
-	my $datasetHistory_id = $db->updateOrInsertRow(
+				#### Insert the new record
+				my $datasetHistory_id = $db->updateOrInsertRow(
            insert => 1,
            table_name => $historyTableName,
            rowdata_ref => \%rowdata,
            return_PK => 1,
         );
-	push(@{$response->{info}},"Updated history table and received datasetHistory_id=$datasetHistory_id");
+				push(@{$response->{info}},"Updated history table and received datasetHistory_id=$datasetHistory_id");
 
-	#### Return a successful message
-	$response->{result} = "SUCCESS";
-	$response->{identifier} = $datasetIdentifier;
-	$response->{dataset_id} = $dataset_id;
-	$response->{message} = "${testPhrase}Identifier $datasetIdentifier granted to $PXPartner";
+				#### Return a successful message
+				$response->{result} = "SUCCESS";
+				$response->{identifier} = $datasetIdentifier;
+				$response->{dataset_id} = $dataset_id;
+				$response->{message} = "${testPhrase}Identifier $datasetIdentifier granted to $PXPartner";
 
       #### Report a database problem
       } else {
-	$response->{result} = "ERROR";
-	$response->{message} = "Illegal dataset_id '$dataset_id' returned from database";
+				$response->{result} = "ERROR";
+				$response->{message} = "Illegal dataset_id '$dataset_id' returned from database";
       }
 
     #### Otherwise Insert failed
@@ -581,7 +585,6 @@ sub processAnnouncement {
 	      $response->{message} = "Test processing was successful, although no database changes occurred.";
 	      return($response);
 	    }
-
 	    #### If we're not just validating, then begin the database update and announcement
 	    $self -> updateRecord (
               result => $result,

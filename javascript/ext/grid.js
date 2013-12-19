@@ -11,6 +11,7 @@ var fields = [
       { name: 'Title' },
       { name: 'AnnouncementDate' },
       { name: 'PSubmitter' },
+      { name: 'LabHead' },
       { name: 'Publication' },
       { name: 'Repository'},
       { name: 'Instrument' },
@@ -53,6 +54,10 @@ var columns = new Array ([
             dataIndex: 'PSubmitter',
           },
           {
+            header: 'Lab Head',
+            dataIndex: 'LabHead',
+          },
+          {
             header: 'Announcement Date', 
             dataIndex: 'AnnouncementDate' ,
             width: 110
@@ -82,13 +87,14 @@ Ext.define('Dataset', {
     fields: fields,
 });
 
+var url = get_cgi_url(); 
 var store = Ext.create('Ext.data.Store', {
 	 model: 'Dataset',
    pageSize: itemsPerPage,
 	 proxy: {
 			type: 'ajax',
 			api: {
-					read: '/cgi/Query.cgi',
+					read: url+ '/Query.cgi',
 			},
 			reader: {
 					type: 'json',
@@ -147,7 +153,6 @@ var store = Ext.create('Ext.data.Store', {
 var grid; 
 Ext.onReady(function(){
    Ext.QuickTips.init();
-
     //var rowEditing = Ext.create('Ext.grid.plugin.RowEditing');
     grid = new Ext.grid.Panel({
         renderTo:  document.getElementById('center'),
@@ -279,7 +284,11 @@ function get_url_parameter (){
   var params = Ext.urlDecode(getParams[getParams.length - 1]);
   return params;
 }
-
+function get_cgi_url(){
+  var url = document.URL.replace(/cgi.*/, 'cgi');
+  return url;
+  
+}
 
 Ext.EventManager.onWindowResize( function(){
 	var border = Ext.getCmp( 'layout' );
@@ -328,8 +337,12 @@ function id_renderer (value,  metadata, record, rowIndex, columnIndex, store){
   if( tip){
     metadata.tdAttr = ' data-qtip="' + tip + '"';
  }*/
+  var test='';
+  if (params.test ){
+    test = '&test=' + params.test ;
+  }
 
-  var html = '<a href="http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=' + value + '">' + value +'</a>';
+  var html = '<a href="' + url + '/GetDataset?ID=' + value + test + '">' + value +'</a>';
   return html;
 }
 

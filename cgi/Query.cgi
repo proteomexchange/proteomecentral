@@ -12,6 +12,7 @@ use CGI qw/:standard/;
 my $cgi = new CGI;
 $cgi->charset('utf-8');
 
+
 my $response = {};
 $response->{result} = "ERROR";
 $response->{message} = "ERROR: Unhandled exception E001";
@@ -94,6 +95,7 @@ sub  listDatasets {
         ["PXPartner","Repository"],
         ["status","Status"],
         ["primarySubmitter","PSubmitter"],
+        ["labHead", "LabHead"],
         ["title","Title"],
         ["species","Species"],
         ["instrument","Instrument"],
@@ -190,8 +192,8 @@ sub showDataset {
     $teststr = "&test=$test";
   }
 
-  if ($datasetID =~ /^PXD/){
-    $datasetID =~ s/PXD//;
+  if ($datasetID =~ /^R?PX[DT]/){
+    $datasetID =~ s/^R?PX[DT]//;
     $datasetID =~ s/^0+//;
   }
   my ($title,$str,$id,$status,$announcementXML);
@@ -202,7 +204,7 @@ sub showDataset {
   my @results = $dbh->selectSeveralColumns($sql);
   $announcementXML = $results[0]->[0];
   my $parser = new ProteomeXchange::DatasetParser;
-  $parser->parse('uploadFilename' => $announcementXML, 'response' => $response, 'path'=>$path);
+  $parser->parse('uploadFilename' => $announcementXML, 'response' => $response, 'filename'=>"$path/$announcementXML");
   my $result = $response->{dataset};
   my ($hash, %data);
   $hash ->{"QueryResponse" }{"counts"}{"dataset"} = 1;
@@ -215,6 +217,7 @@ sub showDataset {
                           datasetOrigin
                           RepositorySupport
                           primarySubmitter
+                          labHead
                           title
                           description
                           speciesList

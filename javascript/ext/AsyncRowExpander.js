@@ -198,16 +198,16 @@ function make_meta_data (data){
                                "instrument",
                                "speciesList",
                                "ModificationsList");
+    var url = get_cgi_url();
     for(j = 0; j<record.length; j++){
       var data = '';
       data = record[j];
       for (var i=0; i<metadata.length; i++){
         if (metadata[i].match(/announcementXML/i)){
           details += checkIfExists(data[metadata[i]])? "<h3>" +
-          ucfirst(metadata[i]) + "</h3><div id='box'><a href=\"http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=" + 
+          ucfirst(metadata[i]) + "</h3><div id='box'><a href=\""+url+"/GetDataset?ID=" + 
           data['id'] +  '&outputMode=XML' + data['test'] + '\">' + 
           data[metadata[i]]+ "</a></div>": '';
-
         }else{
           details += checkIfExists(data[metadata[i]])? "<h3>" + 
           ucfirst(metadata[i]) + "</h3><div id='box'>"+data[metadata[i]]+"</div>" : '';
@@ -226,4 +226,11 @@ function ucfirst (str) {
   // Makes a string's first character uppercase
   var f = str.charAt(0).toUpperCase();
   return f + str.substr(1);
+}
+
+
+function get_cgi_url(){
+  var url = document.URL.replace(/cgi.*/, 'cgi');
+  return url;
+
 }
