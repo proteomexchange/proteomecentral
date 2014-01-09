@@ -244,7 +244,12 @@ sub updateRecord{
     push(@{$response->{info}},"The document has no identifierVersion. It should be '$identifierVersion', Will force it to '$identifierVersion'.");
   }
 
-  my $datasetOrigin = join(",", @{$result->{datasetOriginAccession}});
+  #### If there is a dataset origin, add it, else just insert NULL
+  my $datasetOrigin = 'NULL';
+  if ($result->{datasetOriginAccession}) {
+    $datasetOrigin = join(",", @{$result->{datasetOriginAccession}});
+  }
+
   my %rowdata = (
     'primarySubmitter' => $result->{primarySubmitter}, 
     'title' => $result->{title},
