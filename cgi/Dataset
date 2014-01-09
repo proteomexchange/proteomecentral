@@ -22,7 +22,7 @@ $response->{info} = \@tmp;
 
 my $params;
 
-my @parameters = qw ( query PXPartner authentication method ProteomeXchangeXML reprocessed noEmailBroadcast test verbose );
+my @parameters = qw ( query PXPartner authentication method ProteomeXchangeXML reprocessed noDatabaseUpdate noEmailBroadcast test verbose );
 
 #### Extract CGI parameters
 foreach my $parameter ( @parameters ) {
