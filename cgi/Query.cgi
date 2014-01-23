@@ -112,7 +112,7 @@ sub  listDatasets {
         hidden_cols_ref => \%hidden_cols,
         heading => \@headings);
 
-  my $order_clause='DATASETIDENTIFIER DESC';
+  my $order_clause="REPLACE(DATASETIDENTIFIER, 'R', '') DESC";
   if ($params->{sort}){
     $params->{sort} =~ /property.*:"(\w+)".*:"(\w+)".*/;
     $order_clause = $1 ." " .$2; 
@@ -223,7 +223,9 @@ sub showDataset {
                           speciesList
                           modificationList
                           instrument)){
-     $data{$key} = $result->{$key};
+     my $idx = $key;
+     $idx =~ s/^[A-Z]+//;
+     $data{$idx} = $result->{$key};
 
   }
   $data{id} = $datasetID;
