@@ -286,6 +286,9 @@
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="RepositoryRecordType">
+    <xs:annotation>
+      <xs:documentation>A record in the repository the data was submitted to corresponding to this dataset (for an example PRIDE experiment record).</xs:documentation>
+    </xs:annotation>
     <xs:sequence>
       <xs:element name="SourceFileRef" type="RefType" minOccurs="0" maxOccurs="unbounded">
         <xs:annotation>
@@ -311,8 +314,16 @@
         </xs:annotation>
       </xs:element>
     </xs:sequence>
-    <xs:attribute name="name" type="xs:string" use="required"/>
-    <xs:attribute name="label" type="xs:string"/>
+    <xs:attribute name="name" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>Short name for the repository record, usually like a sample name.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="label" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>Short label for the type of repository record.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
     <xs:attribute name="recordID" type="xs:string" use="required">
       <xs:annotation>
         <xs:documentation>A unique identifier for the record within the repository.</xs:documentation>
@@ -323,23 +334,34 @@
         <xs:documentation>Identifier that uniquely defines the hosting repository which holds the data records.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="uri" type="xs:anyURI" use="required"/>
+    <xs:attribute name="uri" type="xs:anyURI" use="required">
+      <xs:annotation>
+        <xs:documentation>URI that links to the repository record.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
   </xs:complexType>
   <xs:complexType name="SampleListType">
+    <xs:annotation>
+      <xs:documentation>The list of samples that are analyzed in this dataset.</xs:documentation>
+    </xs:annotation>
     <xs:sequence>
       <xs:element name="Sample" type="SampleType" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="SampleType">
     <xs:annotation>
-      <xs:documentation>A summary of the sample describtion. This should be a (sub) sellection 
+      <xs:documentation>A summary of the sample describtion. This should be a (sub) selection 
         of cvParams used to describe the sample. Minimally this should contain information like 
         species, tissue, etc..., but could also contain sample preparation information.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="cvParam" type="CvParamType" maxOccurs="unbounded"/>
     </xs:sequence>
-    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>Short name for the sample analyzed in this dataset.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
   </xs:complexType>
   <xs:complexType name="SpeciesListType">
     <xs:annotation>
