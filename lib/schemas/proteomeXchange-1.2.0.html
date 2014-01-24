@@ -48,36 +48,36 @@
 <td class='zero'><TABLE border="1">
 <TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
 <TR><TD><a href="#CvList">CvList</a></TD><TD>1</TD><TD>1</TD><TD>The list of controlled vocabularies used in the file.</TD></TR>
-<TR><TD><a href="#ChangeLog">ChangeLog</a></TD><TD>0</TD><TD>1</TD><TD>A collection of all change log messages to record the changes and updates related to this dataset.</TD></TR>
-<TR><TD><a href="#DatasetSummary">DatasetSummary</a></TD><TD>1</TD><TD>1</TD><TD>-</TD></TR>
-<TR><TD><a href="#DatasetIdentifierList">DatasetIdentifierList</a></TD><TD>1</TD><TD>1</TD><TD>-</TD></TR>
-<TR><TD><a href="#DatasetOriginList">DatasetOriginList</a></TD><TD>1</TD><TD>1</TD><TD>A list of the origins of this dataset. This list can link to other ProteomeXchange datasets or other resources. 
+<TR><TD><a href="#ChangeLog">ChangeLog</a></TD><TD>0</TD><TD>1</TD><TD>The change log message to record what changes and updates were made to this dataset for a revised announcement.</TD></TR>
+<TR><TD><a href="#DatasetSummary">DatasetSummary</a></TD><TD>1</TD><TD>1</TD><TD>Broad description of the dataset being announced, inlcuding a title, abstract, review level, etc.</TD></TR>
+<TR><TD><a href="#DatasetIdentifierList">DatasetIdentifierList</a></TD><TD>1</TD><TD>1</TD><TD>The list of identifiers associated with this dataset, not just the PXD identifier, but possibly DOIs and other identifiers.</TD></TR>
+<TR><TD><a href="#DatasetOriginList">DatasetOriginList</a></TD><TD>1</TD><TD>1</TD><TD>The list of the origins of this dataset. This list can link to other ProteomeXchange datasets or other resources. 
         If this dataset contains previously unreported data, then a 'new dataset' annotation should be used.</TD></TR>
 <TR><TD><a href="#SpeciesList">SpeciesList</a></TD><TD>1</TD><TD>1</TD><TD>The list of species from which the data has been generated.</TD></TR>
-<TR><TD><a href="#InstrumentList">InstrumentList</a></TD><TD>1</TD><TD>1</TD><TD>List of instruments on which the data generation was performed.</TD></TR>
-<TR><TD><a href="#ModificationList">ModificationList</a></TD><TD>1</TD><TD>1</TD><TD>A list of PTMs defined as cvParams.</TD></TR>
-<TR><TD><a href="#ContactList">ContactList</a></TD><TD>1</TD><TD>1</TD><TD>List of contacts related to the ProteomeXchange dataset.</TD></TR>
-<TR><TD><a href="#PublicationList">PublicationList</a></TD><TD>1</TD><TD>1</TD><TD>List of publications from which the dataset was collected or wherein it is published</TD></TR>
+<TR><TD><a href="#InstrumentList">InstrumentList</a></TD><TD>1</TD><TD>1</TD><TD>The list of instruments on which the data generation was performed.</TD></TR>
+<TR><TD><a href="#ModificationList">ModificationList</a></TD><TD>1</TD><TD>1</TD><TD>The list of amino acid mass modifications caused or considered, defined as cvParams.</TD></TR>
+<TR><TD><a href="#ContactList">ContactList</a></TD><TD>1</TD><TD>1</TD><TD>The list of contacts related to the ProteomeXchange dataset.</TD></TR>
+<TR><TD><a href="#PublicationList">PublicationList</a></TD><TD>1</TD><TD>1</TD><TD>The list of publications from which the dataset was collected or wherein it is published</TD></TR>
 <TR><TD><a href="#KeywordList">KeywordList</a></TD><TD>1</TD><TD>1</TD><TD>Keywords defined by controlled vocabulary or free text categorised by a controlled vocabolary term 
         (e.g. 'journal article keyword', 'submitter keyword' or 'curator keyword').</TD></TR>
-<TR><TD><a href="#FullDatasetLinkList">FullDatasetLinkList</a></TD><TD>1</TD><TD>1</TD><TD>A list of links to the complete ProteomeXchange dataset.</TD></TR>
+<TR><TD><a href="#FullDatasetLinkList">FullDatasetLinkList</a></TD><TD>1</TD><TD>1</TD><TD>The list of links to the complete ProteomeXchange dataset.</TD></TR>
 <TR><TD><a href="#DatasetFileList">DatasetFileList</a></TD><TD>0</TD><TD>1</TD><TD>The list of ALL files comprising this ProteomeXchange submission.</TD></TR>
 <TR><TD><a href="#RepositoryRecordList">RepositoryRecordList</a></TD><TD>0</TD><TD>1</TD><TD>The list of records as found in the repository the data was submitted to (for example PRIDE experiment records).</TD></TR>
 <TR><TD><a href="#AdditionalInformation">AdditionalInformation</a></TD><TD>0</TD><TD>1</TD><TD>A place for all additional information that may be added to the 
-        broadcast message and that could not be fitted into another location. Here should 
+        broadcast message and that could not be fit into another location. Here should 
         also go references to other ProteomeXchange submissions.</TD></TR>
 </TABLE>
 </td>
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE>&lt;ProteomeXchangeDataset xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xsi:noNamespaceSchemaLocation=&quot;proteomeXchange-1.2.0.xsd&quot; id=&quot;PXD0000622.1&quot; formatVersion=&quot;1.2.0&quot;&gt;
-  &lt;CvList&gt;
-    &lt;Cv id=&quot;MS&quot; fullName=&quot;Proteomics Standards Initiative Mass Spectrometry Ontology&quot; version=&quot;3.57.0&quot; uri=&quot;http://psidev.cvs.sourceforge.net/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo&quot;/&gt;
-    &lt;Cv id=&quot;PRIDE&quot; fullName=&quot;PRIDE Ontology&quot; version=&quot;noVersion&quot; uri=&quot;http://ebi-pride.googlecode.com/svn/trunk/pride-core/schema/pride_cv.obo&quot;/&gt;
-    &lt;Cv id=&quot;MOD&quot; fullName=&quot;PRIDE Ontology&quot; version=&quot;noVersion&quot; uri=&quot;http://psidev.cvs.sourceforge.net/*checkout*/psidev/psi/mod/data/PSI-MOD.obo&quot;/&gt;
-  &lt;/CvList&gt;
-  &lt;ChangeLog&gt;
+<td class='zero'><PRE>&lt;ProteomeXchangeDataset id=&quot;PXD000647&quot; formatVersion=&quot;1.2.0&quot; xsi:noNamespaceSchemaLocation=&quot;proteomeXchange-1.2.0.xsd&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+    &lt;CvList&gt;
+        &lt;Cv fullName=&quot;PSI-MS&quot; uri=&quot;http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo&quot; id=&quot;MS&quot;/&gt;
+        &lt;Cv fullName=&quot;PRIDE&quot; uri=&quot;http://code.google.com/p/ebi-pride/source/browse/trunk/pride-core/schema/pride_cv.obo&quot; id=&quot;PRIDE&quot;/&gt;
+        &lt;Cv fullName=&quot;PSI-MOD&quot; uri=&quot;http://psidev.cvs.sourceforge.net/psidev/psi/mod/data/PSI-MOD.obo&quot; id=&quot;MOD&quot;/&gt;
+        &lt;Cv fullName=&quot;UNIMOD&quot; uri=&quot;http://www.unimod.org/obo/unimod.obo&quot; id=&quot;UNIMOD&quot;/&gt;
+    &lt;/CvList&gt;
   ...
 &lt;/ProteomeXchangeDataset&gt;
 </PRE>
@@ -91,7 +91,7 @@
 <tr>
 <td class='zero'><b>Definition:</b></td>
 <td class='zero'>A place for all additional information that may be added to the 
-        broadcast message and that could not be fitted into another location. Here should 
+        broadcast message and that could not be fit into another location. Here should 
         also go references to other ProteomeXchange submissions.
 </td>
 </tr>
@@ -169,7 +169,7 @@
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'>A collection of all change log messages to record the changes and updates related to this dataset.
+<td class='zero'>The change log message to record what changes and updates were made to this dataset for a revised announcement.
 </td>
 </tr>
 <tr>
@@ -192,10 +192,7 @@
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE>&lt;ChangeLog&gt;
-  &lt;ChangeLogEntry date=&quot;2013-12-11&quot;&gt;Fixed Dataset Link URIs and cvParams&lt;/ChangeLogEntry&gt;
-&lt;/ChangeLog&gt;
-</PRE>
+<td class='zero'><PRE></PRE>
 </td>
 </tr>
 </table><br/>
@@ -229,8 +226,7 @@
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE>&lt;ChangeLogEntry date=&quot;2013-12-11&quot;&gt;Fixed Dataset Link URIs and cvParams&lt;/ChangeLogEntry&gt;
-</PRE>
+<td class='zero'><PRE></PRE>
 </td>
 </tr>
 </table><br/>
@@ -266,11 +262,11 @@
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE>&lt;Contact id=&quot;c002&quot;&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002037&quot; name=&quot;dataset submitter&quot; /&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000586&quot; name=&quot;contact name&quot; value=&quot;Lik Wee Lee&quot; /&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000590&quot; name=&quot;contact affiliation&quot; value=&quot;Integrated Diagnostics&quot; /&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000589&quot; name=&quot;contact email&quot; value=&quot;llee@indidx.com&quot; /&gt;
+<td class='zero'><PRE>&lt;Contact id=&quot;project_submitter&quot;&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000586&quot; name=&quot;contact name&quot; value=&quot;Andreas Otto&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000589&quot; name=&quot;contact email&quot; value=&quot;andreas.otto@uni-greifswald.de&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000590&quot; name=&quot;contact affiliation&quot; value=&quot;Institut fur Mikrobiologie&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002037&quot; name=&quot;dataset submitter&quot;/&gt;
 &lt;/Contact&gt;
 </PRE>
 </td>
@@ -297,11 +293,10 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002332&quot; name=&quot;lab head&quot; /&gt;
-&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000586&quot; name=&quot;contact name&quot; value=&quot;Paul Kearney&quot; /&gt;
-&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000590&quot; name=&quot;contact affiliation&quot; value=&quot;Integrated Diagnostics&quot; /&gt;
-&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000589&quot; name=&quot;contact email&quot; value=&quot;pkearney@indidx.com&quot; /&gt;
-&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002037&quot; name=&quot;dataset submitter&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000586&quot; name=&quot;contact name&quot; value=&quot;Andreas Otto&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000589&quot; name=&quot;contact email&quot; value=&quot;andreas.otto@uni-greifswald.de&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000590&quot; name=&quot;contact affiliation&quot; value=&quot;Institut fur Mikrobiologie&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002037&quot; name=&quot;dataset submitter&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -312,7 +307,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'>List of contacts related to the ProteomeXchange dataset.
+<td class='zero'>The list of contacts related to the ProteomeXchange dataset.
 </td>
 </tr>
 <tr>
@@ -336,12 +331,12 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;ContactList&gt;
-  &lt;Contact id=&quot;c001&quot;&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002332&quot; name=&quot;lab head&quot; /&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000586&quot; name=&quot;contact name&quot; value=&quot;Paul Kearney&quot; /&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000590&quot; name=&quot;contact affiliation&quot; value=&quot;Integrated Diagnostics&quot; /&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000589&quot; name=&quot;contact email&quot; value=&quot;pkearney@indidx.com&quot; /&gt;
-  &lt;/Contact&gt;
+    &lt;Contact id=&quot;project_submitter&quot;&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000586&quot; name=&quot;contact name&quot; value=&quot;Andreas Otto&quot;/&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000589&quot; name=&quot;contact email&quot; value=&quot;andreas.otto@uni-greifswald.de&quot;/&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000590&quot; name=&quot;contact affiliation&quot; value=&quot;Institut fur Mikrobiologie&quot;/&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002037&quot; name=&quot;dataset submitter&quot;/&gt;
+    &lt;/Contact&gt;
   ...
 &lt;/ContactList&gt;
 </PRE>
@@ -354,7 +349,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'>A source controlled vocabulary from which cvParams will be obtained.
+<td class='zero'>A source controlled vocabulary (CV) from which cvParams will be obtained.
 </td>
 </tr>
 <tr>
@@ -380,7 +375,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE>&lt;Cv id=&quot;MS&quot; fullName=&quot;Proteomics Standards Initiative Mass Spectrometry Ontology&quot; version=&quot;3.57.0&quot; uri=&quot;http://psidev.cvs.sourceforge.net/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo&quot;/&gt;
+<td class='zero'><PRE>&lt;Cv fullName=&quot;PSI-MS&quot; uri=&quot;http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo&quot; id=&quot;MS&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -408,16 +403,17 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <td class='zero'><b>Subelements:</b></td>
 <td class='zero'><TABLE border="1">
 <TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
-<TR><TD><a href="#Cv">Cv</a></TD><TD>1</TD><TD>unbounded</TD><TD>A source controlled vocabulary from which cvParams will be obtained.</TD></TR>
+<TR><TD><a href="#Cv">Cv</a></TD><TD>1</TD><TD>unbounded</TD><TD>A source controlled vocabulary (CV) from which cvParams will be obtained.</TD></TR>
 </TABLE>
 </td>
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;CvList&gt;
-  &lt;Cv id=&quot;MS&quot; fullName=&quot;Proteomics Standards Initiative Mass Spectrometry Ontology&quot; version=&quot;3.57.0&quot; uri=&quot;http://psidev.cvs.sourceforge.net/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo&quot;/&gt;
-  &lt;Cv id=&quot;PRIDE&quot; fullName=&quot;PRIDE Ontology&quot; version=&quot;noVersion&quot; uri=&quot;http://ebi-pride.googlecode.com/svn/trunk/pride-core/schema/pride_cv.obo&quot;/&gt;
-  &lt;Cv id=&quot;MOD&quot; fullName=&quot;PRIDE Ontology&quot; version=&quot;noVersion&quot; uri=&quot;http://psidev.cvs.sourceforge.net/*checkout*/psidev/psi/mod/data/PSI-MOD.obo&quot;/&gt;
+    &lt;Cv fullName=&quot;PSI-MS&quot; uri=&quot;http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo&quot; id=&quot;MS&quot;/&gt;
+    &lt;Cv fullName=&quot;PRIDE&quot; uri=&quot;http://code.google.com/p/ebi-pride/source/browse/trunk/pride-core/schema/pride_cv.obo&quot; id=&quot;PRIDE&quot;/&gt;
+    &lt;Cv fullName=&quot;PSI-MOD&quot; uri=&quot;http://psidev.cvs.sourceforge.net/psidev/psi/mod/data/PSI-MOD.obo&quot; id=&quot;MOD&quot;/&gt;
+    &lt;Cv fullName=&quot;UNIMOD&quot; uri=&quot;http://www.unimod.org/obo/unimod.obo&quot; id=&quot;UNIMOD&quot;/&gt;
 &lt;/CvList&gt;
 </PRE>
 </td>
@@ -463,7 +459,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002031&quot; name=&quot;PASSEL transition group browser URI&quot; value=&quot;https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/GetSELTransitions?row_limit=5000&amp;SEL_experiments=47&amp;QUERY_NAME=AT_GetSELTransitions&amp;action=QUERY&amp;uploaded_file_not_saved=1&amp;apply_action=QUERY&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001925&quot; name=&quot;submitter keyword&quot; value=&quot;Bacterial effector proteins, Dictyostelium discoideum, host-pathogen interactions, 18 Legionella, macrophage, pathogen vacuole, phosphoinositide lipids, GTPase, type IV secretion&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -501,12 +497,23 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE></PRE>
+<td class='zero'><PRE>&lt;DatasetFile id=&quot;FILE_127&quot; name=&quot;Mudpit_120819_V2_P6_AO_ChH_Dicty_pentuple_1_1.mzid_Mudpit_120819_V2_P6_AO_ChH_Dicty_pentuple_1_1.MGF&quot;&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000409&quot; name=&quot;Peak list file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2014/01/PXD000647/Mudpit_120819_V2_P6_AO_ChH_Dicty_pentuple_1_1.mzid_Mudpit_120819_V2_P6_AO_ChH_Dicty_pentuple_1_1.MGF&quot;/&gt;
+&lt;/DatasetFile&gt;
+</PRE>
 </td>
 </tr>
 <tr>
 <td class='zero'><b>cvParam Mapping Rules:</b></td>
 <td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000404&quot; name=&quot;Associated raw file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2014/01/PXD000647/120815_V2_P6_AO_ChH_Dicty_WT_1_1.mzXML&quot;/&gt;
+&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000408&quot; name=&quot;Search engine output file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2014/01/PXD000647/Mudpit_120815_V2_P6_AO_ChH_Dicty_WT_1_1.mzid&quot;/&gt;
+&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000409&quot; name=&quot;Peak list file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2014/01/PXD000647/Mudpit_120815_V2_P6_AO_ChH_Dicty_WT_1_1.mzid_Mudpit_120815_V2_P6_AO_ChH_Dicty_WT_1_1.MGF&quot;/&gt;
+</PRE>
+</td>
 </tr>
 </table><br/>
 
@@ -538,7 +545,16 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE></PRE>
+<td class='zero'><PRE>&lt;DatasetFileList&gt;
+    &lt;DatasetFile id=&quot;FILE_0&quot; name=&quot;120815_V2_P6_AO_ChH_Dicty_WT_1_1.mzXML&quot;&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000404&quot; name=&quot;Associated raw file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2014/01/PXD000647/120815_V2_P6_AO_ChH_Dicty_WT_1_1.mzXML&quot;/&gt;
+    &lt;/DatasetFile&gt;
+    &lt;DatasetFile id=&quot;FILE_1&quot; name=&quot;120815_V2_P6_AO_ChH_Dicty_WT_1_10.mzXML&quot;&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000404&quot; name=&quot;Associated raw file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2014/01/PXD000647/120815_V2_P6_AO_ChH_Dicty_WT_1_10.mzXML&quot;/&gt;
+    &lt;/DatasetFile&gt;
+  ...
+&lt;/DatasetFileList&gt;
+</PRE>
 </td>
 </tr>
 </table><br/>
@@ -548,7 +564,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'><B>Depending on context:</B><BR>
+<td class='zero'>An identifier associated with this dataset, defined by CV term.
 </td>
 </tr>
 <tr>
@@ -572,8 +588,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;DatasetIdentifier&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD0000622&quot; /&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001921&quot; name=&quot;ProteomeXchange accession number version number&quot; value=&quot;1&quot; /&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD000647&quot;/&gt;
 &lt;/DatasetIdentifier&gt;
 </PRE>
 </td>
@@ -584,8 +599,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD0000622&quot; /&gt;
-&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001921&quot; name=&quot;ProteomeXchange accession number version number&quot; value=&quot;1&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD000647&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -596,7 +610,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'><B>Depending on context:</B><BR>
+<td class='zero'>The list of identifiers associated with this dataset, not just the PXD identifier, but possibly DOIs and other identifiers.
 </td>
 </tr>
 <tr>
@@ -613,17 +627,16 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <td class='zero'><b>Subelements:</b></td>
 <td class='zero'><TABLE border="1">
 <TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
-<TR><TD><a href="#DatasetIdentifier">DatasetIdentifier</a></TD><TD>1</TD><TD>unbounded</TD><TD>-</TD></TR>
+<TR><TD><a href="#DatasetIdentifier">DatasetIdentifier</a></TD><TD>1</TD><TD>unbounded</TD><TD>An identifier associated with this dataset, defined by CV term.</TD></TR>
 </TABLE>
 </td>
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;DatasetIdentifierList&gt;
-  &lt;DatasetIdentifier&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD0000622&quot; /&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001921&quot; name=&quot;ProteomeXchange accession number version number&quot; value=&quot;1&quot; /&gt;
-  &lt;/DatasetIdentifier&gt;
+    &lt;DatasetIdentifier&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD000647&quot;/&gt;
+    &lt;/DatasetIdentifier&gt;
 &lt;/DatasetIdentifierList&gt;
 </PRE>
 </td>
@@ -635,7 +648,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'><B>Depending on context:</B><BR>
+<td class='zero'>Specifies via CV term whether this is an original dataset or is a re-interpretation of a previous ProteomeXchange dataset.
 </td>
 </tr>
 <tr>
@@ -659,8 +672,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;DatasetOrigin&gt;
-  &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000402&quot; name=&quot;Original data&quot; /&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD0000622&quot; /&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000402&quot; name=&quot;Original data&quot;/&gt;
 &lt;/DatasetOrigin&gt;
 </PRE>
 </td>
@@ -671,8 +683,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000402&quot; name=&quot;Original data&quot; /&gt;
-&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD0000622&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000402&quot; name=&quot;Original data&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -683,7 +694,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'>A list of the origins of this dataset. This list can link to other ProteomeXchange datasets or other resources. 
+<td class='zero'>The list of the origins of this dataset. This list can link to other ProteomeXchange datasets or other resources. 
         If this dataset contains previously unreported data, then a 'new dataset' annotation should be used.
 </td>
 </tr>
@@ -701,17 +712,16 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <td class='zero'><b>Subelements:</b></td>
 <td class='zero'><TABLE border="1">
 <TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
-<TR><TD><a href="#DatasetOrigin">DatasetOrigin</a></TD><TD>1</TD><TD>1</TD><TD>-</TD></TR>
+<TR><TD><a href="#DatasetOrigin">DatasetOrigin</a></TD><TD>1</TD><TD>1</TD><TD>Specifies via CV term whether this is an original dataset or is a re-interpretation of a previous ProteomeXchange dataset.</TD></TR>
 </TABLE>
 </td>
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;DatasetOriginList&gt;
-  &lt;DatasetOrigin&gt;
-    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000402&quot; name=&quot;Original data&quot; /&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD0000622&quot; /&gt;
-  &lt;/DatasetOrigin&gt;
+    &lt;DatasetOrigin&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000402&quot; name=&quot;Original data&quot;/&gt;
+    &lt;/DatasetOrigin&gt;
 &lt;/DatasetOriginList&gt;
 </PRE>
 </td>
@@ -723,7 +733,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'><B>Depending on context:</B><BR>
+<td class='zero'>Broad description of the dataset being announced, inlcuding a title, abstract, review level, etc.
 </td>
 </tr>
 <tr>
@@ -753,13 +763,13 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE>&lt;DatasetSummary announceDate=&quot;2013-12-11&quot; title=&quot;Biomarker discovery for lung nodules&quot; hostingRepository=&quot;PeptideAtlas&quot;&gt;
-  &lt;Description&gt;Each year millions of pulmonary nodules are discovered by computed tomography and subsequently biopsied. As the majority of these nodules are benign, many patients undergo unnecessary and costly invasive procedures. We present a 13-protein blood-based classifier that differentiates malignant and benign nodules with high confidence, thereby providing a diagnostic tool to avoid invasive biopsy on benign nodules. Using a systems biology strategy, 371 protein candidates were identified and a multiple reaction monitoring (MRM) assay was developed for each. The MRM assays were applied in a three-site discovery study (n = 143) on plasma samples from patients with benign and Stage IA cancer matched on nodule size, age, gender and clinical site, producing a 13-protein classifier. The classifier was validated on an independent set of plasma samples (n = 104), exhibiting a high negative predictive value (NPV) of 90%. Validation performance on samples from a non-discovery clinical site showed NPV of 94%, indicating the general effectiveness of the classifier. A pathway analysis demonstrated that the classifier proteins are likely modulated by a few transcription regulators (NF2L2, AHR, MYC, FOS) that are associated with lung cancer, lung inflammation and oxidative stress networks. The classifier score was independent of patient nodule size, smoking history and age, which are risk factors used for clinical management of pulmonary nodules. Thus this molecular test can provide a powerful complementary tool for physicians in lung cancer diagnosis.&lt;/Description&gt;
-  &lt;ReviewLevel&gt;
-    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000414&quot; name=&quot;Peer-reviewed dataset&quot; /&gt;
-  &lt;/ReviewLevel&gt;
-  &lt;RepositorySupport&gt;
-    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000416&quot; name=&quot;Supported dataset by repository&quot; /&gt;
+<td class='zero'><PRE>&lt;DatasetSummary announceDate=&quot;2014-01-23&quot; hostingRepository=&quot;PRIDE&quot; title=&quot;Functional analysis of novel Rab GTPases identified in the proteome of 2 purified Legionella-containing vacuoles from macrophages&quot;&gt;
+    &lt;Description&gt;LCVs purified by immuno-magnetic separation and density gradient centrifugation (fraction 4) were  resolved by 1D-SDS-PAGE, the gel lanes were excised in ten equidistant pieces and subjected to trypsin digestion. For the subsequent LC-MS/MS measurements, the digests were separated by reversed phase column chromatography using an EASYnLC apparatus with self-packed columns in a one-column setup. Following loading/ desalting in 0.1% acetic acid in water at a flow rate of 700 nL/min (maximum 220 bar), the peptides were separated by applying a binary non-linear gradient from 5-50% acetonitrile in 0.1% acetic acid over 70 min. The LC was coupled online to a LTQ-Velos Orbitrap mass spectrometer (Thermo Fisher, Bremen, Germany) at a spray voltage of 2.4 kV. After a survey scan in the Orbitrap (r = 30,000), MS/MS data were recorded for the twenty most intensive precursor ions in the linear ion trap. Singly charged ions were not taken into account for MS/MS analysis. The lock mass option was enabled throughout all analyses. After mass spectrometric measurement, MS data was converted into the mzxml format (version 3.1) by ReAdW version 4.3.1 and subsequently subjected to database searching via Sorcerer using Sequest (version 27, revision 11; SageN, Milptas, CA, USA) without charge state deconvolution and deisotoping performed. Database searching was performed either with a database of combined entries of L. pneumophila strain Philadelphia-1 (NC002942) and D. discoideum, or with a database of combined entries of L. pneumophila strain Philadelphia-1 and Mus musculus. Both databases were used as target/decoy databases with a list of common contaminants added (30739 and 64993 entries, respectively). Sequest was used assuming trypsinisation with a fragment ion mass tolerance of 1.00 Da and a search tolerance of 10 ppm for the overview scans. Oxidation of methionine was specified in Sequest as a variable modification. Scaffold (version 3.5.1, Proteome Software Inc., Portland, OR, USA) was used to filter and validate MS/MS-based peptide and protein identifications. Peptide identifications were accepted when spectra exceeded Xcorr values of 2.2, 3.3 and 3.8 for doubly, triply and quadruply peptides with deltaCN values of more than 0.1. Protein identifications are based on at least 2 unique peptides. Proteins that contained similar peptides and could not be differentiated based on MS/MS analysis alone were grouped to meet the principle of parsimony.&lt;/Description&gt;
+    &lt;ReviewLevel&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000414&quot; name=&quot;Peer-reviewed dataset&quot;/&gt;
+    &lt;/ReviewLevel&gt;
+    &lt;RepositorySupport&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000417&quot; name=&quot;Unsupported dataset by repository&quot;/&gt;
   ...
 &lt;/DatasetSummary&gt;
 </PRE>
@@ -792,7 +802,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE>&lt;Description&gt;Each year millions of pulmonary nodules are discovered by computed tomography and subsequently biopsied. As the majority of these nodules are benign, many patients undergo unnecessary and costly invasive procedures. We present a 13-protein blood-based classifier that differentiates malignant and benign nodules with high confidence, thereby providing a diagnostic tool to avoid invasive biopsy on benign nodules. Using a systems biology strategy, 371 protein candidates were identified and a multiple reaction monitoring (MRM) assay was developed for each. The MRM assays were applied in a three-site discovery study (n = 143) on plasma samples from patients with benign and Stage IA cancer matched on nodule size, age, gender and clinical site, producing a 13-protein classifier. The classifier was validated on an independent set of plasma samples (n = 104), exhibiting a high negative predictive value (NPV) of 90%. Validation performance on samples from a non-discovery clinical site showed NPV of 94%, indicating the general effectiveness of the classifier. A pathway analysis demonstrated that the classifier proteins are likely modulated by a few transcription regulators (NF2L2, AHR, MYC, FOS) that are associated with lung cancer, lung inflammation and oxidative stress networks. The classifier score was independent of patient nodule size, smoking history and age, which are risk factors used for clinical management of pulmonary nodules. Thus this molecular test can provide a powerful complementary tool for physicians in lung cancer diagnosis.&lt;/Description&gt;
+<td class='zero'><PRE>&lt;Description&gt;LCVs purified by immuno-magnetic separation and density gradient centrifugation (fraction 4) were  resolved by 1D-SDS-PAGE, the gel lanes were excised in ten equidistant pieces and subjected to trypsin digestion. For the subsequent LC-MS/MS measurements, the digests were separated by reversed phase column chromatography using an EASYnLC apparatus with self-packed columns in a one-column setup. Following loading/ desalting in 0.1% acetic acid in water at a flow rate of 700 nL/min (maximum 220 bar), the peptides were separated by applying a binary non-linear gradient from 5-50% acetonitrile in 0.1% acetic acid over 70 min. The LC was coupled online to a LTQ-Velos Orbitrap mass spectrometer (Thermo Fisher, Bremen, Germany) at a spray voltage of 2.4 kV. After a survey scan in the Orbitrap (r = 30,000), MS/MS data were recorded for the twenty most intensive precursor ions in the linear ion trap. Singly charged ions were not taken into account for MS/MS analysis. The lock mass option was enabled throughout all analyses. After mass spectrometric measurement, MS data was converted into the mzxml format (version 3.1) by ReAdW version 4.3.1 and subsequently subjected to database searching via Sorcerer using Sequest (version 27, revision 11; SageN, Milptas, CA, USA) without charge state deconvolution and deisotoping performed. Database searching was performed either with a database of combined entries of L. pneumophila strain Philadelphia-1 (NC002942) and D. discoideum, or with a database of combined entries of L. pneumophila strain Philadelphia-1 and Mus musculus. Both databases were used as target/decoy databases with a list of common contaminants added (30739 and 64993 entries, respectively). Sequest was used assuming trypsinisation with a fragment ion mass tolerance of 1.00 Da and a search tolerance of 10 ppm for the overview scans. Oxidation of methionine was specified in Sequest as a variable modification. Scaffold (version 3.5.1, Proteome Software Inc., Portland, OR, USA) was used to filter and validate MS/MS-based peptide and protein identifications. Peptide identifications were accepted when spectra exceeded Xcorr values of 2.2, 3.3 and 3.8 for doubly, triply and quadruply peptides with deltaCN values of more than 0.1. Protein identifications are based on at least 2 unique peptides. Proteins that contained similar peptides and could not be differentiated based on MS/MS analysis alone were grouped to meet the principle of parsimony.&lt;/Description&gt;
 </PRE>
 </td>
 </tr>
@@ -827,7 +837,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;FullDatasetLink&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002031&quot; name=&quot;PASSEL transition group browser URI&quot; value=&quot;https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/GetSELTransitions?row_limit=5000&amp;SEL_experiments=47&amp;QUERY_NAME=AT_GetSELTransitions&amp;action=QUERY&amp;uploaded_file_not_saved=1&amp;apply_action=QUERY&quot; /&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000411&quot; name=&quot;Dataset FTP location&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2014/01/PXD000647&quot;/&gt;
 &lt;/FullDatasetLink&gt;
 </PRE>
 </td>
@@ -838,9 +848,8 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002032&quot; name=&quot;PeptideAtlas dataset URI&quot; value=&quot;http://www.PeptideAtlas.org/PASS/PASS00261&quot; /&gt;
-&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1009999&quot; name=&quot;PASSEL experiment URI&quot; value=&quot;https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/GetSELExperiment?SEL_experiment_id=47&quot; /&gt;
-&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002031&quot; name=&quot;PASSEL transition group browser URI&quot; value=&quot;https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/GetSELTransitions?row_limit=5000&amp;SEL_experiments=47&amp;QUERY_NAME=AT_GetSELTransitions&amp;action=QUERY&amp;uploaded_file_not_saved=1&amp;apply_action=QUERY&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000411&quot; name=&quot;Dataset FTP location&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2014/01/PXD000647&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001930&quot; name=&quot;PRIDE project URI&quot; value=&quot;http://www.ebi.ac.uk/pride/archive/projects/PXD000647&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -851,7 +860,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'>A list of links to the complete ProteomeXchange dataset.
+<td class='zero'>The list of links to the complete ProteomeXchange dataset.
 </td>
 </tr>
 <tr>
@@ -875,12 +884,12 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;FullDatasetLinkList&gt;
-  &lt;FullDatasetLink&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002032&quot; name=&quot;PeptideAtlas dataset URI&quot; value=&quot;http://www.PeptideAtlas.org/PASS/PASS00261&quot; /&gt;
-  &lt;/FullDatasetLink&gt;
-  &lt;FullDatasetLink&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1009999&quot; name=&quot;PASSEL experiment URI&quot; value=&quot;https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/GetSELExperiment?SEL_experiment_id=47&quot; /&gt;
-  &lt;/FullDatasetLink&gt;
+    &lt;FullDatasetLink&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000411&quot; name=&quot;Dataset FTP location&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2014/01/PXD000647&quot;/&gt;
+    &lt;/FullDatasetLink&gt;
+    &lt;FullDatasetLink&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001930&quot; name=&quot;PRIDE project URI&quot; value=&quot;http://www.ebi.ac.uk/pride/archive/projects/PXD000647&quot;/&gt;
+    &lt;/FullDatasetLink&gt;
   ...
 &lt;/FullDatasetLinkList&gt;
 </PRE>
@@ -919,8 +928,8 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE>&lt;Instrument id=&quot;Q-Trap&quot;&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000931&quot; name=&quot;QTRAP 5500&quot; /&gt;
+<td class='zero'><PRE>&lt;Instrument id=&quot;Instrument_1&quot;&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001742&quot; name=&quot;LTQ Orbitrap Velos&quot;/&gt;
 &lt;/Instrument&gt;
 </PRE>
 </td>
@@ -949,7 +958,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000931&quot; name=&quot;QTRAP 5500&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001742&quot; name=&quot;LTQ Orbitrap Velos&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -960,7 +969,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'>List of instruments on which the data generation was performed.
+<td class='zero'>The list of instruments on which the data generation was performed.
 </td>
 </tr>
 <tr>
@@ -984,9 +993,9 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;InstrumentList&gt;
-  &lt;Instrument id=&quot;Q-Trap&quot;&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000931&quot; name=&quot;QTRAP 5500&quot; /&gt;
-  &lt;/Instrument&gt;
+    &lt;Instrument id=&quot;Instrument_1&quot;&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001742&quot; name=&quot;LTQ Orbitrap Velos&quot;/&gt;
+    &lt;/Instrument&gt;
 &lt;/InstrumentList&gt;
 </PRE>
 </td>
@@ -998,7 +1007,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'>to reference the 'id' of an 'Instrument' within this submission
+<td class='zero'>Container for a reference to the id of an Instrument within this submission
 </td>
 </tr>
 <tr>
@@ -1010,7 +1019,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <td class='zero'><b>Attributes:</b></td>
 <td class='zero'><TABLE border="1">
 <TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
-<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD>A reference to an element with and id in this document.</TD></TR>
 </TABLE>
 </td>
 </tr>
@@ -1056,9 +1065,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;KeywordList&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001926&quot; name=&quot;curator keyword&quot; value=&quot;selected reaction monitoring&quot; /&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001926&quot; name=&quot;curator keyword&quot; value=&quot;SRM&quot; /&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001926&quot; name=&quot;curator keyword&quot; value=&quot;targeted&quot; /&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001925&quot; name=&quot;submitter keyword&quot; value=&quot;Bacterial effector proteins, Dictyostelium discoideum, host-pathogen interactions, 18 Legionella, macrophage, pathogen vacuole, phosphoinositide lipids, GTPase, type IV secretion&quot;/&gt;
 &lt;/KeywordList&gt;
 </PRE>
 </td>
@@ -1069,7 +1076,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001926&quot; name=&quot;curator keyword&quot; value=&quot;selected reaction monitoring&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001925&quot; name=&quot;submitter keyword&quot; value=&quot;Bacterial effector proteins, Dictyostelium discoideum, host-pathogen interactions, 18 Legionella, macrophage, pathogen vacuole, phosphoinositide lipids, GTPase, type IV secretion&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -1080,7 +1087,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'>A list of PTMs defined as cvParams.
+<td class='zero'>The list of amino acid mass modifications caused or considered, defined as cvParams.
 </td>
 </tr>
 <tr>
@@ -1104,7 +1111,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;ModificationList&gt;
-  &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000398&quot; name=&quot;No PTMs are included in the dataset&quot; /&gt;
+    &lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00425&quot; name=&quot;monohydroxylated residue&quot;/&gt;
 &lt;/ModificationList&gt;
 </PRE>
 </td>
@@ -1115,7 +1122,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000398&quot; name=&quot;No PTMs are included in the dataset&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00425&quot; name=&quot;monohydroxylated residue&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -1152,9 +1159,8 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE>&lt;Publication id=&quot;submitted01&quot;&gt;
-  &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000432&quot; name=&quot;Dataset with its publication pending&quot; /&gt;
-  &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000400&quot; name=&quot;Reference&quot; value=&quot;Li et al., submitted&quot; /&gt;
+<td class='zero'><PRE>&lt;Publication id=&quot;pending&quot;&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000432&quot; name=&quot;Dataset with its publication pending&quot;/&gt;
 &lt;/Publication&gt;
 </PRE>
 </td>
@@ -1165,8 +1171,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000432&quot; name=&quot;Dataset with its publication pending&quot; /&gt;
-&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000400&quot; name=&quot;Reference&quot; value=&quot;Li et al., submitted&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000432&quot; name=&quot;Dataset with its publication pending&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -1177,7 +1182,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <table class='zero'>
 <tr>
 <td class='zero'><b>Definition:</b></td>
-<td class='zero'>List of publications from which the dataset was collected or wherein it is published
+<td class='zero'>The list of publications from which the dataset was collected or wherein it is published
 </td>
 </tr>
 <tr>
@@ -1201,10 +1206,9 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;PublicationList&gt;
-  &lt;Publication id=&quot;submitted01&quot;&gt;
-    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000432&quot; name=&quot;Dataset with its publication pending&quot; /&gt;
-    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000400&quot; name=&quot;Reference&quot; value=&quot;Li et al., submitted&quot; /&gt;
-  &lt;/Publication&gt;
+    &lt;Publication id=&quot;pending&quot;&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000432&quot; name=&quot;Dataset with its publication pending&quot;/&gt;
+    &lt;/Publication&gt;
 &lt;/PublicationList&gt;
 </PRE>
 </td>
@@ -1228,7 +1232,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <td class='zero'><b>Attributes:</b></td>
 <td class='zero'><TABLE border="1">
 <TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
-<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD>A reference to an element with and id in this document.</TD></TR>
 </TABLE>
 </td>
 </tr>
@@ -1275,9 +1279,9 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
 <TR><TD><a href="#SourceFileRef">SourceFileRef</a></TD><TD>0</TD><TD>unbounded</TD><TD>to reference the 'id' of a 'DatasetFile' within this submission</TD></TR>
 <TR><TD><a href="#PublicationRef">PublicationRef</a></TD><TD>0</TD><TD>unbounded</TD><TD>to reference the 'id' of a 'Publication' within this submission</TD></TR>
-<TR><TD><a href="#InstrumentRef">InstrumentRef</a></TD><TD>0</TD><TD>unbounded</TD><TD>to reference the 'id' of an 'Instrument' within this submission</TD></TR>
+<TR><TD><a href="#InstrumentRef">InstrumentRef</a></TD><TD>0</TD><TD>unbounded</TD><TD>Container for a reference to the id of an Instrument within this submission</TD></TR>
 <TR><TD><a href="#SampleList">SampleList</a></TD><TD>0</TD><TD>1</TD><TD>-</TD></TR>
-<TR><TD><a href="#ModificationList">ModificationList</a></TD><TD>0</TD><TD>1</TD><TD>A list of PTMs defined as cvParams.</TD></TR>
+<TR><TD><a href="#ModificationList">ModificationList</a></TD><TD>0</TD><TD>1</TD><TD>The list of amino acid mass modifications caused or considered, defined as cvParams.</TD></TR>
 <TR><TD><a href="#AnnotationList">AnnotationList</a></TD><TD>0</TD><TD>1</TD><TD>Any additional annotation of the record/experiment that the 
             submitter/generator of the message deems important enough to announce.</TD></TR>
 </TABLE>
@@ -1285,7 +1289,8 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE></PRE>
+<td class='zero'><PRE>&lt;RepositoryRecord name=&quot;Functional analysis of novel Rab GTPases identified in the proteome of 2 purified Legionella-containing vacuoles from macrophages&quot; label=&quot;PRIDE project&quot; recordID=&quot;PXD000647&quot; repositoryID=&quot;PRIDE&quot; uri=&quot;http://www.ebi.ac.uk/pride/archive/projects/PXD000647&quot;/&gt;
+</PRE>
 </td>
 </tr>
 </table><br/>
@@ -1318,7 +1323,10 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example Context:</b></td>
-<td class='zero'><PRE></PRE>
+<td class='zero'><PRE>&lt;RepositoryRecordList&gt;
+    &lt;RepositoryRecord name=&quot;Functional analysis of novel Rab GTPases identified in the proteome of 2 purified Legionella-containing vacuoles from macrophages&quot; label=&quot;PRIDE project&quot; recordID=&quot;PXD000647&quot; repositoryID=&quot;PRIDE&quot; uri=&quot;http://www.ebi.ac.uk/pride/archive/projects/PXD000647&quot;/&gt;
+&lt;/RepositoryRecordList&gt;
+</PRE>
 </td>
 </tr>
 </table><br/>
@@ -1352,7 +1360,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;RepositorySupport&gt;
-  &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000416&quot; name=&quot;Supported dataset by repository&quot; /&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000417&quot; name=&quot;Unsupported dataset by repository&quot;/&gt;
 &lt;/RepositorySupport&gt;
 </PRE>
 </td>
@@ -1363,7 +1371,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000416&quot; name=&quot;Supported dataset by repository&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000417&quot; name=&quot;Unsupported dataset by repository&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -1398,7 +1406,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;ReviewLevel&gt;
-  &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000414&quot; name=&quot;Peer-reviewed dataset&quot; /&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000414&quot; name=&quot;Peer-reviewed dataset&quot;/&gt;
 &lt;/ReviewLevel&gt;
 </PRE>
 </td>
@@ -1409,7 +1417,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000414&quot; name=&quot;Peer-reviewed dataset&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000414&quot; name=&quot;Peer-reviewed dataset&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -1509,7 +1517,7 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <td class='zero'><b>Attributes:</b></td>
 <td class='zero'><TABLE border="1">
 <TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
-<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD>A reference to an element with and id in this document.</TD></TR>
 </TABLE>
 </td>
 </tr>
@@ -1554,8 +1562,8 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;Species&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001469&quot; name=&quot;taxonomy: scientific name&quot; value=&quot;Homo sapiens&quot; /&gt;
-  &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001467&quot; name=&quot;taxonomy: NCBI TaxID&quot; value=&quot;9606&quot; /&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001469&quot; name=&quot;taxonomy: scientific name&quot; value=&quot;Dictyostelium discoideum (Slime mold)&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001467&quot; name=&quot;taxonomy: NCBI TaxID&quot; value=&quot;44689&quot;/&gt;
 &lt;/Species&gt;
 </PRE>
 </td>
@@ -1566,8 +1574,8 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 </tr>
 <tr>
 <td class='zero'><b>Example cvParams:</b></td>
-<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001469&quot; name=&quot;taxonomy: scientific name&quot; value=&quot;Homo sapiens&quot; /&gt;
-&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001467&quot; name=&quot;taxonomy: NCBI TaxID&quot; value=&quot;9606&quot; /&gt;
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001469&quot; name=&quot;taxonomy: scientific name&quot; value=&quot;Dictyostelium discoideum (Slime mold)&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001467&quot; name=&quot;taxonomy: NCBI TaxID&quot; value=&quot;44689&quot;/&gt;
 </PRE>
 </td>
 </tr>
@@ -1602,10 +1610,13 @@ MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/brow
 <tr>
 <td class='zero'><b>Example Context:</b></td>
 <td class='zero'><PRE>&lt;SpeciesList&gt;
-  &lt;Species&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001469&quot; name=&quot;taxonomy: scientific name&quot; value=&quot;Homo sapiens&quot; /&gt;
-    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001467&quot; name=&quot;taxonomy: NCBI TaxID&quot; value=&quot;9606&quot; /&gt;
-  &lt;/Species&gt;
+    &lt;Species&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001469&quot; name=&quot;taxonomy: scientific name&quot; value=&quot;Dictyostelium discoideum (Slime mold)&quot;/&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001467&quot; name=&quot;taxonomy: NCBI TaxID&quot; value=&quot;44689&quot;/&gt;
+    &lt;/Species&gt;
+    &lt;Species&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001469&quot; name=&quot;taxonomy: scientific name&quot; value=&quot;Mus musculus (Mouse)&quot;/&gt;
+  ...
 &lt;/SpeciesList&gt;
 </PRE>
 </td>
