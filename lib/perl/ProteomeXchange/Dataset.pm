@@ -276,9 +276,9 @@ sub updateRecord{
 
   #### If we asked not to do the update, set to test_only and verbose
   my @testFlags = ();
-  if ($noDatabaseUpdate) {
+  if ($noDatabaseUpdate && $noDatabaseUpdate !~ /no/i && $noDatabaseUpdate !~ /false/i) {
     push(@{$response->{info}},"Will pretend to update database, but won't really do it because noDatabaseUpdate=$noDatabaseUpdate.");
-    @testFlags = ( testonly=>1,verbose=>1 );
+    @testFlags = ( testonly=>1 );
   }
 
   my $value = $db->updateOrInsertRow(
@@ -493,6 +493,14 @@ sub processAnnouncement {
   $noDatabaseUpdate = 0 if (!defined($noDatabaseUpdate));
   $noEmailBroadcast = 0 if (!defined($noEmailBroadcast));
 
+  #### Testing
+  if (0) {
+    push(@{$response->{info}},"noDatabaseUpdate=$noDatabaseUpdate, but forcing it to yes");
+    push(@{$response->{info}},"noEmailBroadcast=$noEmailBroadcast, but forcing it to yes");
+    $noEmailBroadcast = 'yes';
+    $noDatabaseUpdate = 'yes';
+  }
+
   #### Set a default error message in case something goes wrong
   $response->{result} = "ERROR";
   $response->{message} = "Unable to process XML: Unknown error.";
@@ -628,7 +636,7 @@ sub processAnnouncement {
 	      $description =~ s/[\r\n]//g;
 
 	      #### If emailing has be temporarily disabled
-	      if ($noEmailBroadcast) {
+	      if ($noEmailBroadcast && $noEmailBroadcast !~ /no/i && $noEmailBroadcast !~ /false/i) {
 		push(@{$response->{info}},"Will pretend to send around an email to ".join(',',@toRecipients)." but won't really do it because noEmailBroadcast=$noEmailBroadcast.");
 	      } else {
 		push(@{$response->{info}},"Sending an announcement email to ".join(',',@toRecipients));
