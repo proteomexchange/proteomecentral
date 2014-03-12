@@ -91,6 +91,8 @@ var url = get_cgi_url();
 var store = Ext.create('Ext.data.Store', {
 	 model: 'Dataset',
    pageSize: itemsPerPage,
+   isSortable: true,
+   remoteSort: true,
 	 proxy: {
 			type: 'ajax',
 			api: {
@@ -163,6 +165,7 @@ Ext.onReady(function(){
 					forceFit: true,
 					scrollOffset: 15
 				},
+        remoteSort: true,
         autoWidth: true,
         plugins: [{  
                      ptype: 'asyncrowexpander',
