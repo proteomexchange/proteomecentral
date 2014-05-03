@@ -112,6 +112,7 @@ sub parse {
   $dataset->{broadcaster} = $datasetSummary->attr('broadcaster');
   $dataset->{announceDate} = $datasetSummary->attr('announceDate');
   $dataset->{PXPartner} = $datasetSummary->attr('hostingRepository');
+  push(@{$response->{info}},"PXParter is '$dataset->{PXPartner}'");
 
   $dataset->{announcementXML} = $filename;
   if ($filename =~ /\//) {
@@ -180,49 +181,50 @@ sub parse {
         if($name =~ /accession/){
           push @{$dataset->{datasetOriginAccession}} , $value;
         }
-				if ($value){
-					if ($tag eq 'Species'){
-						$dataset->{speciesList} .=  $name . ": ";
-						$dataset->{speciesList} .= $value . "; " ;
-						$dataset->{speciesList} =~ s/taxonomy://;
-						if ($name =~ /scientific name/i){
-							if ( defined($dataset->{species}) && $dataset->{species} ne '' ){
-								$dataset->{species} .=  ", ". $value;
-							}else{
-								$dataset->{species} =  $value;
-							}
-							$dataset->{species} =~ s/\(\w+\)//;
-						}
-					}else{
-						if ( defined($dataset->{lcfirst($tag)})){
-							$dataset->{lcfirst($tag)} .=  "; ". $name . ": ";
-							$dataset->{lcfirst($tag)} .= $value;
-						}else{
-							$dataset->{lcfirst($tag)} =  $name .": ";;
-							$dataset->{lcfirst($tag)} .= $value;
-						}
-					}
-				}else{
-					if (not defined $dataset->{lcfirst($tag)}){
-						$dataset->{lcfirst($tag)} =  $name ;
-					}else{
-						$dataset->{lcfirst($tag)} .=  "; ". $name; 
-					}
-				}
 
-				#if ($cvParam->attr('accession') eq "MS:1001469") {
-				#	$dataset->{species} .= $cvParam->attr('value') ."; ";
-				#}elsif($cvParam->attr('accession') =~ /^MOD:/){
-				#  $dataset->{modification} .=  $cvParam->attr('name') ."; ";
-				#}else {
-				#  $dataset->{instrument} .= $cvParam->attr('name') ."; ";
-				#}
-			}
+	if ($value){
+	  if ($tag eq 'Species'){
+	    $dataset->{speciesList} .=  $name . ": ";
+	    $dataset->{speciesList} .= $value . "; " ;
+	    $dataset->{speciesList} =~ s/taxonomy://;
+	    if ($name =~ /scientific name/i){
+	      if ( defined($dataset->{species}) && $dataset->{species} ne '' ){
+		$dataset->{species} .=  ", ". $value;
+	      }else{
+		$dataset->{species} =  $value;
+	      }
+	      $dataset->{species} =~ s/\(\w+\)//;
+	    }
+	  }else{
+	    if ( defined($dataset->{lcfirst($tag)})){
+	      $dataset->{lcfirst($tag)} .=  "; ". $name . ": ";
+	      $dataset->{lcfirst($tag)} .= $value;
+	    }else{
+	      $dataset->{lcfirst($tag)} =  $name .": ";;
+	      $dataset->{lcfirst($tag)} .= $value;
+	    }
+	  }
+	}else{
+	  if (not defined $dataset->{lcfirst($tag)}){
+	    $dataset->{lcfirst($tag)} =  $name ;
+	  }else{
+	    $dataset->{lcfirst($tag)} .=  "; ". $name; 
+	  }
+	}
+	
+	#if ($cvParam->attr('accession') eq "MS:1001469") {
+	#	$dataset->{species} .= $cvParam->attr('value') ."; ";
+	#}elsif($cvParam->attr('accession') =~ /^MOD:/){
+	#  $dataset->{modification} .=  $cvParam->attr('name') ."; ";
+	#}else {
+	#  $dataset->{instrument} .= $cvParam->attr('name') ."; ";
+	#}
+      }
     }
   }
+
   unless ($dataset->{species}) {
-    $response->{message} = "Unable to extract species from the document";
-    return($response);
+    push(@warnings,'ERROR: Unable to extract scientific species name from the document.');
   }
 
   
@@ -265,6 +267,7 @@ sub parse {
       }
     }
   }
+
   unless ($dataset->{primarySubmitter}) {
     push(@warnings,"WARNING: No contact had the designation 'primary submitter'. Will assume that the first contact is the 'primary submitter'");
     $dataset->{primarySubmitter} = $firstContact{'contact name'};
@@ -290,6 +293,7 @@ sub parse {
      }
    }
   }
+
   foreach my $id (%lists){
     if (defined($lists{$id}{name}) && $lists{$id}{name} =~ /reference/i){
       #if ( 0 ){    ##### !!!!!!!!!!!!!!!!!!!!!!!!!!! DISABLED
@@ -398,9 +402,13 @@ sub parse {
       }
     }
   }
+
+  #### Store the data and warnings in the response
+  #push(@{$response->{info}},"+++ datasets Keys are: ".join(",",keys(%{$dataset})));
   $response->{dataset} = $dataset;
   $response->{warnings} = \@warnings;
 
+  #push(@{$response->{info}},"+++ response Keys are: ".join(",",keys(%{$response})));
   return($response);
 }
 
@@ -559,23 +567,23 @@ sub readControlledVocabularyFile {
   my ($line,$id,$name,$synonym);
   while ($line = <INFILE>) {
     $line =~ s/[\r\n]//g;
-    if ($line =~ /^id: (\S+)\s*/) {
+    if ($line =~ /^id:\s*(\S+)\s*/) {
       $id = $1;
     }
-    if ($line =~ /^name: (.+)\s*$/) {
+    if ($line =~ /^name:\s*(.+)\s*$/) {
       $name = $1;
       $self->{cv}->{terms}->{$id}->{name} = $name;
     }
-    if ($line =~ /^exact_synonym: \"(.+)\"\s*[\[\]]*\s*$/) {
+    if ($line =~ /^exact_synonym:\s*\"(.+)\"\s*[\[\]]*\s*$/) {
       $synonym = $1;
       $self->{cv}->{terms}->{$id}->{synonyms}->{$synonym} = $synonym;
     }
-    if ($line =~ /^relationship: has_units\s*(\S+) \! (.+)?\s*$/) {
+    if ($line =~ /^relationship:\s*has_units\s*(\S+) \! (.+)?\s*$/) {
       my $unit = $1;
       my $unitName = $2;
       $self->{cv}->{terms}->{$id}->{units}->{$unit} = $unitName;
     }
-    if ($line =~ /^xref: value-type:\s*(\S+)\s+\"/) {
+    if ($line =~ /^xref:\s*value-type:\s*(\S+)\s+\"/) {
       my $datatype = $1;
       $datatype =~ s/\\//g;
       $self->{cv}->{terms}->{$id}->{datatypes}->{$datatype} = $datatype;
