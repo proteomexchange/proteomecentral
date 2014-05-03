@@ -566,6 +566,13 @@ sub processAnnouncement {
 	  }
 	  push(@{$response->{info}},"There was a total of $nCvErrors different CV errors or warnings.");
 
+	  #### If there are other warnings or errors, put them in info
+	  my $nErrors = 0;
+	  foreach my $error ( @{$response->{warnings}} ) {
+	    $nErrors++;
+	    push(@{$response->{info}},$error);
+	  }
+	  push(@{$response->{info}},"There was a total of $nErrors other errors or warnings.");
 
 	  ### If the PXPartner does not match the one in XML file, report an error
 	  if ($params->{PXPartner} ne $result->{PXPartner} ){
