@@ -69,6 +69,8 @@ foreach my $arg ( @ARGV ) {
 
 $response->{verbose} = $params->{verbose};
 
+searchUnannouncedDatasets(params=>$params,response=>$response);
+
 searchAnnouncedDatasets(params=>$params,response=>$response);
 
 exit;
@@ -352,7 +354,7 @@ sub searchUnannouncedDatasets {
 	my %stats;
 	foreach my $values (@results){
 	  $counter++;
-	  last if ($counter > 20);
+	  #last if ($counter > 200);
 	  #next unless ($values->[0] eq 'PXD000246');
 
 	  my $buffer ='';
@@ -360,13 +362,13 @@ sub searchUnannouncedDatasets {
 	  $buffer .= "<HR>\n";
 	  $buffer .= "<a href=\"http://proteomecentral.proteomexchange.org/dataset/$values->[0]\">$values->[0]</a> \t$values->[6] (from $values->[1])<BR>\n";
 
-	  print "Searching for $values->[0]: $values->[5]\n";
+	  #print "Searching for $values->[0] ($values->[2])<BR>\n";
 
-	  my $searchResult = $articleFinder->findArticle(title=>$values->[5]);
+	  my $searchResult = $articleFinder->findArticle(abstract=>$values->[0]);
 
 	  #### If nothing was found
 	  if ( $searchResult->{message} eq 'No articles found' || $searchResult->{year} < 2012) {
-	    $stats{"Datasets of status '$values->[6]' with no articles found"}++;
+	    $stats{"Datasets of status '$values->[2]' with no articles found"}++;
 	    next;
 	  }
 
@@ -376,7 +378,7 @@ sub searchUnannouncedDatasets {
 	  $referenceString =~ s#PMID (\d+)#<a href="http://www.ncbi.nlm.nih.gov/pubmed/?term=$1">PMID $1</a>#;
 
 	  $buffer .= "<B>Possible reference:</B> $referenceString\n";
-	  $stats{"Datasets of status '$values->[6]' with a possible article found"}++;
+	  $stats{"Datasets of status '$values->[2]' with a possible article found"}++;
 	  print $buffer;
 	}
 
