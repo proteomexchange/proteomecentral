@@ -43,6 +43,7 @@ sub findArticle {
 
   #### Process parameters
   my $searchTitle = $args{title};
+  my $searchAbstract = $args{abstract};
 
   #### Prepare response
   my %result;
@@ -50,16 +51,24 @@ sub findArticle {
   $result{message} = 'Unknown failure';
 
   #### Ensure there is something to search with
-  unless ($searchTitle) {
-    $result{message} = 'Unable to search without a valid title';
+  unless ($searchTitle || $searchAbstract) {
+    $result{message} = 'Unable to search without a valid title for abstract string';
     return \%result;
   }
 
   #### Look for articles
-  print "DEBUG[$METHOD]: Search by title: $searchTitle\n" if ($DEBUG);
   my $pubMed = Bio::Biblio->new(-access=> "eutils");
-  my $searchResult = $pubMed->find($searchTitle, "title");
-  my $pmids = $searchResult->get_all_ids();
+  my ($searchResult,$pmids);
+
+  if ($searchTitle) {
+    print "DEBUG[$METHOD]: Search by title: $searchTitle\n" if ($DEBUG);
+    $searchResult = $pubMed->find($searchTitle, "title");
+    $pmids = $searchResult->get_all_ids();
+  } elsif ($searchAbstract) {
+    print "DEBUG[$METHOD]: Search in abstract: $searchAbstract\n" if ($DEBUG);
+    $searchResult = $pubMed->find($searchAbstract, "abstract");
+    $pmids = $searchResult->get_all_ids();
+  }
 
   my $nMatches = scalar(@{$pmids});
   print "  $nMatches articles found\n" if ($DEBUG);
