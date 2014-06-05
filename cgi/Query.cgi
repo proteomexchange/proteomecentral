@@ -76,7 +76,6 @@ sub  listDatasets {
     $table_name = 'dataset_test';
     $path = "$path/testing";
   }
-
 	my $dbh = new ProteomeXchange::Database;
   my $whereclause = '';
   my %hidden_cols = ();
@@ -86,8 +85,8 @@ sub  listDatasets {
     $whereclause = "where status != 'ID requested'";
     %hidden_cols = (
                   "Status" => 1,
-                  "Identifier Date"=> 1,
-                  "Revision Date" => 1,);
+                  "IdentifierDate"=> 1,
+                  "RevisionDate" => 1,);
   }
 
   my  @column_array =(
@@ -106,23 +105,46 @@ sub  listDatasets {
         ["announcementXML", "announcementXML"],
         );
 
- 
   my $columns_clause =  build_SQL_columns_list(
 				column_array_ref=>\@column_array,
         hidden_cols_ref => \%hidden_cols,
         heading => \@headings);
 
-  my $order_clause="REPLACE(DATASETIDENTIFIER, 'R', '') DESC";
+  #my $order_clause="REPLACE(DATASETIDENTIFIER, 'R', '') DESC";
+  my $order_clause = "submissionDate DESC ";
+  my $sort_col = '';
+  my $sort_dir = '';
   if ($params->{sort}){
     $params->{sort} =~ /property.*:"(\w+)".*:"(\w+)".*/;
     $order_clause = $1 ." " .$2; 
+    $sort_col = $1;
+    $sort_dir = $2;
   }
- 
+  my $idx = 0;
+  my %col_idx = ();
+  my %col_name = ();
+  my %is_number_col = ();
+  foreach my $col (@column_array){
+    next if ($hidden_cols{$col->[1]});
+    if(lc($col->[1]) eq 'id' || $col->[1] =~ /date/i){
+      $is_number_col{$idx} = 1;
+    }
+    $col_idx{lc($col->[1])} = $idx;
+    $col_name{$idx} = $col->[1];
+    $idx++;
+  }
+  if($sort_col ne ''){
+    $sort_col = $col_idx{lc($sort_col)};
+  }else{
+    $sort_col = $col_idx{lc('AnnouncementDate')};
+    $sort_dir = 'desc';
+  }
+
 	my $sql = qq~ select
                  $columns_clause 
                  from $table_name
                  $whereclause
-                 ORDER BY $order_clause
+                 ORDER BY $order_clause 
              ~;
 
 	my @results = $dbh->selectSeveralColumns($sql);
@@ -130,9 +152,12 @@ sub  listDatasets {
   my $hash;
   my $cnt = 0;
   my @query_terms = ();
+  my %sorter = ();
   if ($filterstr ne ''){
     @query_terms = split(/\s+/, $filterstr);
   }
+  $idx=0;
+
   foreach my $row (@results){
     if ($filterstr ne ''){
       my $matches = 0;
@@ -151,18 +176,62 @@ sub  listDatasets {
       }
       next if ($matches < @query_terms);
     }
-    if( $cnt < $pageStart || $cnt > ( $pageStart + $pageLimit - 1)){
-      $cnt++;
-    }else{ 
-      $cnt++;
-			my %data=();
-			foreach my $i (0..$#headings-1){
-				$data{$headings[$i]} =  $row->[$i];
-			}
-			push @{$hash->{QueryResponse}{dataset}}, {%data};
-    }
+		my %data=();
+		foreach my $i (0..$#headings-1){
+			$data{$headings[$i]} =  $row->[$i];
+		}
+		if($col_name{$sort_col} =~/^id$/i ){
+			$row->[$sort_col] =~ s/^[A-Z]+0{0,}//;
+		}elsif($col_name{$sort_col} =~ /date/i){
+			$row->[$sort_col] =~ s/-//g;
+		}elsif($col_name{$sort_col} =~ /publication/i){
+			$row->[$sort_col] =~ s/<[^>]+//g;
+		}
+		##add idx in case there is a empty string.
+		$sorter{lc($row->[$sort_col])}{$idx} = \%data; 
+		$idx++; 
   }
   close IN;
+  $cnt= $idx;
+  $idx = 0;
+
+  if($is_number_col{$sort_col}){
+		if ($sort_dir =~ /desc/i){
+			foreach my $entry (sort {$b <=> $a} keys %sorter){
+				foreach my $n (keys %{$sorter{$entry}}){
+          if( $idx < $pageStart || $idx > ( $pageStart + $pageLimit - 1)){$idx++; next;}
+					push @{$hash->{QueryResponse}{dataset}},{%{$sorter{$entry}{$n}}};
+          $idx++;
+				}
+			}
+		}else{
+			foreach my $entry (sort {$a <=> $b} keys %sorter){
+				foreach my $n (keys %{$sorter{$entry}}){
+          if( $idx < $pageStart || $idx > ( $pageStart + $pageLimit - 1)){$idx++; next;}
+					push @{$hash->{QueryResponse}{dataset}},{%{$sorter{$entry}{$n}}};
+          $idx++;
+				}
+			}
+		}
+   }else{
+    if ($sort_dir =~ /desc/i){
+      foreach my $entry (sort {$b cmp  $a} keys %sorter){
+        foreach my $n (keys %{$sorter{$entry}}){
+          if( $idx < $pageStart || $idx > ( $pageStart + $pageLimit - 1)){$idx++; next;}
+          push @{$hash->{QueryResponse}{dataset}},{%{$sorter{$entry}{$n}}};
+          $idx++;
+        }
+      }
+    }else{
+      foreach my $entry (sort {$a cmp $b} keys %sorter){
+        foreach my $n (keys %{$sorter{$entry}}){
+          if( $idx < $pageStart || $idx > ( $pageStart + $pageLimit - 1)){$idx++; next;}
+          push @{$hash->{QueryResponse}{dataset}},{%{$sorter{$entry}{$n}}};
+          $idx++;
+        }
+      }
+    }
+  }
 
   $hash ->{"QueryResponse" }{"counts"}{"dataset"} = $cnt;
   $hash ->{"QueryResponse" }{"counts"}{"order_clause"} = $order_clause; 
