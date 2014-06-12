@@ -302,7 +302,7 @@ sub parse {
         my $PubMedFetcher = new ProteomeXchange::PubMedFetcher;
         my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(
           PubMedID=>$lists{$id}{pubmedid});
-        $dataset->{publicationList} .= $pubmed_info || '';
+        $dataset->{publicationList} .= "$pubmed_info;" || '';
         $dataset->{publication} .= "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$lists{$id}{pubmedid}\">$pubname</a>";;  
       }else{
          if ( defined $dataset->{publication} ){
