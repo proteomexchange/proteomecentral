@@ -624,6 +624,9 @@ sub processAnnouncement {
 		@toRecipients = (
 				 'ProteomeXchange Test','proteomexchange-test@googlegroups.com',
 				 );
+		#@toRecipients = (
+		#		 'Eric Deutsch','edeutsch@systemsbiology.org',
+		#		 );
 		$testClause = '&test=yes';
 	      } else {
 		@toRecipients = (
@@ -657,7 +660,7 @@ sub processAnnouncement {
 					   ccRecipients=>\@ccRecipients,
 					   bccRecipients=>\@bccRecipients,
 					   subject=>"$messageType{titleIntro} ProteomeXchange dataset $identifier$testFlag",
-					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}Species: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
+					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}HostingRepository: $params->{PXPartner}\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
 					   );
 	      }
 	    }
