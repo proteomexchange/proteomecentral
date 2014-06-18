@@ -174,17 +174,98 @@ sub listDatasets {
 				#$line =~ s/>/style="padding: 0">/g;
 				print "$line\n";
 			}elsif ($line =~ /^<!-- BEGIN main content -->/){
-				print "$line\n";
+				print "$line\n"; 
+        my $col_options = qq~ ;
+					<option value="Title">Title</option>
+					<option value="id">Dataset ID</option>
+					<option value="AnnouncementDate">Date</option>
+					<option value="Instrument">Instrument</option>
+					<option value="Labhead">Lab Head</option>
+          <option value="Publication">Publication</option>
+					<option value="Repository">Repository</option>
+					<option value="Species">Species</option>
+					<option value="Psubmitter">Submitter</option>
+         ~;
+
+         my $cond_options = qq~;
+          <option value="contain">Contains</option>
+          <option value="notcontain">Does not contain</option>
+          <option value="exactly">Is exactly</option>
+          <option value="less">Is less than</option>
+          <option value="greater">Is greater than</option>
+         ~;
 					 my $str = qq~
             <div class="wrapper">
             <link rel="stylesheet" type="text/css" href="$CGI_BASE_DIR/../javascript/ext/css/ext-all.css"/>
             <link rel="stylesheet" type="text/css" href="$CGI_BASE_DIR/../javascript/ext/css/grid.css"/>
+            <link rel="stylesheet" type="text/css" href="$CGI_BASE_DIR/../javascript/css/button.css"/>
             <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/ext/jquery-1.8.0.min.js"></script> 
             <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/ext/ext-4.0.7-gpl/bootstrap.js"></script>
             <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/ext/RowExpander.js"></script>
             <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/ext/AsyncRowExpander.js"></script>
             <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/ext/grid.js"></script>
+            <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/toggle.js"></script>
+
             &nbsp;Below is a listing of publicly accessible ProteomeXchange datasets. Additional datasets will become visible as they are released.<BR><BR>
+            <font face="Calibri">
+            <div style="color:red;" id='basic_search' 
+             onclick='toggle_more("basic_search","advanced_search","buildQuery","searchContainer")'>
+             &nbsp;&nbsp;&nbsp;&nbsp;[Go to Advanced Search]</div>
+            <div id='advanced_search' onclick='toggle_less("advanced_search","basic_search","buildQuery","searchContainer")' 
+                 style='display:none; color:red;'>&nbsp;&nbsp;&nbsp;&nbsp;[Go back to Basic free-text Search]</div><BR>
+            <div id='buildQuery' style='display: none; font-size:14px;'>
+            &nbsp;&nbsp;&nbsp;&nbsp;Build your metadata query constraints below. Note that it is not yet possible to query for individual proteins:
+            <div style="padding:30px; font-size:18px;"><a style="color:red;" id="error"></a>
+							<table cellpadding="10" >
+            ~;
+            my $cnt = 1;
+            foreach my $sel ( qw(
+                                 Title 
+                                 Instrument 
+                                 Publication
+                                 AnnouncementDate 
+                                  )){
+              my $options2 = $cond_options;
+              if ($sel !~ /date/i){
+                $options2 =~ s/value="greater"/value="greater" disabled/;
+                $options2 =~ s/value="less"/value="less" disabled/;
+              }
+              if($cnt == 1){
+   							$str .= qq~<tr><td align="position" valign="position" height="35">
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								  <select id="sel_col1" onchange="configureDropDownList(this,'sel_con1')">$col_options</select>
+                  </td><td>&nbsp;
+                  <select id="sel_con1">$options2</select>
+                  </td>
+								  <td>&nbsp;<input type="text" id="sel1"></input></td></tr>
+                ~;
+              }else{
+                my $options = $col_options;
+                $options =~ s/(value="$sel")/$1 selected="selected"/;
+                $str .= qq~
+							    <tr><td height="35">
+                  AND&nbsp;&nbsp; 
+                  <select id="sel_col$cnt" onchange="configureDropDownList(this, \'sel_con$cnt\')">$options</select>
+                  </td><td>&nbsp;
+                  <select id="sel_con$cnt">$options2</select>
+                  </td>
+                  <td>&nbsp;<input type="text" id="sel$cnt"></input></td>
+                ~;
+                if($cnt == 4){
+                  $str .= qq~
+                    <td>&nbsp;&nbsp;<input type="button" name="advsearchbtn" id="advsearchbtn" value="Advanced Search"/>
+                    &nbsp;&nbsp;<input  type="button" name="clear" id="clear" value="Clear"/>
+                    </tr>
+                  ~;
+                }else{
+                    $str .= "</tr>";
+                }
+              }
+              $cnt++;
+            }
+            $str .= qq~
+							</table>
+            </div></div></font>
 						<div id="searchContainer"> 
             Search metadata for ProteomeXchange datasets: (e.g. "liver", "musculus", "5600", etc.)<BR>
 						<input type="text" id="field" id="s" name="q">
@@ -432,8 +513,8 @@ sub showDataset {
         $header =~  s/([A-Z][a-z]+)/$1 /g;
         $str .= qq~<tr>
                    <td><b>$header</b></td><td>
-                   <div id="less" onclick='toggle_more("less")' >[+]</div>
-                   <div id="more" onclick='toggle_less("more")' style='display: none'>[-]</div> 
+                   <div id="less" onclick='toggle_more("less","more","repositoryRecordList")' >[+]</div>
+                   <div id="more" onclick='toggle_less("more","less","repositoryRecordList")' style='display: none'>[-]</div> 
                     </td></tr> 
                     <ul id="repositoryRecordList" style='display: none'>
         ~;
@@ -527,25 +608,8 @@ sub showDataset {
 	print "$line\n";
 	print qq~
 						<link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
-						<script type="text/javascript">
-							function toggle_more(id){
-							  var list = document.getElementById("repositoryRecordList");
-                                                          list.style.display = '';
-                                                          var x = document.getElementById(id);
-							  var y = document.getElementById('more');
-							  x.style.display='none';
-							  y.style.display='';
-						        }
-							function toggle_less(id){
-							  var list = document.getElementById("repositoryRecordList");
-							  list.style.display = 'none';
-							  var x = document.getElementById(id);
-							  var y = document.getElementById('less');
-							  x.style.display='none';
-							  y.style.display='';
-							}
-						</script>
-
+            <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/toggle.js"></script>
+ 
 						<div id="main">
 						<div id="primary" class="site-content">
                   <div><a href='$CGI_BASE_DIR/GetDataset$teststr'> << Full experiment listing </a></div>

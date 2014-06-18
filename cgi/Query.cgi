@@ -20,7 +20,7 @@ my @tmp = ( 'Dataset service start' );
 $response->{info} = \@tmp;
 
 my $params;
-my @parameters = qw ( test verbose ID filterstr outputMode detailLevel limit start sort);
+my @parameters = qw ( test verbose action ID filterstr outputMode detailLevel limit start sort);
 
 #### Extract CGI parameters
 foreach my $parameter ( @parameters ) {
@@ -68,6 +68,8 @@ sub  listDatasets {
   my $extended = $params->{detailLevel} || '0';
   my $pageStart = $params->{start} || 0;
   my $pageLimit = $params->{limit} || 10;
+  my $searchType = $params->{action} || '';
+ 
   my $table_name = 'dataset';
   my $teststr = '';
   my $path = '/local/wwwspecial/proteomecentral/var/submissions/';
@@ -154,27 +156,80 @@ sub  listDatasets {
   my @query_terms = ();
   my %sorter = ();
   if ($filterstr ne ''){
-    @query_terms = split(/\s+/, $filterstr);
+    if ($searchType !~ /^advsearch/){
+      @query_terms = split(/\s+/, $filterstr);
+    }else{
+      @query_terms = split('\]\[',$filterstr);
+      foreach (@query_terms){
+        s/^\[//;
+        s/\]$//;
+      }
+    }
   }
   $idx=0;
 
   foreach my $row (@results){
     if ($filterstr ne ''){
-      my $matches = 0;
-      foreach my $q (@query_terms){
-        my $match  = grep (/$q/i, @$row);
-        ## search xml file also
-        if ( ! $match){
-          my $xml_file = $row->[$#headings];
-          open (IN, "<$path/$xml_file") or die "cannot open $xml_file";
-          my @lines = <IN>;
-          $match = grep  (/$q/i,@lines);
-        }
-        if ($match){
-          $matches++;
-        }
-      }
-      next if ($matches < @query_terms);
+			my $matches = 0;
+      if ( $searchType !~ /^advsearch/ ){
+				foreach my $q (@query_terms){
+					my $match  = grep (/$q/i, @$row);
+					## search xml file also
+					if ( ! $match){
+						my $xml_file = $row->[$#headings];
+						open (IN, "<$path/$xml_file") or die "cannot open $xml_file";
+						my @lines = <IN>;
+						$match = grep  (/$q/i,@lines);
+					}
+					if ($match){
+						$matches++;
+					}
+				}
+				next if ($matches < @query_terms);
+      }else{ ## advanced search
+         foreach my $q (@query_terms){
+           my ($colname, $cond, $str) = split(/\+/, $q);
+           for(my $i =0; $i<= $#headings; $i++){
+             if ($headings[$i] =~ /$colname/i){
+                if ($cond =~ /^contain$/){
+                  if ( $row->[$i] =~ /$str/i){
+                    $matches++;
+                  }
+                }elsif ($cond =~ /^notontained/){
+                  if ( $row->[$i] !~ /$str/i){
+                    $matches++;
+                  }
+                }elsif($cond =~ /exactly/){
+                  if ( $row->[$i] =~ /^$str$/i){
+                    $matches++;
+                  }
+                } 
+                if($colname =~ /date/i){## two more conditions to check for date
+                  my $val1= $row->[$i];
+                  my $val2 = $str;
+                  $val1 =~ s/[\-\s]//g;
+                  $val2 =~s/[\-\s]//g;
+                  # format query date. make it have length 6
+                  my $zeros = '00000000';
+                  my $n = length($val2);
+                  $zeros =~ s/^.{$n}/$val2/;
+                  $val2 = $zeros;
+                  if($cond =~ /greater/i){
+                    if($val1 >= $val2){
+                      $matches++;
+                    }
+                  }elsif($cond =~ /less/i){
+                    if($val1 <= $val2){
+                      $matches++;
+                    }
+                  }
+               }
+             }
+           }
+         }
+         next if ($matches < @query_terms);
+      }## advanced search
+
     }
 		my %data=();
 		foreach my $i (0..$#headings-1){

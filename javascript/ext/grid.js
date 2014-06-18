@@ -132,7 +132,9 @@ var store = Ext.create('Ext.data.Store', {
 				'beforeload': function(store, options) {
 						var params = get_url_parameter();
 						store.proxy.extraParams.detailLevel=params.detailLevel;
-            store.proxy.extraParams.filterstr= $('#field').val();
+            var filterparams = get_filterstr();
+            store.proxy.extraParams.filterstr= filterparams[1];
+            store.proxy.extraParams.action = filterparams[0];
 				},
 				write: function(store, operation){
 						var record = operation.records[0],
@@ -235,6 +237,15 @@ Ext.onReady(function(){
         $("#field").val("");
         $(this).hide();
     });
+    $("#clear").click(function clearTextBox(){
+			var list = document.getElementsByTagName("input");
+			for (var i=0; i<list.length; i++){
+				 if(list[i].type == 'text'){
+						list[i].value = '';
+				 }
+			}
+      document.getElementById("error").innerHTML = '';
+		});
 
     var myQueryEvent = function(e){
       /*alert (e.keycode + " " + e.button);
@@ -244,18 +255,26 @@ Ext.onReady(function(){
       var params = get_url_parameter();
       params.start = 0;
       params.limit = itemsPerPage;
-      params.filterstr =  $('#field').val();
-      params.action = 'search';
+     
+      var filterparams = get_filterstr(); 
+      params.action = filterparams[0];
+      params.filterstr = filterparams[1]; 
       store.load({
         params: params,
       });
+      store.loadPage(1); 
 
    };
 
    $('#searchbtn').click(myQueryEvent);
     //$('#field').keypress(myQueryEvent);
-   
+  
+ 
    $("#x").click(myQueryEvent);
+   $("#clear").click(myQueryEvent);
+   $("#basic_search").click(myQueryEvent);
+   $("#advanced_search").click(myQueryEvent);
+   $('#advsearchbtn').click(myQueryEvent); 
 
    $('#field').on('keyup', function(e) {
       if (e.which == 13) {
@@ -266,7 +285,8 @@ Ext.onReady(function(){
 				params.action = 'search';
 				store.load({
 					params: params,
-				}); 
+				});
+        store.loadPage(1);
      }
    });
 
@@ -279,6 +299,46 @@ Ext.onReady(function(){
 	}*/
 
 });
+function get_filterstr(){
+  var filterstr = '' ; 
+  var action = 'search';
+  for (var i = 1; i<= 4; i++){
+    var sel_id = 'sel_col' + i;
+    var cond_id = 'sel_con' + i;
+    var id = 'sel' + i; 
+		if($("#"+id).val() != ''){
+			action = "advsearch";
+			filterstr += "[" + $("select#"+sel_id).val() +  "+" + $("select#"+cond_id).val()
+									 + "+" +  $("#" + id).val() + "]";
+		}
+    if ( $("#"+id).val() != '' && $("select#"+sel_id).val().match(/date/i)){
+      var result = checkDateFormat($("#"+id).val());
+      if (result == 1){
+         document.getElementById("error").innerHTML = "Please use format YYYY-MM-DD/YYYY-MM/YYYY for date";
+         return ['', ''];
+      }else{
+         document.getElementById("error").innerHTML = '';
+      }
+    }
+
+  }
+  if ( filterstr == ''){
+    filterstr = $('#field').val();
+  }
+  return [action , filterstr];
+}
+
+
+function checkDateFormat(val){
+  val = val.replace(/\s/g, "");
+	if (! (val.match(/^\d{4}-\d{2}-\d{2}$/) || 
+         val.match(/^\d{4}-\d{2}$/) || 
+         val.match(/^\d{4}$/))){
+		return 1;
+	}else{
+    return 0;
+  }
+}
 
 function get_url_parameter (){
   // separating the GET parameters from the current URL
@@ -363,7 +423,5 @@ function ucfirst (str) {
 	var f = str.charAt(0).toUpperCase();
 	return f + str.substr(1);
 }
-                                           
-
 
  
