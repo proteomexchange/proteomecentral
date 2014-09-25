@@ -152,8 +152,6 @@ var store = Ext.create('Ext.data.Store', {
 		}
 });
 
-
-
 var grid; 
 Ext.onReady(function(){
    Ext.QuickTips.init();
@@ -213,7 +211,13 @@ Ext.onReady(function(){
     });
 
 		Ext.EventManager.onWindowResize(function(w, h){
-				grid.doComponentLayout();
+				//grid.doComponentLayout();
+        //if(!Ext.isIE){
+        //  grid.getView().refresh();
+        // }else{
+         //  if(border){ grid.setWidth(border.body.getWidth());  }
+        // }
+        window.location.reload();
 		});
     var params = get_url_parameter();
     params.start = 0;
