@@ -273,6 +273,7 @@ sub listDatasets {
 						<div id="delete"><span id="x">x</span></div></input>
 						<input type="button" name="searchbtn" id="searchbtn" value="Search" /><BR>
             Note: it is not yet possible to query for individual proteins contained in these datasets at ProteomeCentral.<BR>
+            <a href="http://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="50" height="15" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to receive all new ProteomeXchange announcements!</font></a>
 						</div>
 						<table cellpadding="0" width="100%" align="center" cellspacing="0" id="br1owseWrapper">
 						<tr>
@@ -284,7 +285,6 @@ sub listDatasets {
 							</tr>
 						</table>
             </div>
-            &nbsp;&nbsp;<a href="http://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="100" height="30" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to all new ProteomeXchange announcements!</font></a>
             <div class="footer"  align="center">
         ~;
 
