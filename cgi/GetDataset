@@ -164,17 +164,18 @@ sub listDatasets {
              ~;
 	my @results = $dbh->selectSeveralColumns($sql);
 
+  #### If the output mode is HTML, then render a JavaScript-based table of the data
   if ($outputMode =~ /html/i){
-		print "Content-type:text/html\r\n\r\n";
-		foreach my $line (@page){
-			if($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
-				 $line =~ s/$1/ProteomeXchange Datasets/;
-				 print "$line\n";
-			}elsif($line =~ /class="node-inner-padding"/){
-				#$line =~ s/>/style="padding: 0">/g;
-				print "$line\n";
-			}elsif ($line =~ /^<!-- BEGIN main content -->/){
-				print "$line\n"; 
+    print "Content-type:text/html\r\n\r\n";
+    foreach my $line (@page){
+      if ($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
+	$line =~ s/$1/ProteomeXchange Datasets/;
+	print "$line\n";
+      } elsif($line =~ /class="node-inner-padding"/){
+	#$line =~ s/>/style="padding: 0">/g;
+	print "$line\n";
+      } elsif ($line =~ /^<!-- BEGIN main content -->/){
+	print "$line\n"; 
         my $col_options = qq~ ;
 					<option value="Title">Title</option>
 					<option value="id">Dataset ID</option>
@@ -283,16 +284,22 @@ sub listDatasets {
 							</tr>
 						</table>
             </div>
+            &nbsp;&nbsp;<a href="http://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="100" height="30" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to all new ProteomeXchange announcements!</font></a>
             <div class="footer"  align="center">
-					~;
+        ~;
+
         print "$str\n";
+
       }elsif($line =~ /<\/body/){
         print "</div>$line\n";
+
       }else{
         print "$line\n";
       }
-		}
-  }elsif($outputMode=~ /xml/i){
+    }
+
+  #### Else if the output mode is request to be XML, write out the tabular data as XML
+  } elsif ($outputMode=~ /xml/i) {
      print "Content-type:text/xml\r\n\r\n";
      my $writer = new XML::Writer(DATA_MODE => 1, DATA_INDENT => 4,ENCODING=>'UTF-8',);
      $writer->xmlDecl("UTF-8");
