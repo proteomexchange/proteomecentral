@@ -5,7 +5,7 @@
 
 	<table align="center" bgcolor="#f4f6f8">
 	<tr><td>
-	<img src="/images/EMBL.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="/images/isb.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="/images/capacities.png">
+	<img src="/images/ebi_footer_logo.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="/images/isb.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="/images/capacities.png">
 	</td></tr>
 	
 	</table>			
