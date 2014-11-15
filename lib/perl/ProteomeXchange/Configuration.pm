@@ -74,7 +74,7 @@ sub readConfiguration {
   my %args = @_;
   my $SUB_NAME = 'readConfiguration';
 
-  my @paths = ( "$FindBin::Bin/../conf", "$FindBin::Bin/../lib/conf" );
+  my @paths = ( "$FindBin::Bin/../conf", "$FindBin::Bin/../lib/conf", "$FindBin::Bin/../../conf", "$FindBin::Bin/../../lib/conf" );
 
   my $filename = 'system.conf';
   my $validatedFullPath;
