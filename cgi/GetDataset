@@ -342,7 +342,6 @@ sub listDatasets {
 sub showDataset {
   my %args = @_;
   my $SUB_NAME = 'showDataset';
-
   #### Decode the argument list
   my $params = $args{'params'} || die("[$SUB_NAME] ERROR: params not passed");
   my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
@@ -368,7 +367,8 @@ sub showDataset {
     $datasetID =~ s/^0+//;
   }
 
-  my ($title,$status,$PXPartner,$announcementXML,$identifierDate);
+  my ($title,$status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetTitle);
+  my ($datasetSubmitter,$datasetLabHead,$datasetSpeciesString);
 
   my $pageStatus = 'OK';
   my $str = '';
@@ -418,7 +418,6 @@ sub showDataset {
     }
 
     if ( $pageStatus eq 'OK' ) {
-      my $datasetIdentifier;
       ($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier) = @{$results[0]};
       $title = $datasetIdentifier;
 
@@ -432,23 +431,15 @@ sub showDataset {
       my $header;
 
       $str .= "<p> <b>DataSet Summary</b> </p>\n<ul>";
-      foreach my $key ( qw( PXPartner 
-           announceDate 
-           announcementXML 
-           DigitalObjectIdentifier 
-           ReviewLevel 
-           datasetOrigin 
-           derivedDataset 
-           RepositorySupport 
-			     primarySubmitter 
-           title 
-           description 
-           speciesList 
-           modificationList 
-           instrument
-        ) ) {
-        
+      foreach my $key ( qw( PXPartner announceDate announcementXML DigitalObjectIdentifier ReviewLevel 
+			    datasetOrigin derivedDataset RepositorySupport primarySubmitter title 
+			    description speciesList modificationList instrument ) ) {
+
         $header =  ucfirst($key);  
+
+	$datasetTitle = $result->{$key} if ($key eq 'title');
+        $datasetSpeciesString = $result->{$key} if ($key eq 'speciesList');
+
         if ($header eq 'PXPartner'){
           $header = 'HostingRepository';
 					$result->{$key} = $PXPartner unless ($result->{$key});
@@ -492,14 +483,17 @@ sub showDataset {
 					$str .= "<p> <b>$header</b> </p>\n<ol>\n";     
           if ($key eq 'contactList'){
             foreach my $id (keys %{$result->{contactList}}){
-              if ( defined $result->{contactList}{$id}{'contact name'}){
-                $str .= "<b>$result->{contactList}{$id}{'contact name'}</b>\n<ul>";
+              my $thisContactName = $result->{contactList}{$id}{'contact name'};
+              if ( defined($thisContactName) ){
+                $str .= "<b>$thisContactName</b>\n<ul>";
               } else {
                 $str .= "<b>$id</b>\n<ul>";
               }
               foreach my $name (keys %{$result->{contactList}{$id}}){
                 next if($name eq 'contact name');
                 $str .= qq~<li>$name: $result->{contactList}{$id}{$name}</li> ~;
+                $datasetSubmitter = $thisContactName if ($name eq 'dataset submitter');
+                $datasetLabHead = $thisContactName if ($name eq 'lab head');
               }
               $str .= "</ul>\n";
             }
@@ -622,14 +616,33 @@ sub showDataset {
                   <div><a href='$CGI_BASE_DIR/GetDataset$teststr'> << Full experiment listing </a></div>
         ~;
 
-	#### Write out the information collected thus far
+	#### Show the dataset information window
 	print qq~ <h1 class="entry-title"> $title </h1> ~;
+	
+        #### Show what the tweet message would be
+	use ProteomeXchange::Tweet;
+	my $tweet = new ProteomeXchange::Tweet;
+	$tweet->prepareTweetContent(
+          datasetTitle => $datasetTitle,
+          PXPartner => $PXPartner,
+          datasetIdentifier => $title,
+          datasetSubmitter  => $datasetSubmitter,
+          datasetLabHead => $datasetLabHead,
+          datasetSpeciesString => $datasetSpeciesString,
+          datasetStatus => 'new',
+	);
+
 	print qq~
                   <div class="entry-content">
                   $str
-									 </div><!-- #content -->
-									 </div><!-- #primary .site-content -->
-									 </div><!-- #main -->
+        ~;
+	print "<BR><BR>".$tweet->getTweetAsHTML()."<BR><BR>";
+
+	#### Finish the display card window
+	print qq~
+		  </div><!-- #content -->
+		  </div><!-- #primary .site-content -->
+		  </div><!-- #main -->
         ~;
 
       } else {
