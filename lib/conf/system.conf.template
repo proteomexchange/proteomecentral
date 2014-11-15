@@ -23,3 +23,6 @@ baseUrl=http://proteomecentral.proteomexchange.org
 #### Base path on the local filesystem that corresponds to the URL above
 basePath=/net/dblocal/wwwspecial/proteomecentral
 
+#### Configuration tokens for ProteomeXchange::Tweet
+twitterTokens=/net/dblocal/wwwspecial/proteomecentral/lib/conf/twitterOAuth.keys
+
