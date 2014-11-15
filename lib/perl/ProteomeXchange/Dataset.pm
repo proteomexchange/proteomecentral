@@ -645,23 +645,44 @@ sub processAnnouncement {
 	      my $description = $result->{description} || '???';
 	      $description =~ s/[\r\n]//g;
 
-	      #### If emailing has be temporarily disabled
+	      my $changeLogEntry = '';
+	      if ($result->{changeLogEntry}) {
+	        $changeLogEntry = "Changes: $result->{changeLogEntry}\n";
+	      }
+
+              #### Create a tweet message from the available information
+              use ProteomeXchange::Tweet;
+              my $tweet = new ProteomeXchange::Tweet;
+              $tweet->prepareTweetContent(
+                datasetTitle => $result->{title},
+                PXPartner => $params->{PXPartner},
+                datasetIdentifier => $identifier,
+                datasetSubmitter  => $result->{primarySubmitter},
+                datasetLabHead => $result->{labHead},
+                datasetSpeciesString => $result->{species},
+                datasetStatus => $messageType{status},
+              );
+              my $tweetString = $tweet->getTweet();
+
+	      #### If emailing has been temporarily disabled, just create an INFO entry about it
 	      if ($noEmailBroadcast && $noEmailBroadcast !~ /no/i && $noEmailBroadcast !~ /false/i) {
 		push(@{$response->{info}},"Will pretend to send around an email to ".join(',',@toRecipients)." but won't really do it because noEmailBroadcast=$noEmailBroadcast.");
+
+              #### Otherwise, send the email!
 	      } else {
 		push(@{$response->{info}},"Sending an announcement email to ".join(',',@toRecipients));
-		my $changeLogEntry = '';
-		if ($result->{changeLogEntry}) {
-		  $changeLogEntry = "Changes: $result->{changeLogEntry}\n";
-		}
 		my $emailProcessor = new ProteomeXchange::EMailProcessor;
 	        $emailProcessor -> sendEmail(
 					   toRecipients=>\@toRecipients,
 					   ccRecipients=>\@ccRecipients,
 					   bccRecipients=>\@bccRecipients,
 					   subject=>"$messageType{titleIntro} ProteomeXchange dataset $identifier$testFlag",
-					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}HostingRepository: $params->{PXPartner}\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
+					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}HostingRepository: $params->{PXPartner}\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\n\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\nTweet: $tweetString\n\n",
 					   );
+
+		push(@{$response->{info}},"Sending tweet to ProteomeXchange");
+                $tweet->sendTweet();
+
 	      }
 	    }
 	  }
