@@ -680,8 +680,13 @@ sub processAnnouncement {
 					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}HostingRepository: $params->{PXPartner}\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\n\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\nTweet: $tweetString\n\n",
 					   );
 
-		push(@{$response->{info}},"Sending tweet to ProteomeXchange");
-                $tweet->sendTweet();
+		#### Send a tweet too if this is a new dataset
+	        if ( $messageType{status} eq 'new' ) {
+		  push(@{$response->{info}},"Sending tweet to ProteomeXchange");
+		  $tweet->sendTweet();
+		} else {
+		  push(@{$response->{info}},"Tweet of revision suppressed");
+		}
 
 	      }
 	    }
