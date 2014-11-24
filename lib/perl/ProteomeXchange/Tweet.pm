@@ -75,13 +75,13 @@ sub prepareTweetContent {
      $sourceString = "(malformed source)";
   }
 
-  my $speciesString = '';
+  my $speciesString = $datasetSpeciesString || '';
   if ($datasetSpeciesString =~ /scientific name: (.+?);/) {
     $speciesString = $1;
-    $speciesString = "Human" if ($speciesString =~ /Homo sapiens/);
-    $speciesString = "Mouse" if ($speciesString =~ /Mus musculus/);
-    $speciesString =  " ($speciesString)";
   }
+  $speciesString = "Human" if ($speciesString =~ /Homo sapiens/i);
+  $speciesString = "Mouse" if ($speciesString =~ /Mus musculus/i);
+  $speciesString =  " ($speciesString)" if ($speciesString);
 
   my $announcementType = ucfirst($datasetStatus);
 
