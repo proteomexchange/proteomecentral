@@ -9,7 +9,7 @@ package ProteomeXchange::DatasetParser;
 ###############################################################################
 
 use strict;
-use lib "/local/wwwspecial/proteomecentral/lib/perl";
+#use lib "/local/wwwspecial/proteomecentral/lib/perl";
 use ProteomeXchange::Database;
 
 use vars qw($db);
