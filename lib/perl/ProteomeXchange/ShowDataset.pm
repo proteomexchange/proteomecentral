@@ -73,7 +73,7 @@ sub listDatasets {
   my  @column_array =(
         ["datasetIdentifier","Dataset Identifier"],
         ["title","Title"],
-        ["PXPartner","Repository"],
+        ["PXPartner","Repos"],
         ["species","Species"],
         ["instrument","Instrument"],
         ["publication","Publication"],
