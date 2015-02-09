@@ -112,11 +112,11 @@ sub listDatasets {
          <div id="result"> 
           <div id="pager" class="pager">
 					<form>
-						<img src="../javascript/icon/first.png" class="first"/>
-						<img src="../javascript/icon/prev.png" class="prev"/>
+						<img src="../javascript/image/first.png" class="first"/>
+						<img src="../javascript/image/prev.png" class="prev"/>
 						<input type="text" class="pagedisplay"/>
-						<img src="../javascript/icon/next.png" class="next"/>
-						<img src="../javascript/icon/last.png" class="last"/>
+						<img src="../javascript/image/next.png" class="next"/>
+						<img src="../javascript/image/last.png" class="last"/>
             <a> Page Size</a>
 						<select class="pagesize">
 							<option selected="selected"  value="10">10</option>
