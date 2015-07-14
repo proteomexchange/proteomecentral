@@ -585,6 +585,17 @@ sub processAnnouncement {
 	    }
 	  }
 
+	  ### If the description is not at least 50 characters, report an error
+	  if ( !exists($result->{description}) || !defined($result->{description}) || length($result->{description}) < 50 ){
+	    if ($method eq 'validateXML') {
+	      push(@{$response->{info}},"ERROR: The description for the submission is not sufficient. It must be at least 50 characters.");
+	    } else {
+	      $response->{result} = "ERROR";
+	      $response->{message} = "The description for the submission is not sufficient. It must be at least 50 characters.";
+	      return($response);
+	    }
+	  }
+
 	  #### Else everything is okay, so record the result and email the announcement
 	  if ( 1 ) {
 
