@@ -441,6 +441,8 @@ sub checkCvParam {
     $self->readControlledVocabularyFile(input_file=>$infile);
     $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/DOID/doid.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/Unimod/unimod.obo';
+    $self->readControlledVocabularyFile(input_file=>$infile);
     my @tmp = ();
     $self->{cvErrors} = \@tmp;
   }
