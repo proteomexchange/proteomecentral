@@ -771,7 +771,9 @@ sub showDataset {
 				<div class="entry-content">
 				$str
 		 ~;
-		 print "<BR><BR>".$tweet->getTweetAsHTML()."<BR><BR>";
+
+                 #### Removed display of the tweet here. It wasn't working correctly anyway. Would be good to revive for testing.
+		 #print "<BR><BR>".$tweet->getTweetAsHTML()."<BR><BR>";
 
 		 #### Finish the display card window
 
