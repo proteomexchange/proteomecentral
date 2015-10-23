@@ -1,0 +1,1426 @@
+<html><head>
+
+	  <style type="text/css">
+	      body {  font-family: Helvetica, Arial, sans-serif; font-size: 9pt; background-color: #ffffff;}
+	      table{  border: 1px solid black; border-collapse: collapse; }
+	       th   {  border: 1px solid black; font-family: Helvetica, Arial, sans-serif; font-size: 9pt; font-weight: bold;
+	       background-color: #dddddd;}
+	       td   {  border: 1px solid black; font-family: Helvetica, Arial, sans-serif; font-size: 9pt; padding:3px; vertical-align:top;}
+	       table.zero{  border: 0px ; border-collapse: collapse; }
+	       td.zero {  border: 0px ; font-family: Helvetica, Arial, sans-serif; font-size: 9pt; padding:3px; vertical-align:top;}
+	       form   {  font-family: Helvetica, Arial, sans-serif; font-size: 9pt}
+	       pre    {  font-family: Courier New, Courier; font-size: 8pt}
+	       h1   {  font-family: Helvetica, Arial, sans-serif; font-size: 14pt; font-weight: bold}
+	       h2   {  font-family: Helvetica, Arial, sans-serif; font-size: 12pt; font-weight: bold;
+		     padding: 5px;
+		     border: 2px dotted black;
+		       background-color: #ddddff;
+		   }
+	       h3   {  font-family: Helvetica, Arial, sans-serif; font-size: 12pt}
+	       h4   {  font-family: AHelvetica, rial, sans-serif; font-size: 12pt}
+	    </style>
+		</head>
+<body>
+<H2>Element &lt;<a name="ProteomeXchangeDataset">ProteomeXchangeDataset</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'><B>Depending on context:</B><BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ProteomeXchangeDatasetType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>formatVersion</TD><TD>versionRegex</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+<TR><TD>id</TD><TD>xs:string</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#CvList">CvList</a></TD><TD>1</TD><TD>1</TD><TD>The list of controlled vocabularies used in the file.</TD></TR>
+<TR><TD><a href="#ChangeLog">ChangeLog</a></TD><TD>0</TD><TD>1</TD><TD>A collection of all change log messages to record the changes and updates related to this dataset.</TD></TR>
+<TR><TD><a href="#DatasetSummary">DatasetSummary</a></TD><TD>1</TD><TD>1</TD><TD>-</TD></TR>
+<TR><TD><a href="#DatasetIdentifierList">DatasetIdentifierList</a></TD><TD>1</TD><TD>1</TD><TD>-</TD></TR>
+<TR><TD><a href="#DatasetOriginList">DatasetOriginList</a></TD><TD>1</TD><TD>1</TD><TD>A list of the origins of this dataset. This list can link to other ProteomeXchange datasets or other resources. 
+        If this dataset contains previously unreported data, then a 'new dataset' annotation should be used.</TD></TR>
+<TR><TD><a href="#SpeciesList">SpeciesList</a></TD><TD>1</TD><TD>1</TD><TD>The list of species from which the data has been generated.</TD></TR>
+<TR><TD><a href="#InstrumentList">InstrumentList</a></TD><TD>1</TD><TD>1</TD><TD>List of instruments on which the data generation was performed.</TD></TR>
+<TR><TD><a href="#ModificationList">ModificationList</a></TD><TD>1</TD><TD>1</TD><TD>A list of PTMs defined as cvParams.</TD></TR>
+<TR><TD><a href="#ContactList">ContactList</a></TD><TD>1</TD><TD>1</TD><TD>List of contacts related to the ProteomeXchange dataset.</TD></TR>
+<TR><TD><a href="#PublicationList">PublicationList</a></TD><TD>1</TD><TD>1</TD><TD>List of publications from which the dataset was collected or wherein it is published</TD></TR>
+<TR><TD><a href="#KeywordList">KeywordList</a></TD><TD>1</TD><TD>1</TD><TD>Keywords defined by controlled vocabulary or free text categorised by a controlled vocabolary term 
+        (e.g. 'journal article keyword', 'submitter keyword' or 'curator keyword').</TD></TR>
+<TR><TD><a href="#FullDatasetLinkList">FullDatasetLinkList</a></TD><TD>1</TD><TD>1</TD><TD>A list of links to the complete ProteomeXchange dataset.</TD></TR>
+<TR><TD><a href="#DatasetFileList">DatasetFileList</a></TD><TD>0</TD><TD>1</TD><TD>The list of ALL files comprising this ProteomeXchange submission.</TD></TR>
+<TR><TD><a href="#RepositoryRecordList">RepositoryRecordList</a></TD><TD>0</TD><TD>1</TD><TD>The list of records as found in the repository the data was submitted to (for example PRIDE experiment records).</TD></TR>
+<TR><TD><a href="#AdditionalInformation">AdditionalInformation</a></TD><TD>0</TD><TD>1</TD><TD>A place for all additional information that may be added to the 
+        broadcast message and that could not be fitted into another location. Here should 
+        also go references to other ProteomeXchange submissions.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="AdditionalInformation">AdditionalInformation</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A place for all additional information that may be added to the 
+        broadcast message and that could not be fitted into another location. Here should 
+        also go references to other ProteomeXchange submissions.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>AdditionalInformationType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>0</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+<TR><TD><a href="#userParam">userParam</a></TD><TD>0</TD><TD>unbounded</TD><TD>A single user-defined parameter.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="AnnotationList">AnnotationList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Any additional annotation of the record/experiment that the 
+            submitter/generator of the message deems important enough to announce.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>AdditionalInformationType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>0</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+<TR><TD><a href="#userParam">userParam</a></TD><TD>0</TD><TD>unbounded</TD><TD>A single user-defined parameter.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="ChangeLog">ChangeLog</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A collection of all change log messages to record the changes and updates related to this dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ChangeLogType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#ChangeLogEntry">ChangeLogEntry</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single change log entry giving providing the date on the change, a new version number of the dataset and a description of the change/update.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="ChangeLogEntry">ChangeLogEntry</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A single change log entry giving providing the date on the change, a new version number of the dataset and a description of the change/update.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ChangeLogEntryType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>date</TD><TD>xs:date</TD><TD>optional</TD><TD><font color="red">???</font></TD></TR>
+<TR><TD>version</TD><TD>xs:string</TD><TD>optional</TD><TD><font color="red">???</font></TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Contact">Contact</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Contact person related to the ProteomeXchange dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ContactType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>id</TD><TD>xs:ID</TD><TD>required</TD><TD>Identifier for the contact to be used for referencing within a document.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="ContactList">ContactList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>List of contacts related to the ProteomeXchange dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ContactListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Contact">Contact</a></TD><TD>1</TD><TD>unbounded</TD><TD>Contact person related to the ProteomeXchange dataset.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="CV">CV</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A source controlled vocabulary from which cvParams will be obtained.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>CvType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>fullName</TD><TD>xs:string</TD><TD>required</TD><TD>The full name of the CV.</TD></TR>
+<TR><TD>id</TD><TD>xs:ID</TD><TD>required</TD><TD>The unique identifier of this cv within the document to be referenced by cvParam elements. </TD></TR>
+<TR><TD>uri</TD><TD>xs:anyURI</TD><TD>required</TD><TD>The URI of the source CV.</TD></TR>
+<TR><TD>version</TD><TD>xs:string</TD><TD>optional</TD><TD>The version of the CV.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="CvList">CvList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of controlled vocabularies used in the file.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>CvListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#CV">CV</a></TD><TD>1</TD><TD>unbounded</TD><TD>A source controlled vocabulary from which cvParams will be obtained.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="cvParam">cvParam</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A single entry from an ontology or a controlled vocabulary.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>CvParamType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>accession</TD><TD>xs:string</TD><TD>required</TD><TD>The accession or ID number of this CV term in the source CV.
+            </TD></TR>
+<TR><TD>cvRef</TD><TD>xs:IDREF</TD><TD>required</TD><TD>A reference to the cv element from which this term originates.
+            </TD></TR>
+<TR><TD>name</TD><TD>xs:string</TD><TD>required</TD><TD>The name of the parameter.</TD></TR>
+<TR><TD>unitAccession</TD><TD>xs:string</TD><TD>optional</TD><TD>An accession number identifying the unit within the OBO foundry Unit CV.
+        </TD></TR>
+<TR><TD>unitCvRef</TD><TD>xs:string</TD><TD>optional</TD><TD>If a unit term is referenced, this attribute MUST refer to the CV 'id' attribute
+          defined in the cvList in this file.
+        </TD></TR>
+<TR><TD>unitName</TD><TD>xs:string</TD><TD>optional</TD><TD>The name of the unit.</TD></TR>
+<TR><TD>value</TD><TD>xs:string</TD><TD>optional</TD><TD>The user-entered value of the parameter.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetFile">DatasetFile</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Description of the source file, including location and type.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetFileType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>id</TD><TD>xs:ID</TD><TD>required</TD><TD>Identifier for the sourceFile to be used for referencing within a document.</TD></TR>
+<TR><TD>name</TD><TD>xs:string</TD><TD>required</TD><TD>Name of the source file, without reference to location (either URI or local path).</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetFileList">DatasetFileList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of ALL files comprising this ProteomeXchange submission.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetFileListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#DatasetFile">DatasetFile</a></TD><TD>1</TD><TD>unbounded</TD><TD>Description of the source file, including location and type.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetIdentifier">DatasetIdentifier</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'><B>Depending on context:</B><BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetIdentifierType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetIdentifierList">DatasetIdentifierList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'><B>Depending on context:</B><BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetIdentifierListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#DatasetIdentifier">DatasetIdentifier</a></TD><TD>1</TD><TD>unbounded</TD><TD>-</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetOrigin">DatasetOrigin</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'><B>Depending on context:</B><BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetOriginType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetOriginList">DatasetOriginList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A list of the origins of this dataset. This list can link to other ProteomeXchange datasets or other resources. 
+        If this dataset contains previously unreported data, then a 'new dataset' annotation should be used.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetOriginListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#DatasetOrigin">DatasetOrigin</a></TD><TD>1</TD><TD>1</TD><TD>-</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetSummary">DatasetSummary</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'><B>Depending on context:</B><BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetSummaryType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>announceDate</TD><TD>xs:date</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+<TR><TD>hostingRepository</TD><TD>HostingRepositoryType</TD><TD>required</TD><TD>The broadcaster who send out this ProteomeXchange message.</TD></TR>
+<TR><TD>title</TD><TD>xs:string</TD><TD>required</TD><TD>A descriptive title for the dataset.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Description">Description</a></TD><TD>1</TD><TD>1</TD><TD>-</TD></TR>
+<TR><TD><a href="#ReviewLevel">ReviewLevel</a></TD><TD>1</TD><TD>1</TD><TD>Level of review on this dataset/associated paper.</TD></TR>
+<TR><TD><a href="#RepositorySupport">RepositorySupport</a></TD><TD>1</TD><TD>1</TD><TD>To what extend the data is supported in the hosting repository.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Description">Description</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'><B>Depending on context:</B><BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>xs:string
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="FullDatasetLink">FullDatasetLink</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A single link to the full dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>FullDatasetLinkType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>1</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="FullDatasetLinkList">FullDatasetLinkList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A list of links to the complete ProteomeXchange dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>FullDatasetLinkListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#FullDatasetLink">FullDatasetLink</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single link to the full dataset.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Instrument">Instrument</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Instrument on which the data has been generated.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>InstrumentType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>id</TD><TD>xs:ID</TD><TD>required</TD><TD>Identifier for the instrument to be used for referencing within a document</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="InstrumentList">InstrumentList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>List of instruments on which the data generation was performed.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>InstrumentListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Instrument">Instrument</a></TD><TD>1</TD><TD>unbounded</TD><TD>Instrument on which the data has been generated.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="InstrumentRef">InstrumentRef</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>to reference the 'id' of an 'Instrument' within this submission
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RefType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="KeywordList">KeywordList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Keywords defined by controlled vocabulary or free text categorised by a controlled vocabolary term 
+        (e.g. 'journal article keyword', 'submitter keyword' or 'curator keyword').
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>KeywordListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="ModificationList">ModificationList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A list of PTMs defined as cvParams.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ModificationListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Publication">Publication</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Reference to a publication in which the dataset is published.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>PublicationType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>id</TD><TD>xs:ID</TD><TD>required</TD><TD>Identifier for the publication to be used for referencing within a document</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="PublicationList">PublicationList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>List of publications from which the dataset was collected or wherein it is published
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>PublicationListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Publication">Publication</a></TD><TD>1</TD><TD>unbounded</TD><TD>Reference to a publication in which the dataset is published.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="PublicationRef">PublicationRef</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>to reference the 'id' of a 'Publication' within this submission
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RefType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="RepositoryRecord">RepositoryRecord</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'><B>Depending on context:</B><BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RepositoryRecordType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>label</TD><TD>xs:string</TD><TD>optional</TD><TD><font color="red">???</font></TD></TR>
+<TR><TD>name</TD><TD>xs:string</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+<TR><TD>recordID</TD><TD>xs:string</TD><TD>required</TD><TD>A unique identifier for the record within the repository.</TD></TR>
+<TR><TD>repositoryID</TD><TD>HostingRepositoryType</TD><TD>required</TD><TD>Identifier that uniquely defines the hosting repository which holds the data records.</TD></TR>
+<TR><TD>uri</TD><TD>xs:anyURI</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#SourceFileRef">SourceFileRef</a></TD><TD>0</TD><TD>unbounded</TD><TD>to reference the 'id' of a 'DatasetFile' within this submission</TD></TR>
+<TR><TD><a href="#PublicationRef">PublicationRef</a></TD><TD>0</TD><TD>unbounded</TD><TD>to reference the 'id' of a 'Publication' within this submission</TD></TR>
+<TR><TD><a href="#InstrumentRef">InstrumentRef</a></TD><TD>0</TD><TD>unbounded</TD><TD>to reference the 'id' of an 'Instrument' within this submission</TD></TR>
+<TR><TD><a href="#SampleList">SampleList</a></TD><TD>0</TD><TD>1</TD><TD>-</TD></TR>
+<TR><TD><a href="#ModificationList">ModificationList</a></TD><TD>0</TD><TD>1</TD><TD>A list of PTMs defined as cvParams.</TD></TR>
+<TR><TD><a href="#AnnotationList">AnnotationList</a></TD><TD>0</TD><TD>1</TD><TD>Any additional annotation of the record/experiment that the 
+            submitter/generator of the message deems important enough to announce.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="RepositoryRecordList">RepositoryRecordList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of records as found in the repository the data was submitted to (for example PRIDE experiment records).
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RepositoryRecordListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#RepositoryRecord">RepositoryRecord</a></TD><TD>1</TD><TD>unbounded</TD><TD>-</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="RepositorySupport">RepositorySupport</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>To what extend the data is supported in the hosting repository.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RepositorySupportType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>1</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="ReviewLevel">ReviewLevel</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Level of review on this dataset/associated paper.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ReviewLevelType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>1</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Sample">Sample</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A summary of the sample describtion. This should be a (sub) sellection 
+        of cvParams used to describe the sample. Minimally this should contain information like 
+        species, tissue, etc..., but could also contain sample preparation information.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>SampleType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>name</TD><TD>xs:string</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="SampleList">SampleList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'><B>Depending on context:</B><BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>SampleListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Sample">Sample</a></TD><TD>1</TD><TD>unbounded</TD><TD>A summary of the sample describtion. This should be a (sub) sellection 
+        of cvParams used to describe the sample. Minimally this should contain information like 
+        species, tissue, etc..., but could also contain sample preparation information.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="SourceFileRef">SourceFileRef</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>to reference the 'id' of a 'DatasetFile' within this submission
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RefType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD><font color="red">???</font></TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Species">Species</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The species from which the data has been generated.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>SpeciesType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="SpeciesList">SpeciesList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of species from which the data has been generated.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>SpeciesListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Species">Species</a></TD><TD>1</TD><TD>unbounded</TD><TD>The species from which the data has been generated.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="userParam">userParam</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A single user-defined parameter.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>UserParamType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>name</TD><TD>xs:string</TD><TD>required</TD><TD>The name of the parameter.</TD></TR>
+<TR><TD>unitAccession</TD><TD>xs:string</TD><TD>optional</TD><TD>An accession number identifying the unit within the OBO foundry Unit CV.
+        </TD></TR>
+<TR><TD>unitCvRef</TD><TD>xs:string</TD><TD>optional</TD><TD>If a unit term is referenced, this attribute MUST refer to the CV 'id' attribute
+          defined in the cvList in this file.
+        </TD></TR>
+<TR><TD>unitName</TD><TD>xs:string</TD><TD>optional</TD><TD>The name of the unit.</TD></TR>
+<TR><TD>value</TD><TD>xs:string</TD><TD>optional</TD><TD>The user-entered value of the parameter.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+</body></html>
