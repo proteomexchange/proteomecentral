@@ -1,0 +1,25 @@
+#!/bin/tcsh
+# Invoke this with:
+#   updateCVs.start
+#
+# The program will kick off the second script that does some real work,
+# capturing stdout and stderr to an out file.
+# When the second script completes, the log file is emailed to an admin.
+
+  set DIR=/net/dblocal/wwwspecial/proteomecentral/lib/scripts
+
+  set LOGFILE=$DIR/updateCVs.out
+  set NAME=updateCVs
+  set PROGRAM=$DIR/updateCVs.csh
+  set ADMIN=edeutsch@systemsbiology.org
+
+  unalias cd
+  if ( -e $LOGFILE ) /bin/rm $LOGFILE
+ 
+  $PROGRAM >& $LOGFILE
+
+  if ( ! -e $LOGFILE ) then
+    echo "$NAME failed to generate any output" | mail -s "$NAME failed" $ADMIN
+  endif
+ 
+  cat $LOGFILE | mail -s "Result of $NAME" $ADMIN
