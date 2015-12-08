@@ -315,6 +315,9 @@ sub handleDataset {
   my $test = $params->{test};
   my $method = $args{'method'} || die("[$SUB_NAME] ERROR: method not passed");
 
+  #### 2015-10-22 EWD: Put this header print much earlier for dubegging mostly, so that some accidental output doesn't cause an error
+  print "Content-type: text/plain\n\n";
+
   #### Configure the location of where the uploaded file will go
   my $path = '/local/wwwspecial/proteomecentral/var/submissions';
   if ($method eq 'validateXML') {
