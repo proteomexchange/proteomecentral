@@ -87,7 +87,8 @@ textarea {
 	
 	line-height: 1.5;
 	/*background-color: #ece8de; zhi*/ 
-	background-image:url(images/texture.png);
+	/*background-image:url(images/texture.png); Eric commented out 2015-10-20. Where is this file supposed to be? */
+
 }
 /* Headings */
 h1,h2,h3,h4,h5,h6 {
