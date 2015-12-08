@@ -82,7 +82,7 @@ if ($params->{action} && $params->{action} =~ /search/i){
 }else{
 	if ($params->{ID} && $params->{ID} ne '') {
     if ($outputMode =~ /html/i){
-			$HTML -> printPageHeader (template => \@template);
+			$HTML -> printPageHeader (params=>$params,template => \@template);
 			$HTML -> showDataset(params=>$params,response=>$response);
 			$HTML -> printPageFooter (template => \@template);
     }else{
