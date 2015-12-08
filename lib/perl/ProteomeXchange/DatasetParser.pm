@@ -72,6 +72,11 @@ sub parse {
   $response->{result} = "ERROR";
   $response->{message} = "Unable to parse file: Unknown error";
 
+  #### Check the filename
+  unless ( $filename ) {
+    $response->{message} = "ERROR: Filename not specified!";
+    return($response);
+  }
   if ( ! -f "$filename" ) {
     $filename =~ s/local/net\/dblocal/;
     if ( ! -f "$filename" ) {
@@ -428,20 +433,20 @@ sub checkCvParam {
 
   #### Check all the CV params
   unless ($self->{cv}) {
-    my $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/PSI-MS/controlledVocabulary/psi-ms.obo';
+    my $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/psi-ms.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
     return unless ($self->{cv}->{status} eq 'read ok');
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/PRIDE/schema/pride_cv.obo';
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/pride_cv.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/PSI-MOD/data/PSI-MOD.obo';
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/PSI-MOD.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CELL/ontology/cl.obo';
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/cl.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/BRENDA/BrendaTissueOBO';
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/BrendaTissueOBO';
     $self->readControlledVocabularyFile(input_file=>$infile);
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/DOID/doid.obo';
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/doid.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/Unimod/unimod.obo';
+    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/unimod.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
     my @tmp = ();
     $self->{cvErrors} = \@tmp;
