@@ -692,9 +692,10 @@ sub processAnnouncement {
 					   );
 
 		#### Send a tweet too if this is a new dataset
-	        if ( $messageType{status} eq 'new' ) {
+	        if ( $messageType{status} eq 'new' && !$testClause ) {
 		  push(@{$response->{info}},"Sending tweet to ProteomeXchange");
-		  $tweet->sendTweet();
+		  my $tweetResponse = $tweet->sendTweet();
+		  push(@{$response->{info}},"Result from tweet: $tweetResponse");
 		} else {
 		  push(@{$response->{info}},"Tweet of revision suppressed");
 		}
