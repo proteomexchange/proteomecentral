@@ -85,19 +85,19 @@ sub prepareTweetContent {
 
   my $announcementType = ucfirst($datasetStatus);
 
-  #### For testing, force to 22 characters, which all URLs are remapped to by Twitter
-  #$fullURL = "http://t.co/3456789012";
+  #### For testing, force to 23 characters, which all URLs are remapped to by Twitter
+  #$fullURL = "http://t.co/34567890123";
 
   #### Create the tweet string
-  my $tweetString = "$announcementType \#$datasetIdentifier $sourceString via $PXPartner: $speciesString ";
+  my $tweetString = "$announcementType $datasetIdentifier $sourceString via $PXPartner: $speciesString ";
   my $len = length($tweetString);
-  my $amountLeft = 140 - 25 - $len;
+  my $amountLeft = 140 - 26 - $len;
 
   #### Something is wrong, but just hack it off so we can get some of the title there
   if ($amountLeft < 30) {
-    $tweetString = substr($tweetString,0,140-25-30).".. ";
+    $tweetString = substr($tweetString,0,140-26-30).".. ";
     $len = length($tweetString);
-    $amountLeft = 140 - 25 - $len;
+    $amountLeft = 140 - 26 - $len;
   }
 
   my $truncatedTitle = $datasetTitle;
@@ -180,7 +180,7 @@ sub sendTweet {
   }
 
   #### Prepare response
-  my $result;
+  my $result = "ERROR";
 
   #### If there's no tweet string, then error out
   unless ($self->{tweetString}) {
@@ -193,7 +193,8 @@ sub sendTweet {
   #### Get the keys for access to my account via this app
   my $access_tokens = eval { retrieve($tokensFile) } || [];
   unless ( @$access_tokens ) {
-    die("ERROR: Unable to access the user access tokens");
+    $result = "ERROR: Unable to access the user access tokens";
+    return $result;
   }
 
   my $nt = Net::Twitter::Lite::WithAPIv1_1->new(
@@ -204,10 +205,28 @@ sub sendTweet {
       ssl                 => 1,
   );
 
+  #### Tweet diagnostics
+  if ( 0 ) {
+    print "tweetString:===$self->{tweetString}===\n";
+    print "Length=".length($self->{tweetString})."\n";
+    my $beforeHttp = substr($self->{tweetString},0,index($self->{tweetString},"http"));
+    print "beforeHttp:===$beforeHttp===\n";
+    print "Length=".length($beforeHttp)."\n";
+  }
+
+
   #### Send the tweet
-  my $response = $nt->update($self->{tweetString});
+  my $response = eval { $nt->update($self->{tweetString}) };
+
+  if ( $@ ) {
+    $result = "ERROR: $@";
+  } else {
+    $result = "SUCCESS";
+  }
+
   return $result;
 
+  ##################################
   #### The below is just for testing
 
   #### Try to find the most recent tweet
