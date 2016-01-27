@@ -9,7 +9,6 @@ package ProteomeXchange::DatasetParser;
 ###############################################################################
 
 use strict;
-#use lib "/local/wwwspecial/proteomecentral/lib/perl";
 use ProteomeXchange::Database;
 
 use vars qw($db);
@@ -291,6 +290,9 @@ sub parse {
      foreach my $cvParam ( @cvParams ) {
        if ($cvParam->attr('name') =~ /pubmed/i) {
           $lists{$id}{pubmedid} = $cvParam->attr('value');
+       }elsif($cvParam->attr('name') =~ /Digital Object Identifier/i){
+          $lists{$id}{DOI} = $cvParam->attr('value');
+          $lists{$id}{name} = $cvParam->attr('name');
        }else{
          $lists{$id}{name} = $cvParam->attr('name');
          $lists{$id}{value} = $cvParam->attr('value');
@@ -299,24 +301,38 @@ sub parse {
    }
   }
 
+  use ProteomeXchange::PubMedFetcher;
+  my $PubMedFetcher = new ProteomeXchange::PubMedFetcher;
+  my $sep='';
   foreach my $id (%lists){
-    if (defined($lists{$id}{name}) && $lists{$id}{name} =~ /reference/i){
+    if (defined($lists{$id}{name}) && ($lists{$id}{name} =~ /reference/i || $lists{$id}{name} =~ /digital/i)){
       #if ( 0 ){    ##### !!!!!!!!!!!!!!!!!!!!!!!!!!! DISABLED
       if (defined $lists{$id}{pubmedid}){
-        use ProteomeXchange::PubMedFetcher;
-        my $PubMedFetcher = new ProteomeXchange::PubMedFetcher;
         my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(
           PubMedID=>$lists{$id}{pubmedid});
-        $dataset->{publicationList} .= "$pubmed_info;" || '';
-        $dataset->{publication} .= "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$lists{$id}{pubmedid}\">$pubname</a>";;  
+        $dataset->{publicationList} .= "$sep$pubmed_info";
+        $dataset->{publication} .= "$sep<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$lists{$id}{pubmedid}\">$pubname</a>";;  
+        $sep = '; ' if (!$sep);
+      }elsif(defined $lists{$id}{DOI}){
+         my $pubmedid = $PubMedFetcher->getPubmedID(DOI=>$lists{$id}{DOI});
+         if ($pubmedid){
+           my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(PubMedID=>$pubmedid);
+           $dataset->{publicationList} .= "$sep$pubmed_info";
+           $dataset->{publication} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\">$pubname</a>";
+         }else{
+           $dataset->{publication} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\">$lists{$id}{DOI}</a>";
+           $dataset->{publicationList} .= "$sep$lists{$id}{DOI};" || '';
+         }
+         $sep = '; ' if (!$sep);
       }else{
          if ( defined $dataset->{publication} ){
-           $dataset->{publicationList} .= "; $lists{$id}{value}";
-           $dataset->{publication} .= "; $lists{$id}{value}";
+           $dataset->{publicationList} .= "$sep$lists{$id}{value}";
+           $dataset->{publication} .= "$sep$lists{$id}{value}";
          }else{
-           $dataset->{publicationList} = "$lists{$id}{value}";
-           $dataset->{publication} = "$lists{$id}{value}";
+           $dataset->{publicationList} = "$sep$lists{$id}{value}";
+           $dataset->{publication} = "$sep$lists{$id}{value}";
          }
+         $sep = '; ' if (!$sep);
       }
     }else{
        my $str;

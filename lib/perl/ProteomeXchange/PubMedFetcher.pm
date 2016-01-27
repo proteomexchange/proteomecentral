@@ -37,6 +37,41 @@ sub new {
 }
 
 
+###############################################################################
+# get Pubmed id 
+# input DOI  
+###############################################################################
+sub getPubmedID{
+  my $SUB_NAME = 'getPubmedID';
+  my $self = shift || die("$SUB_NAME: Parameter self not passed");
+  my %args = @_;
+  my $doi = $args{'DOI'};
+  my $verbose = $args{'verbose'} || 0;
+
+  unless ($doi){
+     print "$SUB_NAME: Error: Parameter DOI not passed\n";
+  }
+  #### Get the XML data from NCBI
+  my $url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?'.
+            'db=PubMed&retmode=xml&term='.$doi;
+  my $xml = getHTTPData($url);
+
+  print "------ Returned XML -------\n$xml\n-----------------------\n"
+    if ($verbose > 1);
+  %info = ();
+  #### Set up the XML parser and parse the returned XML
+  my $parser = new XML::Parser(
+             Handlers => {
+              Start => \&start_element,
+              End => \&end_element,
+              Char => \&characters,
+             }
+            );
+  $parser->parse($xml);
+  return  ($info{Id});
+
+}
+ 
 
 ###############################################################################
 # getArticleInfo
@@ -176,8 +211,6 @@ sub characters {
   my $string = shift;
   my $context = $handler->{Context}->[-1];
 	
-    
-    
   my %element_type = (
     PMID => 'reg',
     ArticleTitle => 'reg',
@@ -188,6 +221,7 @@ sub characters {
     MedlineTA => 'reg',
     LastName => 'append(AuthorList), ',
     Initials => 'append(AuthorList) ',
+    Id  => 'reg'
   );
 
   if (defined($element_type{$context}) && $element_type{$context} eq 'reg') {
@@ -214,9 +248,7 @@ sub characters {
   # 2001 Dec 20-27
     ($info{PublishedYear}) = $string =~ /^(\d{4})/;
     
-}  
-  
-
+  }  
 
 }
 
