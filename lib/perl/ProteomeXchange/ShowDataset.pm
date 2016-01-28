@@ -104,9 +104,10 @@ sub listDatasets {
   process_result(result =>\@rows,  
                  newresult => \@results,
                  xmlloc => $path,
-                           search_type=> $searchType,
-                           filterstr => $filterstr,
-                           heading => \@headings);
+								 search_type=> $searchType,
+								 filterstr => $filterstr,
+								 heading => \@headings,
+                 teststr => $teststr);
    if ($outputMode=~ /html/i){
 				print qq~
          <div id="result"> 
@@ -335,10 +336,12 @@ sub printPageHeader {
   my $outputMode=$params->{outputMode} || 'html';
   my $datasetID = $params->{ID} || $params->{id};
   #### Print the template
-  print "Content-type:text/html\r\n\r\n";
+  print "Content-type:text/html; charset=ISO-8859-1\r\n\r\n";
 
   foreach my $line ( @$template ){
-
+    #if ($line =~/meta/){
+    #  $line =~ s/utf-8/ISO-8859-1/;
+    #}
 		if($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
 			my $len = 9 - length($datasetID);
       my $title = $datasetID;
@@ -351,7 +354,7 @@ sub printPageHeader {
       print "$line\n";
       print qq~
 				<link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
-				<script type="text/javascript" src="$CGI_BASE_DIR/../javascript/js/toggle.js"></script>
+        <script type="text/javascript" src="http://localhost/../javascript/js/toggle.js"></script>
         ~;  
      }elsif($line =~ /END/){
         last;
@@ -394,7 +397,7 @@ sub  process_result{
   my $xmlloc = $args{xmlloc};
   my $headings = $args{heading};
   my @headings = @$headings;
- 
+  my $teststr=$args{teststr}; 
 
   my @query_terms;
   if ($filterstr ne ''){
@@ -409,6 +412,11 @@ sub  process_result{
     }
   }
   foreach my $row (@$result){
+    ## fix old publication link. open link to new tab by default
+    if ($row->[5] =~ /href/ && $row->[5] !~ /blank/){
+       $row->[5] =~ s/(href\s?=\s?"[^"]+")>/$1 target="_blank">/g;
+    }
+
     if ($filterstr ne ''){
       my $matches = 0;
       if ( $searchType !~ /^advsearch/ ){
@@ -427,7 +435,7 @@ sub  process_result{
         }
         next if ($matches < @query_terms);
 				pop @$row;
-				$row->[0] = "<a href=\"$CGI_BASE_DIR/GetDataset?ID=$row->[0]\">$row->[0]</a>";
+				$row->[0] = "<a href=\"$CGI_BASE_DIR/GetDataset?ID=$row->[0]$teststr\" target=\"_blank\">$row->[0]</a>";
 				push @$newresult, $row; 
       }else{ ## advanced search
          foreach my $q (@query_terms){
@@ -472,12 +480,12 @@ sub  process_result{
          }
          next if ($matches < @query_terms);
 				 pop @$row;
-				 $row->[0] = "<a href=\"$CGI_BASE_DIR/GetDataset?ID=$row->[0]\">$row->[0]</a>";
+				 $row->[0] = "<a href=\"$CGI_BASE_DIR/GetDataset?ID=$row->[0]$teststr\" target=\"_blank\">$row->[0]</a>";
 				 push @$newresult, $row; 
       }## advanced search
     }else{
         pop @$row;
-        $row->[0] = "<a href=\"$CGI_BASE_DIR/GetDataset?ID=$row->[0]\">$row->[0]</a>";
+        $row->[0] = "<a href=\"$CGI_BASE_DIR/GetDataset?ID=$row->[0]$teststr\" target=\"_blank\">$row->[0]</a>";
         push @$newresult, $row;
     }
 
@@ -605,21 +613,21 @@ sub showDataset {
 
         if ($key eq 'announcementXML'){
           $str .= qq~
-                <li><b>$header</b>: <a href='GetDataset?ID=$datasetID&outputMode=XML&test=$test'>$result->{$key}</a></li>
+                <li><b>$header</b>: <a href='GetDataset?ID=$datasetID&outputMode=XML&test=$test' target="_blank">$result->{$key}</a></li>
                 ~;
         } elsif ($key eq 'DigitalObjectIdentifier') {
-          $str .= qq~<li><b>$header</b>: <a href="$result->{$key}">$result->{$key}</a></li>~;
+          $str .= qq~<li><b>$header</b>: <a href="$result->{$key}" target="_blank">$result->{$key}</a></li>~;
         }elsif ($key eq 'derivedDataset'){
            if(@derivedDatasets){
              $str .= '<li><b>Reprocessed datasets that are derived from this dataset</b>: ';
              foreach my $acc (@derivedDatasets){
-               $str .=  "<a href=\"GetDataset?ID=$acc&test=$test\">$acc<\/a> " ;
+               $str .=  "<a href=\"GetDataset?ID=$acc&test=$test\" target=\"_blank\">$acc<\/a> " ;
              }
              $str .='</li>';
            }
         }elsif($key eq 'datasetOrigin'){
            if($result->{$key} =~ /ProteomeXchange accession.*PXD\d+/i){
-             $result->{$key} =~ s#(PXD\d+)#<a href="GetDataset?ID=$1&test=$test">$1<\/a>#;
+             $result->{$key} =~ s#(PXD\d+)#<a href="GetDataset?ID=$1&test=$test" target="_blank">$1<\/a>#;
            }
            $str .= qq~<li><b>$header</b>: $result->{$key}</li>~;
         }else {
@@ -679,7 +687,7 @@ sub showDataset {
           $str .= "<li>$repositoryid<ol>";
           foreach my $recordid (keys %{$result->{repositoryRecordList}{$repositoryid}}){
             if (defined $result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}){
-							$str .= "<li><a href=\"$result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}\">$recordid</a><ol>"; 
+							$str .= "<li><a href=\"$result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}\" target=\"_blank\">$recordid</a><ol>"; 
             }else{ 
 							$str .= "<li>$recordid<ol>";
             }
@@ -771,8 +779,7 @@ sub showDataset {
 				<div class="entry-content">
 				$str
 		 ~;
-
-                 #### Removed display of the tweet here. It wasn't working correctly anyway. Would be good to revive for testing.
+     #### Removed display of the tweet here. It wasn't working correctly anyway. Would be good to revive for testing.
 		 #print "<BR><BR>".$tweet->getTweetAsHTML()."<BR><BR>";
 
 		 #### Finish the display card window

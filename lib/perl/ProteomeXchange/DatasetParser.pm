@@ -311,18 +311,18 @@ sub parse {
         my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(
           PubMedID=>$lists{$id}{pubmedid});
         $dataset->{publicationList} .= "$sep$pubmed_info";
-        $dataset->{publication} .= "$sep<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$lists{$id}{pubmedid}\">$pubname</a>";;  
+        $dataset->{publication} .= "$sep<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$lists{$id}{pubmedid}\" target=\"_blank\">$pubname</a>";;  
         $sep = '; ' if (!$sep);
       }elsif(defined $lists{$id}{DOI}){
-         my $pubmedid = $PubMedFetcher->getPubmedID(DOI=>$lists{$id}{DOI});
-         if ($pubmedid){
-           my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(PubMedID=>$pubmedid);
-           $dataset->{publicationList} .= "$sep$pubmed_info";
-           $dataset->{publication} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\">$pubname</a>";
-         }else{
-           $dataset->{publication} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\">$lists{$id}{DOI}</a>";
-           $dataset->{publicationList} .= "$sep$lists{$id}{DOI};" || '';
-         }
+         #my $pubmedid = $PubMedFetcher->getPubmedID(DOI=>$lists{$id}{DOI});
+         #if ($pubmedid){
+         #  my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(PubMedID=>$pubmedid);
+         #  $dataset->{publicationList} .= "$sep$pubmed_info";
+         #  $dataset->{publication} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\">$pubname</a>";
+         #}else{
+           $dataset->{publication} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\" target=\"_blank\">$lists{$id}{DOI}</a>";
+           $dataset->{publicationList} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\" target=\"_blank\">$lists{$id}{DOI}</a>;" || '';
+         #}
          $sep = '; ' if (!$sep);
       }else{
          if ( defined $dataset->{publication} ){
@@ -381,11 +381,11 @@ sub parse {
            if ($cvParam->attr('name') =~ /PRIDE experiment URI/i){
              if ($cvParam->attr('value') =~ /.*=(\d+)/) {
                $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
-                                                '>'.  "PRIDE experiment $1 </a>;";
+                                                ' target="_blank">'.  "PRIDE experiment $1 </a>;";
 	     }
            } else {
            $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
-                                              '>'.  $cvParam->attr('name') .'</a>;';
+                                              ' target="_blank">'.  $cvParam->attr('name') .'</a>;';
            }
          }else{
            $dataset->{fullDatasetLinkList} .= $cvParam->attr('name') .": ". $cvParam->attr('value') .";";
@@ -400,7 +400,7 @@ sub parse {
     my $recordID = $repositoryRecord->attr('recordID');
     if ( $repositoryID and $recordID){
       foreach my $name (keys %{$repositoryRecord}){
-        next if ($name =~ /^\_/ || $name =~ /(repositoryID|recordID)/);
+       next if ($name =~ /^\_/ || $name =~ /(repositoryID|recordID)/);
         my $value = $repositoryRecord ->attr($name);
         $dataset->{repositoryRecordList}{$repositoryID}{$recordID}{ucfirst($name)} = $value;
       }

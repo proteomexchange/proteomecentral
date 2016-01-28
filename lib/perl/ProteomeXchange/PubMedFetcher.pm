@@ -153,7 +153,7 @@ sub getArticleRef {
   }
   my $ref  = "$info{AuthorList}, $info{ArticleTitle} $info{MedlineTA}, $info{Volume}".
              "($info{Issue}):$info{MedlinePgn}($info{PublishedYear}) [".
-             "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed?term=$PubMedID\">pubmed</a>]";
+             "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed?term=$PubMedID\" target=\"_blank\">pubmed</a>]";
  
   return ($info{PublicationName}, $ref);
 
