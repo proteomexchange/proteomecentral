@@ -1,5 +1,7 @@
 $(document).ready(function(){
 
+  $("div.pager select").val("Default Value");
+
 	$('#searchbtn').click(function() {
      myQueryEvent() 
   });
@@ -46,6 +48,8 @@ $(document).ready(function(){
     clearTextBox();
     myQueryEvent();
 	});
+
+
 })
 
 function clearTextBox(){

@@ -119,10 +119,14 @@ sub listDatasets {
 						<img src="../javascript/image/next.png" class="next"/>
 						<img src="../javascript/image/last.png" class="last"/>
             <a> Page Size</a>
-						<select class="pagesize">
-							<option selected="selected"  value="10">10</option>
+						<select id="mysize" class="pagesize">
+							<option selected value="10">10</option>
 							<option value="20">20</option>
 							<option value="30">30</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="500">500</option>
+              <option value="1000">1000</option>
 						</select>
 					</form>
 				</div>
@@ -413,7 +417,7 @@ sub  process_result{
   }
   foreach my $row (@$result){
     ## fix old publication link. open link to new tab by default
-    if ($row->[5] =~ /href/ && $row->[5] !~ /blank/){
+    if ($row->[5] =~ /href/i && $row->[5] !~ /blank/){
        $row->[5] =~ s/(href\s?=\s?"[^"]+")>/$1 target="_blank">/g;
     }
 
