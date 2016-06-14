@@ -1,0 +1,398 @@
+#!/usr/local/bin/perl -w
+
+use strict;
+use FindBin;
+use lib "$FindBin::Bin/../lib/perl";
+use JSON;
+use CGI;
+use Data::Dumper;
+use XML::Writer;
+use ProteomeXchange::Log;
+
+use strict;
+my $log =  ProteomeXchange::Log->new( base => "/net/dblocal/wwwspecial/proteomecentral/devDC/logs/", log_level => 'debug' );
+
+my $json = new JSON;
+my $cgi = new CGI;
+$cgi->charset('utf-8');
+
+use ProteomeXchange::Database;
+my $db = new ProteomeXchange::Database;
+
+my $mode = $cgi->param('mode') || 'download_stats';
+if ( $cgi->param('pretty') ) {
+  $json->pretty( [1] );
+}
+$log->info( "starting, mode is $mode" );
+#my $mode = $cgi->param('mode') || 'domains';
+
+my $json_str = '';
+
+if ( $mode eq 'domains' ) {
+  $json_str = get_domains();
+} elsif ( $mode eq 'omics' ) {
+  $json_str = get_omics();
+} elsif ( $mode eq 'species' ) {
+  $json_str = get_species();
+} elsif ( $mode eq 'instruments' ) {
+  $json_str = get_instruments();
+} elsif ( $mode eq 'species_instruments' ) {
+  $json_str = get_species_instruments();
+} elsif ( $mode eq 'keywords' ) {
+#  $json_str = get_ddi_cloud
+  $json_str = get_keyword_cloud();
+} elsif ( $mode eq 'download_stats' ) {
+  $json_str = get_download_stats();
+} else {
+  $json_str = get_bent();
+}
+
+print $cgi->header( 'application/json' );
+$log->info( "finished" );
+print $json_str;
+
+
+exit;
+
+
+sub get_domains {
+  return qq~ [{"domain":{"label":"EGA","id":null,"value":"763","name":"EGA"},"subdomains":[]},{"domain":{"label":"MassIVE","id":null,"value":"38","name":"MassIVE"},"subdomains":[]},{"domain":{"label":"MetaboLights Dataset","id":null,"value":"94","name":"MetaboLights Dataset"},"subdomains":[]},{"domain":{"label":"Metabolome Workbench","id":null,"value":"107","name":"Metabolome Workbench"},"subdomains":[]},{"domain":{"label":"PeptideAtlas","id":null,"value":"84","name":"PeptideAtlas"},"subdomains":[]},{"domain":{"label":"PRIDE","id":null,"value":"1479","name":"PRIDE"},"subdomains":[]}]
+  ~;
+
+}
+
+sub get_omics {
+  return qq~ [{"label":"Total","id":null,"value":"2565","name":"Total"},{"label":"Proteomics","id":"Proteomics","value":"1601","name":"Proteomics"},{"label":"Metabolomics","id":"Metabolomics","value":"201","name":"Metabolomics"},{"label":"Not available","id":null,"value":"0","name":"Not available"}]
+  ~;
+}
+
+sub get_species_instruments {
+  my $species = get_species( as_perl => 1 );
+  my $species_gen = [];
+  for my $spc ( @{$species} ) {
+    push @{$species_gen}, $spc->{domain};
+  }
+  my $instruments = get_instruments( as_perl => 1 );
+  my %data = ( title => 'ProteomeCentral Data',
+               series => [
+                            { name => 'Instruments',
+                              url => '',
+                              js_function => '',
+                              units => '# of datasets',
+                              data => $instruments },
+
+                            { name => 'Species',
+                              js_function => '',
+                              units => '# of datasets',
+                              url => '',
+                              data => $species_gen },
+                         ] );
+  return $json->encode( \%data );
+}
+
+sub get_keyword_cloud {
+  
+  $log->info( "Getting keywords" );
+  my $keywords = get_keywords( as_perl => 1, sqr => 1 );
+  $log->info( "Getting titlewords" );
+  my $titlewords = get_titlewords( as_perl => 1, sqr => 1 );
+  $log->info( "Encoding" );
+
+  my %data = ( title => 'Keyword Data',
+               series => [
+                            { name => 'Title words',
+                              js_function => '',
+                              units => '# of occurrences',
+                              url => '',
+                              data => $titlewords },
+                            { name => 'Keywords',
+                              url => '',
+                              js_function => '',
+                              units => '# of occurrences',
+                              data => $keywords },
+
+                         ] );
+  return $json->encode( \%data );
+
+
+}
+
+sub get_keywords {
+  my %args = @_;
+  my $sql = 'SELECT keywordList FROM dataset';
+  my %words;
+  my $cnt = 0;
+  for my $s ( $db->selectOneColumn( $sql ) ) {
+    next unless $s;
+    my @words = split( /,/, $s );
+    for my $w ( @words ) {
+      $w =~ s/[:,;]//g;
+      $w =~ s/curator keyword//g;
+      $w =~ s/ProteomeXchange project tag//g;
+      $w =~ s/submitter keyword//g;
+      $w =~ s/Biomedical\ +//;
+      $w =~ s/Biological\ +//;
+      next if $w =~ /Highlighted/i;
+      $w =~ s/^\s+//g;
+      $w =~ s/\s+$//g;
+      next unless $w;
+
+
+      my $skip = 0;
+      for my $bad ( qw( as a of from al. 1 an and the my our in for to by on during with et using part - 2  Protein Proteomics Proteomic Analysis Proteome Proteins Identification Reveals Novel Biomedical LC-MS/MS LC-MSMS Mass spectrometry ) ) {
+        $skip++ if $w =~/^$bad$/i;
+      }
+      next if $skip;
+
+      $words{$w}++;
+    }
+  }
+  my @top_words = sort { $words{$b} <=> $words{$a} } keys( %words );
+  my @return;
+  for ( my $idx = 0; $idx < 40; $idx++ ) {
+    if ( $args{sqr} ) {
+      push @return, { frequent => sqrt($words{$top_words[$idx]}),
+                      label => $top_words[$idx] }; 
+    } else {
+      push @return, { frequent => $words{$top_words[$idx]},
+                      label => $top_words[$idx] }; 
+    }
+  }
+  if ( $args{as_perl} ) {
+    return \@return;
+  }
+  return $json->encode( \@return );
+}
+
+
+
+sub get_titlewords {
+  my %args = @_;
+  my $sql = 'SELECT title FROM dataset';
+  my %words;
+  my $cnt = 0;
+
+  my %bad;
+  for my $bad ( qw( as a of from al. 1 an and the my our in for to by on during with et using part - 2  Protein Proteomics Proteomic Analysis Proteome Proteins Identification Reveals Novel Biomedical LC-MS/MS LC-MSMS Mass spectrometry ) ) {
+
+    $bad{ucfirst($bad)}++;
+  }
+
+
+  for my $s ( $db->selectOneColumn( $sql ) ) {
+    next unless $s;
+    $s =~ s/\n/ /gm;
+    my @words = split( /\s+/, $s );
+    $cnt += scalar( @words );
+    for my $w ( @words ) {
+      next unless $w;
+      $w =~ s/[:,;)(]//g;
+      $w =~ s/^\s+//g;
+      $w =~ s/\s+$//g;
+      $w = ucfirst($w);
+      next if $bad{$w};
+      $words{$w}++;
+    }
+  }
+  $log->info( "Processed $cnt total words" );
+  my @top_words = sort { $words{$b} <=> $words{$a} } keys( %words );
+  my @return;
+  for ( my $idx = 0; $idx < 30; $idx++ ) {
+    if ( $args{sqr} ) {
+      push @return, { frequent => sqrt($words{$top_words[$idx]}),
+                      label => $top_words[$idx] }; 
+    } else {
+      push @return, { frequent => $words{$top_words[$idx]},
+                      label => $top_words[$idx] }; 
+    }
+  }
+  if ( $args{as_perl} ) {
+    return \@return;
+  }
+  return $json->encode( \@return );
+}
+
+sub get_species {
+  my %args = @_;
+  my $sql = 'SELECT species FROM dataset';
+  my %species;
+  my $cnt = 0;
+  for my $s ( $db->selectOneColumn( $sql ) ) {
+#    print STDERR "S is $s\n";
+    next unless $s;
+    $s ||= 'Unknown species';
+#    print STDERR "S is $s\n";
+
+#    next unless $s =~ /Candida/;
+#    print "$s\n";
+#    exit;
+
+    $s =~ /^\s*(\w+)\s*(\w*)\s*.*$/;
+    my $genus = ucfirst($1);
+    my $species = lc($2);
+    $species{"$genus $species"}++;
+  }
+  my @species = sort { $species{$b} <=> $species{$a} } keys( %species );
+  my @return;
+  for ( my $i = 0; $i < 10; $i++ ) {
+    push @return, { domain => { value => $species{$species[$i]}, 
+                                name => $species[$i],
+                                label => $species[$i] },
+                    subdomains => [] };
+  }
+  if ( $args{as_perl} ) {
+    return \@return;
+  }
+  return $json->encode( \@return );
+}
+
+sub get_bent {
+  return '[]';
+}
+
+sub get_instruments {
+  my %args = @_;
+  my $sql = 'SELECT instrument FROM dataset';
+  my %instr;
+  my $cnt = 0;
+  for my $s ( $db->selectOneColumn( $sql ) ) {
+    my $cleaned = '';
+    my $supp_clean = '';
+    if ( $s =~ /unknown/i ) {
+      $cleaned = 'Unknown';
+      next;
+    } elsif ( $s =~ /Orbitrap/i ) {
+      if ( $s =~ /LTQ/i ) {
+        if ( $s =~ /Elite/i ) {
+          $cleaned = 'LTQ Orbitrap Elite';
+        } elsif ( $s =~ /Velos/i ) {
+          $cleaned = 'LTQ Orbitrap Velos';
+        } elsif ( $s =~ /XL/i ) {
+          $cleaned = 'LTQ Orbitrap XL';
+        } else {
+          $cleaned = 'LTQ Orbitrap';
+        }
+      } else {
+        if ( $s =~ /Fusion/ ) {
+          $cleaned = 'Orbitrap Fusion';
+        } elsif ( $s =~ /Velos/ ) {
+          $cleaned = 'Orbitrap Velos';
+        } elsif ( $s =~ /Elite/ ) {
+          $cleaned = 'Orbitrap Elite';
+        } elsif ( $s =~ /XL/ ) {
+          $cleaned = 'Orbitrap XL';
+        } else {
+          print "$s\n";
+        }
+        
+      } 
+      # Special catch for Q Exactive..
+      if ( $s =~ /Q\s*Exactive/i ) {
+        $supp_clean = 'Q Exactive';
+      }
+    } elsif ( $s =~ /Exactive/i ) {
+      $cleaned = 'Q Exactive';
+    } elsif ( $s =~ /TripleTOF/i ) {
+      $cleaned = 'TripleTOF';
+    } elsif ( $s =~ /LCQ/i ) {
+      $cleaned = 'LCQ';
+    } elsif ( $s =~ /LTQ/i ) {
+      $cleaned = 'LTQ';
+    } elsif ( $s =~ /Synapt/i ) {
+      $cleaned = 'Synapt';
+    } elsif ( $s =~ /MicroTOF/i ) {
+      $cleaned = 'MicroTOF';
+    } elsif ( $s =~ /Maxis/i ) {
+      $cleaned = 'Maxis';
+    } elsif ( $s =~ /ultraflex/i ) {
+      $cleaned = 'Ultraflex';
+    } elsif ( $s =~ /6520/i ) {
+      $cleaned = 'QTOF';
+    } elsif ( $s =~ /6110/i ) {
+      $cleaned = 'Quadrupole';
+    } elsif ( $s =~ /TRAP/i && $s =~ /Q/i ) {
+      $cleaned = 'QTRAP';
+    } elsif ( $s =~ /TSQ/i && $s =~ /Vantage/i ) {
+      $cleaned = 'TSQ Vantage';
+    } elsif ( $s =~ /QSTAR/i  ) {
+      $cleaned = 'QSTAR';
+    } else {
+      $cleaned = $s; 
+    }
+    $instr{$cleaned}++;
+    $instr{$supp_clean}++ if $supp_clean;
+  }
+  my @instr = sort { $instr{$b} <=> $instr{$a} } keys( %instr );
+  my @return;
+  for ( my $i = 0; $i < 10; $i++ ) {
+    push @return, { value => $instr{$instr[$i]}, 
+                    name => $instr[$i],
+                    label => $instr[$i] };
+  }
+  if ( $args{as_perl} ) {
+    return \@return;
+  }
+  return $json->encode( \@return );
+}
+
+sub get_download_stats {
+  
+  my $all_time = read_download_stats( as_perl => 1, duration => 'all_time' );
+  my $past_month = read_download_stats( as_perl => 1, duration => 'past_month' );
+
+  my %data = ( title => 'Download Stats',
+               series => [
+                            { name => 'All-time',
+                              url => '',
+                              js_function => '',
+                              units => '# of downloads',
+                              data => $all_time },
+
+                            { name => 'Past month',
+                              js_function => '',
+                              units => '# of downloads',
+                              url => '',
+                              data => $past_month },
+                         ] );
+  return $json->encode( \%data );
+}
+
+
+sub read_download_stats {
+  my %args = @_;
+  my %words;
+  my $cnt = 0;
+  my @return;
+
+  my $file = ( $args{duration} =~ /past_month/i ) ? 'UsageStats_MostAccessedDatasetsPastMonth.txt' : 'UsageStats_MostAccessedDatasets.txt';
+  return \@return if ( !-e "/net/dblocal/wwwspecial/proteomecentral/devED/lib/scripts/usageStats/$file" );
+
+  open STATS, "/net/dblocal/wwwspecial/proteomecentral/devED/lib/scripts/usageStats/$file" || return \@return;
+  my %values;
+  while ( my $line = <STATS> ) {
+    next unless $line;
+    $line =~ /^\s*(\w+)\s+(\d+)/;
+    next unless $1 && $2;
+    $values{$1} = $2;
+  }
+  close STATS;
+
+  my @sorted = sort { $values{$b} <=> $values{$a} } keys(%values);
+
+  for ( my $idx = 0; $idx < 40; $idx++ ) {
+    if ( $args{sqr} ) {
+      push @return, { frequent => sqrt($values{$sorted[$idx]}),
+                      label => $sorted[$idx] }; 
+    } else {
+      push @return, { frequent => $values{$sorted[$idx]},
+                      label => $sorted[$idx] }; 
+    }
+  }
+  if ( $args{as_perl} ) {
+    return \@return;
+  }
+  return $json->encode( \@return );
+}
+
+
+__DATA__
