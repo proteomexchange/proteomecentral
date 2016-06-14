@@ -8,8 +8,11 @@ use XML::Writer;
 use ProteomeXchange::Dataset;
 use ProteomeXchange::DatasetParser;
 use ProteomeXchange::ShowDataset;
+use ProteomeXchange::DDIJS;
 use LWP::UserAgent;
 use HTTP::Request;
+
+
 my $ua = LWP::UserAgent->new();
 
 $| = 1;
@@ -25,6 +28,8 @@ $response->{result} = "ERROR";
 $response->{message} = "ERROR: Unhandled exception E001";
 my @tmp = ( 'Dataset service start' );
 $response->{info} = \@tmp;
+
+my $ddi_js = ProteomeXchange::DDIJS->new();
 
 my $params;
 
@@ -82,7 +87,7 @@ if ($params->{action} && $params->{action} =~ /search/i){
 }else{
 	if ($params->{ID} && $params->{ID} ne '') {
     if ($outputMode =~ /html/i){
-			$HTML -> printPageHeader (params=>$params,template => \@template);
+			$HTML -> printPageHeader (template => \@template);
 			$HTML -> showDataset(params=>$params,response=>$response);
 			$HTML -> printPageFooter (template => \@template);
     }else{
@@ -90,7 +95,9 @@ if ($params->{action} && $params->{action} =~ /search/i){
     }
 	}else{
     if ($outputMode =~ /html/i){
-			$HTML -> printTablePageHeader (template => \@template);
+#			$HTML -> printPageHeader (template => \@template);
+      my $js = get_js();
+			$HTML -> printTablePageHeader (template => \@template, inject_content => $js);
 			$HTML -> listDatasets(params=>$params,response=>$response);
 			$HTML -> printPageFooter (template => \@template);
     }else{
@@ -98,5 +105,33 @@ if ($params->{action} && $params->{action} =~ /search/i){
     }
   }
 }
+
+sub get_js {
+
+  my $js = $ddi_js->get_js_includes(1);
+  $js .= qq~
+  <script type="text/javascript">
+  
+  function plot_onclick( search_key ) {
+    document.getElementById("field").value = search_key;
+    myQueryEvent(); 
+  }
+  </script>
+<div style="display: inline-block; text-align: center">
+    <div class="col-md-4"> 
+      <div class="panel panel-default" style="width:300px; height:300px" id='species_chart'><B><center>Species</center></B></div> 
+    </div> 
+    <div class="col-md-4"> 
+      <div class="panel panel-default" style="width:300px; height:300px" id='keywords'></div> 
+    </div> 
+    <div class="col-md-4"> 
+      <div class="panel panel-default" style="width:300px; height:300px" id='instrument_chart'><B><center>Instruments</center></B></div> 
+    </div> 
+</div>
+  ~;
+  $js .= $ddi_js->get_onload_script();
+  return $js;
+}
+
 
 exit;

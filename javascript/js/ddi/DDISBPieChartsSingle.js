@@ -1,9 +1,14 @@
+/*
+  Javascript widget(s) modified from originals, courtesy of EBI Omics discovery index at http://www.ebi.ac.uk/Tools/omicsdi/#/
 
+   This particular version was quickly modified to handle a single data source, should be replaced shortly by a more robust version of DDISBPieCharts.js
+
+*/
 var pie_charts_repos_omics = function () {
 
     // Get repository JSON
 //    var url='http://wwwdev.ebi.ac.uk/Tools/ddi/ws/statistics/';
-    var url='http://proteomecentral.proteomexchange.org/devDC/cgi/GetJSON';
+    var url='http://proteomecentral.proteomexchange.org/cgi/GetJSON';
     var req=new XMLHttpRequest(); // a new request
 
     var domain_url = url + '?mode=species';

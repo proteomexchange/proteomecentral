@@ -230,6 +230,8 @@ sub connect {
     RaiseError => 0
   );
 
+
+
   $driverString = eval "\"$driverString\"";
 
   #### Try to connect to database

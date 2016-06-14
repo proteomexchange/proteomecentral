@@ -17,6 +17,8 @@ our $CGI_BASE_DIR = $cgi->new->url();
 $CGI_BASE_DIR =~ s/cgi.*/cgi/;
 
 
+
+
 ###############################################################################
 # Constructor
 ###############################################################################
@@ -24,7 +26,7 @@ sub new {
   my $self =shift;
   my %parameters = @_;
   my $class = ref($self) || $self;
-  $self = {} ; 
+  $self = { prev_time => time() } ; 
   bless $self => $class;
   return $self;
 }
@@ -38,6 +40,7 @@ sub listDatasets {
   my %args = @_;
   my $SUB_NAME = 'listDatasets';
    
+  $self->log_em( "List Datasets" );
   #### Decode the argument list
   my $params = $args{'params'};
   my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
@@ -98,9 +101,11 @@ sub listDatasets {
                  $whereclause
                  ORDER BY $order_clause 
              ~;
+  $self->log_em( "$sql" );
 
 	my @rows = $dbh->selectSeveralColumns($sql);
   my @results = ();
+  $self->log_em( "Selected data" );
   process_result(result =>\@rows,  
                  newresult => \@results,
                  xmlloc => $path,
@@ -108,28 +113,10 @@ sub listDatasets {
 								 filterstr => $filterstr,
 								 heading => \@headings,
                  teststr => $teststr);
+  $self->log_em( "processed_results" );
    if ($outputMode=~ /html/i){
 				print qq~
          <div id="result"> 
-          <div id="pager" class="pager">
-					<form>
-						<img src="../javascript/image/first.png" class="first"/>
-						<img src="../javascript/image/prev.png" class="prev"/>
-						<input type="text" class="pagedisplay"/>
-						<img src="../javascript/image/next.png" class="next"/>
-						<img src="../javascript/image/last.png" class="last"/>
-            <a> Page Size</a>
-						<select id="mysize" class="pagesize">
-							<option selected value="10">10</option>
-							<option value="20">20</option>
-							<option value="30">30</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-              <option value="500">500</option>
-              <option value="1000">1000</option>
-						</select>
-					</form>
-				</div>
         ~;
 				print $cgi->start_table ({-border=>'0',
 														-cellspacing => '1', 
@@ -140,10 +127,13 @@ sub listDatasets {
         pop @headings;
 				print $cgi->Tr($cgi->th([@headings]));
 				print "\n</thead>\n<tbody>\n";
+        my $cnt;
         if (@results){
 				  foreach my $row (@results){
+            $cnt++;
 					  print $cgi->Tr($cgi->td([@$row]));
             print "\n";
+            last if $cnt >= 10 && !$searchType;
 				  } 
         }else{
            ## if no result enter a blank row
@@ -154,7 +144,32 @@ sub listDatasets {
            print "</tr>\n";
         }
 				print "\n</tbody>\n";
-				print $cgi ->end_table, "\n</div>\n";
+				print $cgi ->end_table, "\n";
+
+        print qq~
+          <div id="pager" class="pager">
+					<form>
+						<img src="../javascript/image/first.png" class="first"/>
+						<img src="../javascript/image/prev.png" class="prev"/>
+						<input type="text" class="pagedisplay"/>
+						<img src="../javascript/image/next.png" class="next"/>
+						<img src="../javascript/image/last.png" class="last"/>
+            <a> Page Size</a>
+						<select class="pagesize">
+							<option selected="selected"  value="10">10</option>
+							<option value="20">20</option>
+							<option value="30">30</option>
+							<option value="50">50</option>
+							<option value="100">100</option>
+							<option value="500">500</option>
+							<option value="1000">1000</option>
+						</select>
+					</form>
+				</div>
+      </div>\n
+      ~;
+
+
   }elsif($outputMode=~ /xml/i){
      print "Content-type:text/xml\r\n\r\n";
      my $writer = new XML::Writer(DATA_MODE => 1, DATA_INDENT => 4,ENCODING=>'UTF-8',);
@@ -189,7 +204,21 @@ sub listDatasets {
      print "\n";
    }
   }
+
+  $self->log_em( "Finished" );
 }
+
+sub log_em {
+  my $self = shift;
+  my $msg = shift;
+  my $curr = time();
+  my $prev = $self->{prev_time};
+  my $elapsed = $curr - $prev;
+  print STDERR "LOG time $elapsed seconds\n";
+  print STDERR "$msg\n";
+  $self->{prev_time} = $curr;
+}
+
 #####################################################################
 # printPageHeader                                                     #
 #####################################################################
@@ -215,6 +244,7 @@ sub printTablePageHeader {
 				 print "$line\n";
 			}elsif ($line =~ /^<!-- BEGIN main content -->/){
 				print "$line\n"; 
+
         my $col_options = qq~ ;
 					<option value="Title">Title</option>
 					<option value="id">Dataset ID</option>
@@ -251,16 +281,22 @@ sub printTablePageHeader {
 						});
 
 					 </script>
+           <br>
 
-           &nbsp;Below is a listing of publicly accessible ProteomeXchange datasets. Additional datasets will become visible as they are released.<BR><BR>
+           <div class=infotext> &nbsp;&nbsp;&nbsp; Below is a listing of publicly accessible ProteomeXchange datasets. You can use the search box or interactive graphics to filter the list. </div>
+        ~;
+
+         $str .= "$args{inject_content}" if $args{inject_content};
+
+				 $str .= qq~
           <font face="Calibri">
           <div style="color:red;" id='basic_search' 
             onclick='toggle_more("basic_search","advanced_search","buildQuery","searchContainer")'>
             &nbsp;&nbsp;&nbsp;&nbsp;[Go to Advanced Search]</div>
           <div id='advanced_search' onclick='toggle_less("advanced_search","basic_search","buildQuery","searchContainer")' 
-            style='display:none; color:red;'>&nbsp;&nbsp;&nbsp;&nbsp;[Go back to Basic free-text Search]</div><BR>
+            style='display:none; color:red;'>&nbsp;&nbsp;&nbsp;&nbsp;[Go back to Basic free-text Search]</div>
           <div id='buildQuery' style='display: none; font-size:14px;'>
-            &nbsp;&nbsp;&nbsp;&nbsp;Build your metadata query constraints below. Note that it is not yet possible to query for individual proteins:
+            &nbsp;&nbsp;&nbsp;&nbsp;Build your metadata query constraints below (not yet possible to query for individual proteins)
           <div style="padding:30px; font-size:18px;"><a style="color:red;" id="error"></a>
 					<table cellpadding="10" >
         ~;
@@ -313,14 +349,12 @@ sub printTablePageHeader {
 					</table>
 				</div></div></font>
 				<div id="searchContainer"> 
-				Search metadata for ProteomeXchange datasets: (e.g. "liver", "musculus", "5600", etc.)<BR>
-				Note: it is not yet possible to query for individual proteins contained in these datasets at ProteomeCentral.
+				<div class=infotext>Search metadata for ProteomeXchange datasets: (e.g. "liver", "musculus", "5600", etc. Not yet possible to search for individual proteins)</div>
         <br>
 				<input type="text" id="field" id="s" name="q">
 				<div id="delete"><span id="x">x</span></div></input>
 				<input type="button" name="searchbtn" id="searchbtn" value="Search" />
         <p><br> 
-				<a href="http://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="50" height="15" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to receive all new ProteomeXchange announcements!</font></a>
 				</div>
 				~;
 				print "$str";
@@ -382,6 +416,7 @@ sub printPageFooter {
   foreach my $line (@$template){
     if($line =~ /END main content/){
       $begin = 1;
+			print '<a href="http://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="50" height="15" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to receive all new ProteomeXchange announcements!</font></a>';
     }
     if($begin){
       print "$line";
@@ -417,7 +452,7 @@ sub  process_result{
   }
   foreach my $row (@$result){
     ## fix old publication link. open link to new tab by default
-    if ($row->[5] =~ /href/i && $row->[5] !~ /blank/){
+    if ($row->[5] =~ /href/ && $row->[5] !~ /blank/){
        $row->[5] =~ s/(href\s?=\s?"[^"]+")>/$1 target="_blank">/g;
     }
 

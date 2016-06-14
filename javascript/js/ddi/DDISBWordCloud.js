@@ -1,3 +1,8 @@
+/*
+  Javascript widget(s) modified from originals, courtesy of EBI Omics discovery index at http://www.ebi.ac.uk/Tools/omicsdi/#/
+
+
+*/
 
 function draw_word_cloud( json_url, div_name, svg_width, svg_height ) {
 

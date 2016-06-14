@@ -1,5 +1,5 @@
 function toggle_more(id,toid,tag1, tag2){
-  clearTextBox();
+//  clearTextBox();
         var list1 = document.getElementById(tag1);
         list1.style.display = '';
   var list2 = document.getElementById(tag2);
@@ -10,7 +10,7 @@ function toggle_more(id,toid,tag1, tag2){
         y.style.display='';
 }
 function toggle_less(id,toid,tag1,tag2){
-  clearTextBox();
+//  clearTextBox();
         var list1 = document.getElementById(tag1);
         list1.style.display = 'none';
   var list2 = document.getElementById(tag2);

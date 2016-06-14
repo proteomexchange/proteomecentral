@@ -7112,3 +7112,149 @@ Info [2016-06-13 21:02:29] (GetJSON line 97): Getting titlewords
 Info [2016-06-13 21:02:29] (GetJSON line 197): Processed 22184 total words
 Info [2016-06-13 21:02:29] (GetJSON line 99): Encoding
 Info [2016-06-13 21:02:29] (GetJSON line 51): finished
+Info [2016-06-13 21:13:11] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 21:13:11] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 21:13:11] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 21:13:11] (DDIJS.pm line 76): adding single
+Info [2016-06-13 21:13:11] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 21:13:12] (GetJSON line 26): starting, mode is species
+Info [2016-06-13 21:13:12] (GetJSON line 51): finished
+Info [2016-06-13 21:13:12] (GetJSON line 26): starting, mode is instruments
+Info [2016-06-13 21:13:13] (GetJSON line 51): finished
+Info [2016-06-13 21:13:13] (GetJSON line 26): starting, mode is keywords
+Info [2016-06-13 21:13:13] (GetJSON line 95): Getting keywords
+Info [2016-06-13 21:13:14] (GetJSON line 97): Getting titlewords
+Info [2016-06-13 21:13:14] (GetJSON line 197): Processed 22184 total words
+Info [2016-06-13 21:13:14] (GetJSON line 99): Encoding
+Info [2016-06-13 21:13:14] (GetJSON line 51): finished
+Info [2016-06-13 21:28:35] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 21:28:35] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 21:28:35] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 21:28:35] (DDIJS.pm line 76): adding single
+Info [2016-06-13 21:28:35] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 21:28:36] (GetJSON line 26): starting, mode is species
+Info [2016-06-13 21:28:36] (GetJSON line 51): finished
+Info [2016-06-13 21:28:36] (GetJSON line 26): starting, mode is instruments
+Info [2016-06-13 21:28:36] (GetJSON line 51): finished
+Info [2016-06-13 21:28:37] (GetJSON line 26): starting, mode is keywords
+Info [2016-06-13 21:28:37] (GetJSON line 95): Getting keywords
+Info [2016-06-13 21:28:37] (GetJSON line 97): Getting titlewords
+Info [2016-06-13 21:28:37] (GetJSON line 197): Processed 22184 total words
+Info [2016-06-13 21:28:37] (GetJSON line 99): Encoding
+Info [2016-06-13 21:28:37] (GetJSON line 51): finished
+Info [2016-06-13 21:31:31] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 21:31:31] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 21:31:31] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 21:31:31] (DDIJS.pm line 76): adding single
+Info [2016-06-13 21:31:31] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 21:31:33] (GetJSON line 26): starting, mode is species
+Info [2016-06-13 21:31:33] (GetJSON line 51): finished
+Info [2016-06-13 21:31:33] (GetJSON line 26): starting, mode is instruments
+Info [2016-06-13 21:31:33] (GetJSON line 51): finished
+Info [2016-06-13 21:31:34] (GetJSON line 26): starting, mode is keywords
+Info [2016-06-13 21:31:34] (GetJSON line 95): Getting keywords
+Info [2016-06-13 21:31:34] (GetJSON line 97): Getting titlewords
+Info [2016-06-13 21:31:34] (GetJSON line 197): Processed 22184 total words
+Info [2016-06-13 21:31:35] (GetJSON line 99): Encoding
+Info [2016-06-13 21:31:35] (GetJSON line 51): finished
+Info [2016-06-13 21:32:04] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 21:32:04] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 21:32:04] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 21:32:04] (DDIJS.pm line 76): adding single
+Info [2016-06-13 21:32:04] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 21:32:05] (GetJSON line 26): starting, mode is species
+Info [2016-06-13 21:32:05] (GetJSON line 51): finished
+Info [2016-06-13 21:32:05] (GetJSON line 26): starting, mode is instruments
+Info [2016-06-13 21:32:05] (GetJSON line 51): finished
+Info [2016-06-13 21:32:06] (GetJSON line 26): starting, mode is keywords
+Info [2016-06-13 21:32:06] (GetJSON line 95): Getting keywords
+Info [2016-06-13 21:32:06] (GetJSON line 97): Getting titlewords
+Info [2016-06-13 21:32:06] (GetJSON line 197): Processed 22184 total words
+Info [2016-06-13 21:32:06] (GetJSON line 99): Encoding
+Info [2016-06-13 21:32:06] (GetJSON line 51): finished
+Info [2016-06-13 21:33:31] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 21:33:31] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 21:33:31] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 21:33:31] (DDIJS.pm line 76): adding single
+Info [2016-06-13 21:33:31] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 21:33:32] (GetJSON line 26): starting, mode is species
+Info [2016-06-13 21:33:32] (GetJSON line 51): finished
+Info [2016-06-13 21:33:32] (GetJSON line 26): starting, mode is instruments
+Info [2016-06-13 21:33:32] (GetJSON line 51): finished
+Info [2016-06-13 21:33:33] (GetJSON line 26): starting, mode is keywords
+Info [2016-06-13 21:33:33] (GetJSON line 95): Getting keywords
+Info [2016-06-13 21:33:33] (GetJSON line 97): Getting titlewords
+Info [2016-06-13 21:33:33] (GetJSON line 197): Processed 22184 total words
+Info [2016-06-13 21:33:33] (GetJSON line 99): Encoding
+Info [2016-06-13 21:33:33] (GetJSON line 51): finished
+Info [2016-06-13 21:38:22] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 21:38:22] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 21:38:22] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 21:38:22] (DDIJS.pm line 76): adding single
+Info [2016-06-13 21:38:22] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 21:38:23] (GetJSON line 26): starting, mode is species
+Info [2016-06-13 21:38:23] (GetJSON line 51): finished
+Info [2016-06-13 21:38:24] (GetJSON line 26): starting, mode is instruments
+Info [2016-06-13 21:38:24] (GetJSON line 51): finished
+Info [2016-06-13 21:38:24] (GetJSON line 26): starting, mode is keywords
+Info [2016-06-13 21:38:24] (GetJSON line 95): Getting keywords
+Info [2016-06-13 21:38:25] (GetJSON line 97): Getting titlewords
+Info [2016-06-13 21:38:25] (GetJSON line 197): Processed 22184 total words
+Info [2016-06-13 21:38:25] (GetJSON line 99): Encoding
+Info [2016-06-13 21:38:25] (GetJSON line 51): finished
+Info [2016-06-13 21:43:30] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 21:43:30] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 21:43:30] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 21:43:30] (DDIJS.pm line 76): adding single
+Info [2016-06-13 21:43:30] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 21:43:30] (GetJSON line 26): starting, mode is species
+Info [2016-06-13 21:43:30] (GetJSON line 51): finished
+Info [2016-06-13 21:43:30] (GetJSON line 26): starting, mode is instruments
+Info [2016-06-13 21:43:31] (GetJSON line 51): finished
+Info [2016-06-13 21:43:31] (GetJSON line 26): starting, mode is keywords
+Info [2016-06-13 21:43:31] (GetJSON line 95): Getting keywords
+Info [2016-06-13 21:43:31] (GetJSON line 97): Getting titlewords
+Info [2016-06-13 21:43:32] (GetJSON line 197): Processed 22184 total words
+Info [2016-06-13 21:43:32] (GetJSON line 99): Encoding
+Info [2016-06-13 21:43:32] (GetJSON line 51): finished
+Info [2016-06-13 21:46:23] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 21:46:23] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 21:46:23] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 21:46:23] (DDIJS.pm line 76): adding single
+Info [2016-06-13 21:46:23] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 21:48:02] (GetJSON line 26): starting, mode is keywords
+Info [2016-06-13 21:48:02] (GetJSON line 95): Getting keywords
+Info [2016-06-13 21:48:03] (GetJSON line 97): Getting titlewords
+Info [2016-06-13 21:48:03] (GetJSON line 197): Processed 22184 total words
+Info [2016-06-13 21:48:03] (GetJSON line 99): Encoding
+Info [2016-06-13 21:48:03] (GetJSON line 51): finished
+Info [2016-06-13 21:59:35] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 21:59:35] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 21:59:35] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 21:59:35] (DDIJS.pm line 76): adding single
+Info [2016-06-13 21:59:35] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 22:08:02] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 22:08:02] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 22:08:02] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 22:08:02] (DDIJS.pm line 76): adding single
+Info [2016-06-13 22:08:02] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 22:08:05] (GetJSON line 26): starting, mode is species
+Info [2016-06-13 22:08:05] (GetJSON line 51): finished
+Info [2016-06-13 22:08:05] (GetJSON line 26): starting, mode is instruments
+Info [2016-06-13 22:08:05] (GetJSON line 51): finished
+Info [2016-06-13 22:08:06] (GetJSON line 26): starting, mode is keywords
+Info [2016-06-13 22:08:06] (GetJSON line 95): Getting keywords
+Info [2016-06-13 22:08:07] (GetJSON line 97): Getting titlewords
+Info [2016-06-13 22:08:07] (GetJSON line 197): Processed 22184 total words
+Info [2016-06-13 22:08:07] (GetJSON line 99): Encoding
+Info [2016-06-13 22:08:07] (GetJSON line 51): finished
+Info [2016-06-13 22:19:47] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 22:19:47] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 22:19:47] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 22:19:47] (DDIJS.pm line 76): adding single
+Info [2016-06-13 22:19:47] (DDIJS.pm line 79): adding DDISBWordCloud.js
+Info [2016-06-13 22:20:23] (DDIJS.pm line 68): Mode is 1
+Info [2016-06-13 22:20:23] (DDIJS.pm line 79): adding d3.min.js
+Info [2016-06-13 22:20:23] (DDIJS.pm line 79): adding d3.layout.cloud.js
+Info [2016-06-13 22:20:23] (DDIJS.pm line 76): adding single
+Info [2016-06-13 22:20:23] (DDIJS.pm line 79): adding DDISBWordCloud.js

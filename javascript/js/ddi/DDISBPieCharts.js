@@ -1,3 +1,8 @@
+/*
+  Javascript widget(s) modified from originals, courtesy of EBI Omics discovery index at http://www.ebi.ac.uk/Tools/omicsdi/#/
+
+
+*/
 
 var pie_charts_repos_omics = function () {
 
