@@ -530,7 +530,7 @@ sub processAnnouncement {
 	  } else {
 	    $response->{result} = "ERROR";
 	    $response->{message} = "File has unexpected XSD '$1'. Cannot process this file. Sorry.";
-	    push(@{$response->{info}},"File has unexpected XSD '$1'. Cannot process this file. Sorry. At present, only proteomeXchange-1.2.0.xsd is supported");
+	    push(@{$response->{info}},"File has unexpected XSD '$1'. Cannot process this file. Sorry. At present, only proteomeXchange-1.2.0.xsd and proteomeXchange-1.3.0.xsd is supported");
 	    $info->{hasRightXSD} = 'failed';
 	  }
 	}
