@@ -524,7 +524,7 @@ sub processAnnouncement {
 	  $info->{isXML} = 'passed';
 	}
 	if ($line && $line =~ /SchemaLocation=\"(.+?)\"/) {
-	  if ($1 eq 'proteomeXchange-1.2.0.xsd') {
+	  if ($1 eq 'proteomeXchange-1.2.0.xsd' || $1 eq 'proteomeXchange-1.3.0.xsd') {
 	    push(@{$response->{info}},"File has as acceptable XSD $1");
 	    $info->{hasRightXSD} = 'passed';
 	  } else {
