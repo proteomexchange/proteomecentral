@@ -31,6 +31,11 @@
           <CvTerm termAccession="MS:1000496" useTerm="false" termName="instrument attribute" isRepeatable="true" allowChildren="true" cvIdentifierRef="MS"></CvTerm>
         </CvMappingRule>
 
+        <!-- DatasetFile -->
+        <CvMappingRule id="DatasetFile_must" cvElementPath="/ProteomeXchangeDataset/DatasetFileList/DatasetFile/cvParam/@accession" requirementLevel="MUST" scopePath="/ProteomeXchangeDataset/DatasetFileList/DatasetFile" cvTermsCombinationLogic="AND">
+          <CvTerm termAccession="PRIDE:0000403" useTerm="false" termName="Associated file URI" isRepeatable="true" allowChildren="true" cvIdentifierRef="MS"></CvTerm>
+        </CvMappingRule>
+
     </CvMappingRuleList>
 
 </CvMapping>
