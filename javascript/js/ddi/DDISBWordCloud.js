@@ -54,7 +54,7 @@ function draw_word_cloud( json_url, div_name, svg_width, svg_height ) {
 
   body.selectAll("div").remove();
 /*  var wcspacediv = body.append('div');
-  wcspacediv 
+  wcspacediv
     .attr( "float", "bottom" )
     .attr("height", "100px")
     .attr("id", "wcspacediv")
@@ -71,8 +71,8 @@ function draw_word_cloud( json_url, div_name, svg_width, svg_height ) {
     .style("opacity", 0);
 
  document.getElementById( "wordcloud_tooltip" ).innerHTML = "<br>";
-  
-    
+
+
   var formdiv = body.append('div');
   formdiv
       .attr("class", "center")
@@ -183,11 +183,11 @@ function draw_word_cloud( json_url, div_name, svg_width, svg_height ) {
           .style("font-size", function (d) {
             var size = d.frequent/maxfrequent * 24;
             if ( size < 14 ) {
-              return 14;
-            } else {
-              return size;
+              size = 14;
             }
-          })
+            var pxsize = size + "px";
+            return pxsize;
+          } )
           .style("font-family", "Impact")
           .style("fill", function (d, i) {
               return fill(i);
