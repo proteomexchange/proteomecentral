@@ -201,15 +201,22 @@ function draw_word_cloud( json_url, div_name, svg_width, svg_height ) {
           })
           .attr("class", "hotword")
           .on("click", function (d, i) {
-              // alert("you have clicked"+d.label);
 
               wordcloud_tooltip.transition()
                   .duration(500)
                   .style("opacity", 0);
 
+              var advmode = 'Title';
+              if ( field == 'Keywords' ) {
+                advmode = 'Keywords'
+              }
+              $("#field").val('');
+              $("#sel_col1").val(advmode);
+              $("#sel1").val(d.label);
+//             FIXME
 //               plot_onclick( d.label );
-               $("#field").val(d.label);
-               $("#sel1").val('');
+//               $("#field").val(d.label);
+//               $("#sel1").val('');
                myQueryEvent();
           })
 
