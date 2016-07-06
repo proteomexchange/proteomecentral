@@ -6,19 +6,17 @@
 */
 var pie_charts_repos_omics = function () {
 
-    // Get repository JSON
-//    var url='http://wwwdev.ebi.ac.uk/Tools/ddi/ws/statistics/';
-    var url='http://proteomecentral.proteomexchange.org/cgi/GetJSON';
+    // Get repository JSON, using current base dir (dev/prod)
+    var url = window.location;
+    var baseUrl = url.protocol + "//" + url.host + "/" + url.pathname.split('/')[1] + '/cgi/GetJSON';
     var req=new XMLHttpRequest(); // a new request
 
-    var domain_url = url + '?mode=species';
-//    var domain_url = url + '?mode=domains';
+    var domain_url = baseUrl + '?mode=species';
     req.open("GET",domain_url,false);
     req.send(null);
     var domains = JSON.parse( req.responseText );
 
-    var omics_url = url + '?mode=instruments'  // geojson points
-//    var omics_url = url + '?mode=omics'  // geojson points
+    var omics_url = baseUrl + '?mode=instruments'
     req.open("GET",omics_url,false);
     req.send(null);
     var omics = JSON.parse( req.responseText );
@@ -40,8 +38,8 @@ var pie_charts_repos_omics = function () {
         else {
             remove_getting_info('chart_repos_omics');
             var repos = transformdomains(domains);
-            omicstype.shift();
-            var unavailableomics = omicstype.pop();
+//            omicstype.shift();
+//            var unavailableomics = omicstype.pop();
 
             var total_omics = gettotal(omicstype);
             var total_repos = gettotal(repos);
@@ -129,7 +127,7 @@ var pie_charts_repos_omics = function () {
 //            var spacediv_name = piechartname + 'spacediv';
 //
 //            var spacediv = body.append('div');
-//             spacediv 
+//             spacediv
 //             .attr( "float", "bottom" )
 //             .attr("id", spacediv_name )
 //             .attr("opacity", "0.1");
@@ -343,6 +341,7 @@ var pie_charts_repos_omics = function () {
             for (var i = 0; i < arr.length; i++) {
                 newarry.push({
                     "name": arr[i]["domain"]["name"],
+                    "label": arr[i]["domain"]["label"],
                     "value": arr[i]["domain"]["value"]
                 });
             }
@@ -416,7 +415,7 @@ var pie_charts_repos_omics = function () {
                         }
                         $("#field").val('');
                         $("#sel_col1").val(advmode);
-                        $("#sel1").val(d.data.name);
+                        $("#sel1").val(d.data.label);
                         myQueryEvent();
 
                     if (d.data.name == "MetaboLights Dataset")
