@@ -3,21 +3,26 @@ package ProteomeXchange::ShowDataset;
 # Class       : ProteomeXchange::GetDataset
 # Author      : Zhi Sun <zsun@systemsbiology.org>
 #
-# Description : list dataset 
+# Description : list dataset
 #
 ###############################################################################
 use ProteomeXchange::Database;
 use ProteomeXchange::DatasetParser;
+use ProteomeXchange::Configuration qw(%CONFIG);
+
 use strict;
 use XML::Writer;
+use Data::Dumper;
+my $log_dir = ( $CONFIG{basePath} ) ? $CONFIG{basePath} . '/logs/' :
+                                    '/net/dblocal/wwwspecial/proteomecentral/devDC/logs/';
+my $log =  ProteomeXchange::Log->new( base => $log_dir, log_level => 'debug' );
+my $baseUrl = $CONFIG{baseUrl} || 'http://www.proteomecentral.org';
+
 $| = 1;
 use CGI qw/:standard/;
 my $cgi = new CGI;
 our $CGI_BASE_DIR = $cgi->new->url();
 $CGI_BASE_DIR =~ s/cgi.*/cgi/;
-
-
-
 
 ###############################################################################
 # Constructor
@@ -26,7 +31,7 @@ sub new {
   my $self =shift;
   my %parameters = @_;
   my $class = ref($self) || $self;
-  $self = { prev_time => time() } ; 
+  $self = { prev_time => time() } ;
   bless $self => $class;
   return $self;
 }
@@ -39,7 +44,7 @@ sub listDatasets {
   my $self = shift;
   my %args = @_;
   my $SUB_NAME = 'listDatasets';
-   
+
   $self->log_em( "List Datasets" );
   #### Decode the argument list
   my $params = $args{'params'};
@@ -56,20 +61,21 @@ sub listDatasets {
 
   if ($test && ($test =~ /yes/i || $test =~ /true/i)){
     $teststr = "&test=$test";
-    $table_name = 'dataset_test'; 
+    $table_name = 'dataset_test';
     $path .= "/testing";
   }
 
 	my $dbh = new ProteomeXchange::Database;
   my $whereclause = '';
-  my %hidden_cols = ();
-  my @headings = (); 
-  
+  my %hidden_cols = ( );
+  my @headings = ();
+
   if ($extended !~ /extended/i){
     $whereclause = "where status != 'ID requested'";
     %hidden_cols = (
                   "Status" => 1,
                   "Identifier Date"=> 1,
+                  "Primary Submitter"=> 1,
                   "Revision Date" => 1,);
   }
 
@@ -84,8 +90,9 @@ sub listDatasets {
         ["primarySubmitter","Primary Submitter"],
         ["labHead", "LabHead"],
         ["DATE_FORMAT(identifierDate,'\%Y-\%m-\%d')","Identifier Date"],
-        ["DATE_FORMAT(submissionDate,'\%Y-\%m-\%d')","Announcement Date"],
+        ["DATE_FORMAT(submissionDate,'\%Y-\%m-\%d')","Announce Date"],
         ["DATE_FORMAT(revisionDate,'\%Y-\%m-\%d')","Revision Date"],
+        ["keywordList", "Keywords" ],
         ["announcementXML", "announcementXML"],
         );
 
@@ -99,33 +106,32 @@ sub listDatasets {
                  $columns_clause
                  FROM $table_name
                  $whereclause
-                 ORDER BY $order_clause 
+                 ORDER BY $order_clause
              ~;
-  $self->log_em( "$sql" );
 
 	my @rows = $dbh->selectSeveralColumns($sql);
   my @results = ();
-  $self->log_em( "Selected data" );
-  process_result(result =>\@rows,  
+  process_result(result =>\@rows,
                  newresult => \@results,
                  xmlloc => $path,
 								 search_type=> $searchType,
 								 filterstr => $filterstr,
 								 heading => \@headings,
                  teststr => $teststr);
-  $self->log_em( "processed_results" );
+
    if ($outputMode=~ /html/i){
 				print qq~
-         <div id="result"> 
+         <div id="result">
         ~;
 				print $cgi->start_table ({-border=>'0',
-														-cellspacing => '1', 
-																	-align => 'center', 
-																	-class => 'tablesorter', 
+														-cellspacing => '1',
+																	-align => 'center',
+																	-class => 'tablesorter',
 																		 -id => 'datatable'}) ,"\n";
 				print "<thead>\n";
         pop @headings;
 				print $cgi->Tr($cgi->th([@headings]));
+				$log->info($cgi->Tr($cgi->th([@headings])));
 				print "\n</thead>\n<tbody>\n";
         my $cnt;
         if (@results){
@@ -133,8 +139,12 @@ sub listDatasets {
             $cnt++;
 					  print $cgi->Tr($cgi->td([@$row]));
             print "\n";
+
+            # This limits the number of rows shown on initial load, which makes
+            # the apparent load time much quicker. Once loaded, the page does
+            # an AJAX call to fetch more data and fill in the pager widget.
             last if $cnt >= 10 && !$searchType;
-				  } 
+				  }
         }else{
            ## if no result enter a blank row
            print "<tr>";
@@ -181,7 +191,7 @@ sub listDatasets {
       );
 
      foreach my $values (@results) {
-       $headings[0] =~ s/\s+/_/g; 
+       $headings[0] =~ s/\s+/_/g;
        $writer->startTag($headings[0], ,id=>"$values->[0]");
        for (my $i=1;$i<=$#headings;$i++){
         $headings[$i] =~ s/\s+/_/g;
@@ -190,7 +200,7 @@ sub listDatasets {
         $writer->endTag($headings[$i]);
        }
        $writer->endTag($headings[0]);
-     } 
+     }
      $writer->endTag("ProteomeXchangeDataset");
      $writer->end();
   }elsif($outputMode=~ /tsv/i){
@@ -243,7 +253,7 @@ sub printTablePageHeader {
 				 $line =~ s/$1/ProteomeXchange Datasets/;
 				 print "$line\n";
 			}elsif ($line =~ /^<!-- BEGIN main content -->/){
-				print "$line\n"; 
+				print "$line\n";
 
         my $col_options = qq~ ;
 					<option value="Title">Title</option>
@@ -255,6 +265,7 @@ sub printTablePageHeader {
 					<option value="Repository">Repository</option>
 					<option value="Species">Species</option>
 					<option value="Psubmitter">Submitter</option>
+					<option value="Keywords">Keywords</option>
          ~;
 
          my $cond_options = qq~;
@@ -266,13 +277,13 @@ sub printTablePageHeader {
          ~;
 				 my $str = qq~
            <div class="wrapper">
-           <link rel="stylesheet" type="text/css" href="$CGI_BASE_DIR/../javascript/css/button.css"/>
-					 <link rel="stylesheet" href="$CGI_BASE_DIR/../javascript/css/table.css" type="text/css" media="print, projection, screen" />
-           <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/js/jquery.js"></script>
-           <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/js/tablesorter.pager.js"></script>
-           <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/js/tablesorter.js"></script>
-           <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/js/toggle.js"></script>
-           <script type="text/javascript" src="$CGI_BASE_DIR/../javascript/js/search.js"></script>
+           <link rel="stylesheet" type="text/css" href="$baseUrl/javascript/css/button.css"/>
+					 <link rel="stylesheet" href="$baseUrl/javascript/css/table.css" type="text/css" media="print, projection, screen" />
+           <script type="text/javascript" src="$baseUrl/javascript/js/jquery.js"></script>
+           <script type="text/javascript" src="$baseUrl/javascript/js/tablesorter.pager.js"></script>
+           <script type="text/javascript" src="$baseUrl/javascript/js/tablesorter.js"></script>
+           <script type="text/javascript" src="$baseUrl/javascript/js/toggle.js"></script>
+           <script type="text/javascript" src="$baseUrl/javascript/js/search.js"></script>
 					 <script type="text/javascript">
 						\$(function() {
 							\$("#datatable")
@@ -283,17 +294,17 @@ sub printTablePageHeader {
 					 </script>
            <br>
 
-           <div class=infotext> &nbsp;&nbsp;&nbsp; Below is a listing of publicly accessible ProteomeXchange datasets. You can use the search box or interactive graphics to filter the list. </div>
+           <div class=infotext style="margin: auto; text-align: center"> Below is a listing of publicly accessible ProteomeXchange datasets. You can use the search box or interactive graphics to filter the list. </div>
         ~;
 
          $str .= "$args{inject_content}" if $args{inject_content};
 
 				 $str .= qq~
           <font face="Calibri">
-          <div style="color:red;" id='basic_search' 
+          <div style="color:red;" id='basic_search'
             onclick='toggle_more("basic_search","advanced_search","buildQuery","searchContainer")'>
             &nbsp;&nbsp;&nbsp;&nbsp;[Go to Advanced Search]</div>
-          <div id='advanced_search' onclick='toggle_less("advanced_search","basic_search","buildQuery","searchContainer")' 
+          <div id='advanced_search' onclick='toggle_less("advanced_search","basic_search","buildQuery","searchContainer")'
             style='display:none; color:red;'>&nbsp;&nbsp;&nbsp;&nbsp;[Go back to Basic free-text Search]</div>
           <div id='buildQuery' style='display: none; font-size:14px;'>
             &nbsp;&nbsp;&nbsp;&nbsp;Build your metadata query constraints below (not yet possible to query for individual proteins)
@@ -302,10 +313,10 @@ sub printTablePageHeader {
         ~;
 				my $cnt = 1;
 				foreach my $sel ( qw(
-														 Title 
-														 Instrument 
+														 Title
+														 Instrument
 														 Publication
-														 AnnouncementDate 
+														 AnnouncementDate
 															)){
 					my $options2 = $cond_options;
 					if ($sel !~ /date/i){
@@ -326,7 +337,7 @@ sub printTablePageHeader {
 						$options =~ s/(value="$sel")/$1 selected="selected"/;
 						$str .= qq~
 							<tr><td height="35">
-							AND&nbsp;&nbsp; 
+							AND&nbsp;&nbsp;
 							<select id="sel_col$cnt" onchange="configureDropDownList(this, \'sel_con$cnt\')">$options</select>
 							</td><td>&nbsp;
 							<select id="sel_con$cnt">$options2</select>
@@ -348,13 +359,13 @@ sub printTablePageHeader {
 				$str .= qq~
 					</table>
 				</div></div></font>
-				<div id="searchContainer"> 
+				<div id="searchContainer">
 				<div class=infotext>Search metadata for ProteomeXchange datasets: (e.g. "liver", "musculus", "5600", etc. Not yet possible to search for individual proteins)</div>
         <br>
 				<input type="text" id="field" id="s" name="q">
 				<div id="delete"><span id="x">x</span></div></input>
 				<input type="button" name="searchbtn" id="searchbtn" value="Search" />
-        <p><br> 
+        <p><br>
 				</div>
 				~;
 				print "$str";
@@ -362,7 +373,7 @@ sub printTablePageHeader {
        print "$line";
      }
 
-   } 
+   }
   }
 }
 
@@ -393,7 +404,7 @@ sub printPageHeader {
       print qq~
 				<link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
         <script type="text/javascript" src="http://localhost/../javascript/js/toggle.js"></script>
-        ~;  
+        ~;
      }elsif($line =~ /END/){
         last;
      }else{
@@ -423,11 +434,11 @@ sub printPageFooter {
     }
   }
 }
-##################################################################### 
+#####################################################################
 # processresult                                                     #
 #####################################################################
 
-sub  process_result{
+sub process_result{
   my %args = @_;
   my $result = $args{result};
   my $newresult = $args{newresult};
@@ -436,7 +447,7 @@ sub  process_result{
   my $xmlloc = $args{xmlloc};
   my $headings = $args{heading};
   my @headings = @$headings;
-  my $teststr=$args{teststr}; 
+  my $teststr=$args{teststr};
 
   my @query_terms;
   if ($filterstr ne ''){
@@ -450,6 +461,15 @@ sub  process_result{
       }
     }
   }
+
+  my $kw_idx;
+  for ( my $i = 0; $i <= $#headings; $i++ ) {
+    if ( $headings[$i] eq 'Keywords' ) {
+      $kw_idx = $i;
+      last;
+    }
+  }
+
   foreach my $row (@$result){
     ## fix old publication link. open link to new tab by default
     if ($row->[5] =~ /href/ && $row->[5] !~ /blank/){
@@ -475,17 +495,30 @@ sub  process_result{
         next if ($matches < @query_terms);
 				pop @$row;
 				$row->[0] = "<a href=\"$CGI_BASE_DIR/GetDataset?ID=$row->[0]$teststr\" target=\"_blank\">$row->[0]</a>";
-				push @$newresult, $row; 
+        $row->[$kw_idx] =~ s/,\s*$//ig if defined $kw_idx;
+        $row->[$kw_idx] =~ s/;/,/ig if defined $kw_idx;
+        $row->[$kw_idx] =~ s/submitter keyword:\s*//ig if defined $kw_idx;
+        $row->[$kw_idx] =~ s/curator keyword:\s*//ig if defined $kw_idx;
+        $row->[$kw_idx] =~ s/ProteomeXchange project tag:\s*//ig if defined $kw_idx;
+				push @$newresult, $row;
       }else{ ## advanced search
          foreach my $q (@query_terms){
            my ($colname, $cond, $str) = split(/\|/, $q);
            for(my $i =0; $i<= $#headings; $i++){
              if ($headings[$i] =~ /$colname/i){
-                if ($cond =~ /^contain$/){
-                  if ( $row->[$i] =~ /$str/i){
+                if ($cond =~ /^contain$/) {
+                  if ( $str =~ /^EXCLUSION/ ) {
+                    my $ok = 1;
+                    for my $excl ( split( /\./, $str ) ) {
+                      if ( $row->[$i] =~ /$excl/i) {
+                        $ok = 0;
+                      }
+                    }
+                    $matches++ if $ok;
+                  } elsif ( $row->[$i] =~ /$str/i){
                     $matches++;
                   }
-                }elsif ($cond =~ /^notontained/){
+                }elsif ($cond =~ /^notcontain/){
                   if ( $row->[$i] !~ /$str/i){
                     $matches++;
                   }
@@ -520,11 +553,23 @@ sub  process_result{
          next if ($matches < @query_terms);
 				 pop @$row;
 				 $row->[0] = "<a href=\"$CGI_BASE_DIR/GetDataset?ID=$row->[0]$teststr\" target=\"_blank\">$row->[0]</a>";
-				 push @$newresult, $row; 
+
+
+         $row->[$kw_idx] =~ s/,\s*$//ig if defined $kw_idx;
+         $row->[$kw_idx] =~ s/;/,/ig if defined $kw_idx;
+         $row->[$kw_idx] =~ s/submitter keyword:\s*//ig if defined $kw_idx;
+         $row->[$kw_idx] =~ s/curator keyword:\s*//ig if defined $kw_idx;
+         $row->[$kw_idx] =~ s/ProteomeXchange project tag:\s*//ig if defined $kw_idx;
+				 push @$newresult, $row;
       }## advanced search
     }else{
         pop @$row;
         $row->[0] = "<a href=\"$CGI_BASE_DIR/GetDataset?ID=$row->[0]$teststr\" target=\"_blank\">$row->[0]</a>";
+        $row->[$kw_idx] =~ s/,\s*$//ig if defined $kw_idx;
+        $row->[$kw_idx] =~ s/;/,/ig if defined $kw_idx;
+        $row->[$kw_idx] =~ s/submitter keyword:\s*//ig if defined $kw_idx;
+        $row->[$kw_idx] =~ s/curator keyword:\s*//ig if defined $kw_idx;
+        $row->[$kw_idx] =~ s/ProteomeXchange project tag:\s*//ig if defined $kw_idx;
         push @$newresult, $row;
     }
 
@@ -554,10 +599,10 @@ sub showDataset {
     $path .= "/testing";
     $teststr = "?test=$test";
   }
- 
-  my $prefix = ''; 
-  if (($datasetID =~ /^(R?PXD)/ && $teststr eq '') || 
-      ($datasetID =~ /^(R?PXT)/ && $teststr ne '')) {
+
+  my $prefix = '';
+  if (($datasetID =~ /^(R?PXD)/i && $teststr eq '') ||
+      ($datasetID =~ /^(R?PXT)/i && $teststr ne '')) {
     $prefix = $1;
     $datasetID =~ s/$prefix//;
     $datasetID =~ s/^0+//;
@@ -565,14 +610,14 @@ sub showDataset {
 
   my ($title,$status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetTitle);
   my ($datasetSubmitter,$datasetLabHead,$datasetSpeciesString);
- 
+
 
   my $pageStatus = 'OK';
   my $str = '';
   $title  = $params->{ID};
 
   #### If a valid identifier was not obtained
-  if ( $datasetID !~ /^\d+$/){
+  if ( $datasetID !~ /^\d+$/) {
     $str = "The input identifier is not valid and should be of the form PXDnnnnnn or numbers only.";
     $pageStatus = 'ERROR';
   }
@@ -584,25 +629,25 @@ sub showDataset {
     my $dbh = new ProteomeXchange::Database;
     my $sql = qq~
                select datasetIdentifier
-               from $table_name 
+               from $table_name
                where dataset_id in (
                select dataset_id
-               from $table_name 
+               from $table_name
                where datasetOrigin like '%$title%')
               ~;
     my @derivedDatasets = $dbh->selectOneColumn($sql);
-    $sql = qq~ 
+    $sql = qq~
                   SELECT STATUS,
                         PXPARTNER,
                         ANNOUNCEMENTXML,
                        IDENTIFIERDATE,
                        DATASETIDENTIFIER,
                        DATASETORIGIN
-                  from $table_name 
+                  from $table_name
                   where dataset_id=$datasetID
               ~;
     my @results = $dbh->selectSeveralColumns($sql);
-    
+
     #### If no row was returned, then this identifer must not have been assigned yet
     if ( scalar(@results) == 0) {
       $str = "The identifier $title has not yet been assigned. Please check the identifier and type it in again.";
@@ -628,23 +673,23 @@ sub showDataset {
       my $header;
 
       $str .= "<p> <b>DataSet Summary</b> </p>\n<ul>";
-      foreach my $key ( qw( PXPartner 
-           announceDate 
-           announcementXML 
-           DigitalObjectIdentifier 
-           ReviewLevel 
-           datasetOrigin 
-           derivedDataset 
-           RepositorySupport 
-			     primarySubmitter 
-           title 
-           description 
-           speciesList 
-           modificationList 
+      foreach my $key ( qw( PXPartner
+           announceDate
+           announcementXML
+           DigitalObjectIdentifier
+           ReviewLevel
+           datasetOrigin
+           derivedDataset
+           RepositorySupport
+			     primarySubmitter
+           title
+           description
+           speciesList
+           modificationList
            instrument
         ) ) {
-        
-        $header =  ucfirst($key);  
+
+        $header =  ucfirst($key);
         if ($header eq 'PXPartner'){
           $header = 'HostingRepository';
 					$result->{$key} = $PXPartner unless ($result->{$key});
@@ -685,7 +730,7 @@ sub showDataset {
 				if ( defined $result->{$key}){
           $header = ucfirst($key);
           $header =~  s/([A-Z][a-z]+)/$1 /g;
-					$str .= "<p> <b>$header</b> </p>\n<ol>\n";     
+					$str .= "<p> <b>$header</b> </p>\n<ol>\n";
           if ($key eq 'contactList'){
             foreach my $id (keys %{$result->{contactList}}){
               if ( defined $result->{contactList}{$id}{'contact name'}){
@@ -707,7 +752,7 @@ sub showDataset {
 						}
           }
 					$str .= "</ol>\n";
-        } 
+        }
       }
 
       if ( defined $result->{repositoryRecordList}){
@@ -717,29 +762,29 @@ sub showDataset {
         $str .= qq~<tr>
 					 <td><b>$header</b></td><td>
 					 <div id="less" onclick='toggle("less","more","repositoryRecordList")' >[+]</div>
-					 <div id="more" onclick='toggle("more","less","repositoryRecordList")' style='display: none'>[-]</div> 
-						</td></tr> 
+					 <div id="more" onclick='toggle("more","less","repositoryRecordList")' style='display: none'>[-]</div>
+						</td></tr>
 						<ul id="repositoryRecordList" style='display: none'>
         ~;
-        
+
         foreach my $repositoryid (keys %{$result->{repositoryRecordList}}){
           $str .= "<li>$repositoryid<ol>";
           foreach my $recordid (keys %{$result->{repositoryRecordList}{$repositoryid}}){
             if (defined $result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}){
-							$str .= "<li><a href=\"$result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}\" target=\"_blank\">$recordid</a><ol>"; 
-            }else{ 
+							$str .= "<li><a href=\"$result->{repositoryRecordList}{$repositoryid}{$recordid}{Uri}\" target=\"_blank\">$recordid</a><ol>";
+            }else{
 							$str .= "<li>$recordid<ol>";
             }
             foreach my $name (sort{$a cmp $b} keys %{$result->{repositoryRecordList}{$repositoryid}{$recordid}}){
 							next if($name =~ /Uri/);
 							$str .= "<li>$name: $result->{repositoryRecordList}{$repositoryid}{$recordid}{$name}</li>";
-            }           
+            }
             $str .= "</ol></li>";
           }
           $str .= "</li>";
         }
         $str .= "</ul>\n";
-      }     
+      }
 
     }
 
@@ -797,7 +842,7 @@ sub showDataset {
        <div id="main">
        <div id="primary" class="site-content">
        <div><a href="$CGI_BASE_DIR/GetDataset$teststr"> << Full experiment listing </a></div>
-        <h1 class="entry-title"> $title </h1> 
+        <h1 class="entry-title"> $title </h1>
      ~;
 
 
