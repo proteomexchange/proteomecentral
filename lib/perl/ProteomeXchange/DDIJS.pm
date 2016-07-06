@@ -3,35 +3,35 @@ package ProteomeXchange::DDIJS;
 ###############################################################################
 # $Id:  $
 #
-# Description : 
-#
-# SBEAMS is Copyright (C) 2000-2016 Institute for Systems Biology
-# This program is governed by the terms of the GNU General Public License (GPL)
-# version 2 as published by the Free Software Foundation.  It is provided
-# WITHOUT ANY WARRANTY.  See the full description of GPL terms in the
-# LICENSE file distributed with this software.
+# Description : Package to manage access to javascript visualizations adapted
+# from DDI (Data discovery index)
 #
 ###############################################################################
 
 use strict;
 use IO::File;
 use File::Basename;
+use XML::Writer;
+use Data::Dumper;
+
+use ProteomeXchange::Configuration qw(%CONFIG);
 use ProteomeXchange::Log;
 
-my $log =  ProteomeXchange::Log->new( base => "/net/dblocal/wwwspecial/proteomecentral/devDC/logs/", log_level => 'debug' );
+my $basePath = $CONFIG{basePath} || '/net/dblocal/wwwspecial/proteomecentral';
+my $log_dir = $basePath . '/logs/';
+my $log =  ProteomeXchange::Log->new( base => $log_dir, log_level => 'debug' );
+my $baseUrl = $CONFIG{baseUrl} || 'http://www.proteomecentral.org';
 
-
-my $PHYSICAL_BASE_DIR = '/net/dblocal/wwwspecial/proteomecentral';
 
 ##### Public Methods ###########################################################
 
 #+
-# Constructor.  Tries to use values from Settings.pm by default, user may 
+# Constructor.  Tries to use values from Settings.pm by default, user may
 #-
 sub new {
   my $class = shift;
-  
-  my $this = {  
+
+  my $this = {
                @_
              };
 
@@ -45,7 +45,7 @@ sub new {
 sub get_onload_script {
   my $mode = shift || '';
 
-  my $json_base = 'http://proteomecentral.proteomexchange.org/devDC/cgi/GetJSON';
+  my $json_base = $baseUrl . '/cgi/GetJSON';
   my $wc_json = $json_base . '?mode=keywords';
 
   my $onload = q~
@@ -74,14 +74,14 @@ sub get_js_includes {
   for my $js ( qw( d3.min.js d3.layout.cloud.js DDISBPieCharts.js DDISBWordCloud.js ) ) {
     if ( $js eq 'DDISBPieCharts.js' && $mode ) {
       $log->info( "adding single" );
-      $js_includes .= "<script src=/devDC/javascript/js/ddi/DDISBPieChartsSingle.js></script>\n";
+      $js_includes .= "<script src=$baseUrl/javascript/js/ddi/DDISBPieChartsSingle.js></script>\n";
     } else {
       $log->info( "adding $js" );
-      $js_includes .= "<script src=/devDC/javascript/js/ddi/$js></script>\n";
+      $js_includes .= "<script src=$baseUrl/javascript/js/ddi/$js></script>\n";
     }
   }
-  $js_includes .= "<link type='text/css' href='/devDC/javascript/css/bootstrap.min.css' rel='stylesheet'>";
-  $js_includes .= "<link type='text/css' href='/devDC/javascript/css/ddi-min.css' rel='stylesheet'>";
+  $js_includes .= "<link type='text/css' href='$baseUrl/javascript/css/bootstrap.min.css' rel='stylesheet'>";
+  $js_includes .= "<link type='text/css' href='$baseUrl/javascript/css/ddi-min.css' rel='stylesheet'>";
 #  $js_includes .= "<script type=text/javascript>myQueryEvent();</script>";
   return $js_includes;
 
