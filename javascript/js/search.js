@@ -3,11 +3,11 @@ $(document).ready(function(){
   $("div.pager select").val("Default Value");
 
 	$('#searchbtn').click(function() {
-     myQueryEvent() 
+     myQueryEvent()
   });
 	//$('#field').keypress(myQueryEvent);
 	$("#basic_search").click(function() {
-    clearTextBox(); 
+    clearTextBox();
     myQueryEvent()
   });
 	$("#advanced_search").click(function() {
@@ -63,26 +63,31 @@ function clearTextBox(){
 
 function myQueryEvent(){
 	var url = get_cgi_url();
+  // Fetch 'GET' params from URL
   var urlparams = get_url_parameter();
-  //params.start = 0;
-  //params.limit = itemsPerPage;
-	var filterparams = get_filterstr(); 
-	//params.action = filterparams[0];
-	//params.filterstr = filterparams[1];
-  if ( urlparams != ''){
-    urlparams = urlparams + '&action=' + filterparams[0] + '&filterstr=' + filterparams[1]  ;  
-  }else{
-    urlparams = 'action=' + filterparams[0] + '&filterstr=' + filterparams[1] 
+  // Fetch 'POST' params from form
+	var filterparams = get_filterstr();
+
+  // Basic search has priority; if there is a PXD identifier, we redirect
+  // to the single record page.
+  if ( filterparams[0] == 'search' &&  /PXD\d\d\d\d\d\d/i.test(filterparams[1]) ) {
+      url = url+ '/GetDataset?ID=' + filterparams[1];
+      window.location = url;
+      return
+  } else if ( urlparams != '') {
+    urlparams = urlparams + '&action=' + filterparams[0] + '&filterstr=' + filterparams[1]  ;
+  } else {
+    urlparams = 'action=' + filterparams[0] + '&filterstr=' + filterparams[1]
   }
 
   url = url+ '/GetDataset';
 	$.ajax({
-			url: url, 
+			url: url,
 			type: "GET",
-		  data: urlparams, 
+		  data: urlparams,
       dataType: 'html',
-      error: function(XMLHttpRequest, textStatus, errorThrown) { 
-      }, // error 
+      error: function(XMLHttpRequest, textStatus, errorThrown) {
+      }, // error
       success:function(msg) {
         $("#result").html(msg);
 				$(function() {
@@ -92,15 +97,15 @@ function myQueryEvent(){
 				});
       }
 	});
-} 
+}
 
 function get_filterstr(){
-  var filterstr = '' ; 
+  var filterstr = '' ;
   var action = 'search';
   for (var i = 1; i<= 4; i++){
     var sel_id = 'sel_col' + i;
     var cond_id = 'sel_con' + i;
-    var id = 'sel' + i; 
+    var id = 'sel' + i;
 		if($("#"+id).val() != ''){
 			action = "advsearch";
 			filterstr += "[" + $("select#"+sel_id).val() +  "|" + $("select#"+cond_id).val()
@@ -117,7 +122,10 @@ function get_filterstr(){
     }
 
   }
-  if ( filterstr == ''){
+
+  // Basic search will override advanced search
+  if ( $('#field').val() != '' ) {
+    action = 'search';
     filterstr = $('#field').val();
   }
   return [action , filterstr];
@@ -126,8 +134,8 @@ function get_filterstr(){
 
 function checkDateFormat(val){
   val = val.replace(/\s/g, "");
-	if (! (val.match(/^\d{4}-\d{2}-\d{2}$/) || 
-         val.match(/^\d{4}-\d{2}$/) || 
+	if (! (val.match(/^\d{4}-\d{2}-\d{2}$/) ||
+         val.match(/^\d{4}-\d{2}$/) ||
          val.match(/^\d{4}$/))){
 		return 1;
 	}else{
