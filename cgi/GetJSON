@@ -91,7 +91,7 @@ sub get_species_instruments {
 }
 
 sub get_keyword_cloud {
-  
+
   $log->info( "Getting keywords" );
   my $keywords = get_keywords( as_perl => 1, sqr => 1 );
   $log->info( "Getting titlewords" );
@@ -119,27 +119,26 @@ sub get_keyword_cloud {
 
 sub get_keywords {
   my %args = @_;
-  my $sql = 'SELECT keywordList FROM dataset';
+  my $sql = "SELECT keywordList FROM dataset WHERE status = 'announced'";
   my %words;
   my $cnt = 0;
   for my $s ( $db->selectOneColumn( $sql ) ) {
     next unless $s;
-    my @words = split( /,/, $s );
+    $s =~ s/curator keyword/,/g;
+    $s =~ s/ProteomeXchange project tag/,/g;
+    $s =~ s/submitter keyword/,/g;
+    my @words = split( /,/, $s, -1 );
     for my $w ( @words ) {
       $w =~ s/[:,;]//g;
-      $w =~ s/curator keyword//g;
-      $w =~ s/ProteomeXchange project tag//g;
-      $w =~ s/submitter keyword//g;
-      $w =~ s/Biomedical\ +//;
-      $w =~ s/Biological\ +//;
+      $w =~ s/Biomedical\ +//i;
+      $w =~ s/Biological\ +//i;
       next if $w =~ /Highlighted/i;
       $w =~ s/^\s+//g;
       $w =~ s/\s+$//g;
       next unless $w;
 
-
       my $skip = 0;
-      for my $bad ( qw( as a of from al. 1 an and the my our in for to by on during with et using part - 2  Protein Proteomics Proteomic Analysis Proteome Proteins Identification Reveals Novel Biomedical LC-MS/MS LC-MSMS Mass spectrometry ) ) {
+      for my $bad ( qw( as a of from al. 1 an and the my our in for to by on during with et using part - 2  Protein Proteomics Proteomic Analysis Proteome Proteins Identification Reveals Novel Biomedical LC-MS/MS LC-MSMS Mass spectrometry ), 'mass spectrometry' ) {
         $skip++ if $w =~/^$bad$/i;
       }
       next if $skip;
@@ -149,13 +148,13 @@ sub get_keywords {
   }
   my @top_words = sort { $words{$b} <=> $words{$a} } keys( %words );
   my @return;
-  for ( my $idx = 0; $idx < 40; $idx++ ) {
+  for ( my $idx = 0; $idx < 50; $idx++ ) {
     if ( $args{sqr} ) {
       push @return, { frequent => sqrt($words{$top_words[$idx]}),
-                      label => $top_words[$idx] }; 
+                      label => $top_words[$idx] };
     } else {
       push @return, { frequent => $words{$top_words[$idx]},
-                      label => $top_words[$idx] }; 
+                      label => $top_words[$idx] };
     }
   }
   if ( $args{as_perl} ) {
@@ -168,7 +167,7 @@ sub get_keywords {
 
 sub get_titlewords {
   my %args = @_;
-  my $sql = 'SELECT title FROM dataset';
+  my $sql = "SELECT title FROM dataset WHERE status = 'announced'";
   my %words;
   my $cnt = 0;
 
@@ -177,7 +176,6 @@ sub get_titlewords {
 
     $bad{ucfirst($bad)}++;
   }
-
 
   for my $s ( $db->selectOneColumn( $sql ) ) {
     next unless $s;
@@ -197,13 +195,13 @@ sub get_titlewords {
   $log->info( "Processed $cnt total words" );
   my @top_words = sort { $words{$b} <=> $words{$a} } keys( %words );
   my @return;
-  for ( my $idx = 0; $idx < 30; $idx++ ) {
+  for ( my $idx = 0; $idx < 40; $idx++ ) {
     if ( $args{sqr} ) {
       push @return, { frequent => sqrt($words{$top_words[$idx]}),
-                      label => $top_words[$idx] }; 
+                      label => $top_words[$idx] };
     } else {
       push @return, { frequent => $words{$top_words[$idx]},
-                      label => $top_words[$idx] }; 
+                      label => $top_words[$idx] };
     }
   }
   if ( $args{as_perl} ) {
@@ -214,13 +212,13 @@ sub get_titlewords {
 
 sub get_species {
   my %args = @_;
-  my $sql = 'SELECT species FROM dataset';
+  my $sql = "SELECT species FROM dataset WHERE status = 'announced'";
   my %species;
   my $cnt = 0;
   for my $s ( $db->selectOneColumn( $sql ) ) {
 #    print STDERR "S is $s\n";
-    next unless $s;
-    $s ||= 'Unknown species';
+#    next unless $s;
+    $s ||= 'Unknown';
 #    print STDERR "S is $s\n";
 
 #    next unless $s =~ /Candida/;
@@ -233,13 +231,35 @@ sub get_species {
     $species{"$genus $species"}++;
   }
   my @species = sort { $species{$b} <=> $species{$a} } keys( %species );
+  my %top_species = ( 'Other Species' => 1 );
+  for my $species ( @species ) {
+    if ( $species =~ /Unknown/ || scalar(keys(%top_species)) > 9 ) {
+      $species{"Other Species"} += $species{"$species"};
+    } else {
+      $top_species{$species}++;
+    }
+  }
+  my $other_clause = 'EXCLUSION';
+  for my $species ( keys( %top_species ) ) {
+    next if $species eq 'Other Species';
+    $other_clause = $other_clause . '.' . "$species";
+  }
+  delete $species{"Unknown"};
+
   my @return;
-  for ( my $i = 0; $i < 10; $i++ ) {
-    push @return, { domain => { value => $species{$species[$i]}, 
-                                name => $species[$i],
-                                label => $species[$i] },
+  for my $species ( 'Other Species', @species ) {
+    next unless $top_species{"$species"};
+    my $species_name = $species;
+    if ( $species eq 'Other Species' ) {
+      $species_name = $other_clause;
+    }
+
+    push @return, { domain => { value => $species{"$species"},
+                                name => $species,
+                                label => $species_name },
                     subdomains => [] };
   }
+
   if ( $args{as_perl} ) {
     return \@return;
   }
@@ -252,7 +272,7 @@ sub get_bent {
 
 sub get_instruments {
   my %args = @_;
-  my $sql = 'SELECT instrument FROM dataset';
+  my $sql = "SELECT instrument FROM dataset WHERE status = 'announced'";
   my %instr;
   my $cnt = 0;
   for my $s ( $db->selectOneColumn( $sql ) ) {
@@ -260,7 +280,7 @@ sub get_instruments {
     my $supp_clean = '';
     if ( $s =~ /unknown/i ) {
       $cleaned = 'Unknown';
-      next;
+#      next;
     } elsif ( $s =~ /Orbitrap/i ) {
       if ( $s =~ /LTQ/i ) {
         if ( $s =~ /Elite/i ) {
@@ -284,50 +304,73 @@ sub get_instruments {
         } else {
           print "$s\n";
         }
-        
-      } 
+
+      }
+    } else {
       # Special catch for Q Exactive..
       if ( $s =~ /Q\s*Exactive/i ) {
-        $supp_clean = 'Q Exactive';
+        $cleaned = 'Q Exactive';
+      } elsif ( $s =~ /Exactive/i ) {
+        $cleaned = 'Q Exactive';
+      } elsif ( $s =~ /TripleTOF/i ) {
+        $cleaned = 'TripleTOF';
+      } elsif ( $s =~ /LCQ/i ) {
+        $cleaned = 'LCQ';
+      } elsif ( $s =~ /LTQ/i ) {
+        $cleaned = 'LTQ';
+      } elsif ( $s =~ /Synapt/i ) {
+        $cleaned = 'Synapt';
+      } elsif ( $s =~ /MicroTOF/i ) {
+        $cleaned = 'MicroTOF';
+      } elsif ( $s =~ /Maxis/i ) {
+        $cleaned = 'Maxis';
+      } elsif ( $s =~ /ultraflex/i ) {
+        $cleaned = 'Ultraflex';
+      } elsif ( $s =~ /6520/i ) {
+        $cleaned = 'QTOF';
+      } elsif ( $s =~ /6110/i ) {
+        $cleaned = 'Quadrupole';
+      } elsif ( $s =~ /TRAP/i && $s =~ /Q/i ) {
+        $cleaned = 'QTRAP';
+      } elsif ( $s =~ /TSQ/i && $s =~ /Vantage/i ) {
+        $cleaned = 'TSQ Vantage';
+      } elsif ( $s =~ /QSTAR/i  ) {
+        $cleaned = 'QSTAR';
+      } else {
+        $cleaned = $s || 'Unknown';
       }
-    } elsif ( $s =~ /Exactive/i ) {
-      $cleaned = 'Q Exactive';
-    } elsif ( $s =~ /TripleTOF/i ) {
-      $cleaned = 'TripleTOF';
-    } elsif ( $s =~ /LCQ/i ) {
-      $cleaned = 'LCQ';
-    } elsif ( $s =~ /LTQ/i ) {
-      $cleaned = 'LTQ';
-    } elsif ( $s =~ /Synapt/i ) {
-      $cleaned = 'Synapt';
-    } elsif ( $s =~ /MicroTOF/i ) {
-      $cleaned = 'MicroTOF';
-    } elsif ( $s =~ /Maxis/i ) {
-      $cleaned = 'Maxis';
-    } elsif ( $s =~ /ultraflex/i ) {
-      $cleaned = 'Ultraflex';
-    } elsif ( $s =~ /6520/i ) {
-      $cleaned = 'QTOF';
-    } elsif ( $s =~ /6110/i ) {
-      $cleaned = 'Quadrupole';
-    } elsif ( $s =~ /TRAP/i && $s =~ /Q/i ) {
-      $cleaned = 'QTRAP';
-    } elsif ( $s =~ /TSQ/i && $s =~ /Vantage/i ) {
-      $cleaned = 'TSQ Vantage';
-    } elsif ( $s =~ /QSTAR/i  ) {
-      $cleaned = 'QSTAR';
-    } else {
-      $cleaned = $s; 
     }
+    $cleaned ||= 'Unknown';
     $instr{$cleaned}++;
-    $instr{$supp_clean}++ if $supp_clean;
+#    $instr{$supp_clean}++ if $supp_clean;
   }
   my @instr = sort { $instr{$b} <=> $instr{$a} } keys( %instr );
   my @return;
-  for ( my $i = 0; $i < 10; $i++ ) {
-    push @return, { value => $instr{$instr[$i]}, 
-                    name => $instr[$i],
-                    label => $instr[$i] };
+
+  my %top_instr = ( "Other Instruments" => 1 );
+  for ( my $i = 0; $i < scalar(@instr); $i++ ) {
+    if ( scalar(keys(%top_instr)) > 9 || $instr[$i] =~ /Unknown/ ) {
+      $instr{"Other Instruments"} += $instr{$instr[$i]};
+    } else {
+      $top_instr{"$instr[$i]"}++;
+    }
+  }
+  my $other_clause = 'EXCLUSION';
+  for my $instr ( keys( %top_instr ) ) {
+    next if $instr eq 'Other Instruments';
+    $other_clause = $other_clause . '.' . "$instr";
+  }
+
+  for my $instr ( 'Other Instruments', @instr ) {
+    next unless $top_instr{"$instr"};
+    my $instr_name = $instr;
+    if ( $instr eq 'Other Instruments' ) {
+      $instr_name = $other_clause;
+    }
+
+    push @return, { value => $instr{$instr},
+                    name => $instr,
+                    label => $instr_name };
   }
   if ( $args{as_perl} ) {
     return \@return;
@@ -336,7 +379,7 @@ sub get_instruments {
 }
 
 sub get_download_stats {
-  
+
   my $all_time = read_download_stats( as_perl => 1, duration => 'all_time' );
   my $past_month = read_download_stats( as_perl => 1, duration => 'past_month' );
 
@@ -382,10 +425,10 @@ sub read_download_stats {
   for ( my $idx = 0; $idx < 40; $idx++ ) {
     if ( $args{sqr} ) {
       push @return, { frequent => sqrt($values{$sorted[$idx]}),
-                      label => $sorted[$idx] }; 
+                      label => $sorted[$idx] };
     } else {
       push @return, { frequent => $values{$sorted[$idx]},
-                      label => $sorted[$idx] }; 
+                      label => $sorted[$idx] };
     }
   }
   if ( $args{as_perl} ) {
