@@ -34,7 +34,7 @@ my $ddi_js = ProteomeXchange::DDIJS->new();
 my $params;
 
 my @parameters = qw ( test verbose action ID filterstr outputMode detailLevel );
- 
+
 our @template;
 
 
@@ -73,8 +73,8 @@ foreach my $arg ( @ARGV ) {
 }
 
 $response->{verbose} = $params->{verbose};
-my $outputMode = $params->{outputMode} || 'html'; 
- 
+my $outputMode = $params->{outputMode} || 'html';
+
 my $HTML  = new ProteomeXchange::ShowDataset;
 #### Handle a dataset identifier
 
@@ -111,22 +111,24 @@ sub get_js {
   my $js = $ddi_js->get_js_includes(1);
   $js .= qq~
   <script type="text/javascript">
-  
+
   function plot_onclick( search_key ) {
     document.getElementById("field").value = search_key;
-    myQueryEvent(); 
+    myQueryEvent();
   }
   </script>
-<div style="display: inline-block; text-align: center">
-    <div class="col-md-4"> 
-      <div class="panel panel-default" style="width:300px; height:300px" id='species_chart'><B><center>Species</center></B></div> 
-    </div> 
-    <div class="col-md-4"> 
-      <div class="panel panel-default" style="width:300px; height:300px" id='keywords'></div> 
-    </div> 
-    <div class="col-md-4"> 
-      <div class="panel panel-default" style="width:300px; height:300px" id='instrument_chart'><B><center>Instruments</center></B></div> 
-    </div> 
+<div style="margin: auto; text-align: center">
+ <div style="display: inline-block; text-align: center">
+    <div class="col-md-4">
+      <div class="panel panel-default" style="width:300px; height:300px" id='species_chart'><B><center>Top 10 Species</center></B></div>
+    </div>
+    <div class="col-md-4">
+      <div class="panel panel-default" style="width:300px; height:300px" id='keywords'></div>
+    </div>
+    <div class="col-md-4">
+      <div class="panel panel-default" style="width:300px; height:300px" id='instrument_chart'><B><center>Top 10 Instruments</center></B></div>
+    </div>
+ </div>
 </div>
   ~;
   $js .= $ddi_js->get_onload_script();
