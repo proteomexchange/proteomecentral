@@ -4,19 +4,17 @@
    This particular version was quickly modified to handle a single data source, should be replaced shortly by a more robust version of DDISBPieCharts.js
 
 */
-var pie_charts_repos_omics = function () {
+var pie_charts_repos_omics = function ( baseURL ) {
 
     // Get repository JSON, using current base dir (dev/prod)
-    var url = window.location;
-    var baseUrl = url.protocol + "//" + url.host + "/" + url.pathname.split('/')[1] + '/cgi/GetJSON';
     var req=new XMLHttpRequest(); // a new request
 
-    var domain_url = baseUrl + '?mode=species';
+    var domain_url = baseURL + '?mode=species';
     req.open("GET",domain_url,false);
     req.send(null);
     var domains = JSON.parse( req.responseText );
 
-    var omics_url = baseUrl + '?mode=instruments'
+    var omics_url = baseURL + '?mode=instruments'
     req.open("GET",omics_url,false);
     req.send(null);
     var omics = JSON.parse( req.responseText );

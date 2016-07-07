@@ -55,7 +55,7 @@ sub get_onload_script {
     });
   ~;
   $onload .= qq~
-    pie_charts_repos_omics();
+    pie_charts_repos_omics( '$json_base' );
     draw_word_cloud( '$wc_json', 'keywords', 240, 240 );
   </script>
   ~;
