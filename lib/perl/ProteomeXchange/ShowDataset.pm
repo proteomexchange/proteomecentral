@@ -1035,7 +1035,7 @@ ProteomeXchange dataset $identifier has been reserved by the $PXPartner reposito
 <B>If you have seen this identifier in an accepted manuscript:</B><BR><BR>
 <UL>
 <LI> Then this dataset should be publicly released. Probably the authors and/or the journal have not contacted the original repository yet in order to trigger the public release.
-<LI> Please go to the <a href="https://www.ebi.ac.uk/pride/archive/$identifier/publish">PRIDE Publication Notification Page for this dataset</a> and enter in the citation information so that the dataset can be associated with the article and released.
+<LI> Please go to the <a href="https://www.ebi.ac.uk/pride/archive/projects/$identifier/publish">PRIDE Publication Notification Page for this dataset</a> and enter in the citation information so that the dataset can be associated with the article and released.
 </UL>
 ~;
 
