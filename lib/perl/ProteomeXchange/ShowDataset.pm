@@ -792,7 +792,7 @@ sub showDataset {
 
 
   if ( $pageStatus eq 'OK' && $status =~ /requested/ ) {
-    $str = "ProteomeXchange dataset $title has been reserved by the $PXPartner repository for a dataset undergoing processing. However, this dataset has not yet been publicly released and announced to ProteomeXchange. Please check back later to see this dataset, or contact $PXPartner if you feel this message is in error and/or this dataset should have been released.";
+    $str = getNotAccessibleMessage( identifier => $title, PXPartner => $PXPartner );
     $pageStatus = 'ERROR';
   }
 
@@ -965,6 +965,7 @@ sub showDatasetHistory {
   return $str;
 }
 
+
 ###############################################################################
 # sendResponse
 ###############################################################################
@@ -985,11 +986,72 @@ sub sendResponse {
   if ($response->{info}) {
     foreach my $line (@{$response->{info}}) {
       print "info=$line\n";
-  }
+    }
   }
 
   exit;
 }
+
+
+###############################################################################
+# getNotAccessibleMessage
+###############################################################################
+sub getNotAccessibleMessage {
+  my %args = @_;
+  my $SUB_NAME = 'getNotAccessibleMessage';
+
+  #### Decode the argument list
+  my $identifier = $args{'identifier'} || die("[$SUB_NAME] ERROR: identifier not passed");
+  my $PXPartner = $args{'PXPartner'} || die("[$SUB_NAME] ERROR: PXPartner not passed");
+
+  my $str = qq~
+ProteomeXchange dataset $identifier has been reserved by the $PXPartner repository for a dataset that has been deposited but is not yet publicly released and announced to ProteomeXchange.<BR><BR>
+~;
+
+  my $url = "??";
+  my $contact = "??";
+
+  if ( $PXPartner eq 'PRIDE' ) {
+
+    $url = "https://www.ebi.ac.uk/pride/archive/login";
+    $contact = "pride-support\@ebi.ac.uk";
+
+    $str .= qq~
+<B>If you are a reviewer of a manuscript that includes this dataset:</B><BR><BR>
+<UL>
+<LI> You should also have received a username and password to access this dataset $identifier.
+<LI> If you did not, contact your manuscript editor about obtaining this information.
+</UL>
+~;
+
+    $str .= qq~
+<UL>
+<LI> If you did, go to the <a href="$url">PRIDE Archive login page $url</a> to enter the reviewer credentials and access the data.
+<LI> If you have questions or problems about this process, please contact <a href="mailto:$contact">$contact</a>
+</UL>
+    ~;
+
+    $str .= qq~
+<B>If you have seen this identifier in an accepted manuscript:</B><BR><BR>
+<UL>
+<LI> Then this dataset should be publicly released. Probably the authors and/or the journal have not contacted the original repository yet in order to trigger the public release.
+<LI> Please go to the <a href="https://www.ebi.ac.uk/pride/archive/projects/$identifier/publish">PRIDE Publication Notification Page for this dataset</a> and enter in the citation information so that the dataset can be associated with the article and released.
+</UL>
+~;
+
+  }
+
+  $str .= qq~
+<B>If you are just waiting for this dataset to be released:</B><BR><BR>
+<UL>
+<LI> The dataset has not yet been released.
+<LI> Please check again later or contact the original data submitters to see when it will be public.
+</UL>
+~;
+
+  return $str;
+}
+
 
 1;
 
