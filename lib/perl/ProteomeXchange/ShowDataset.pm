@@ -403,7 +403,7 @@ sub printPageHeader {
       print "$line\n";
       print qq~
 				<link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
-        <script type="text/javascript" src="http://localhost/../javascript/js/toggle.js"></script>
+        <script type="text/javascript" src="/javascript/js/toggle.js"></script>
         ~;
      }elsif($line =~ /END/){
         last;
