@@ -54,10 +54,12 @@ sub getPubmedID{
   #### Get the XML data from NCBI
   my $url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?'.
             'db=PubMed&retmode=xml&term='.$doi;
-  my $xml = getHTTPData($url);
+  use LWP::Simple;
+  my $xml = get($url);
 
   print "------ Returned XML -------\n$xml\n-----------------------\n"
     if ($verbose > 1);
+
   %info = ();
   #### Set up the XML parser and parse the returned XML
   my $parser = new XML::Parser(
@@ -102,8 +104,9 @@ sub getArticleRef {
 
   #### Get the XML data from NCBI
   my $url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?".
-    "db=PubMed&id=$PubMedID&report=xml&mode=text";
-  my $xml = getHTTPData($url);
+    "db=pubmed&id=$PubMedID&retmode=xml";
+  use LWP::Simple;
+  my $xml = get($url);
 
   print "------ Returned XML -------\n$xml\n-----------------------\n"
     if ($verbose > 1);
