@@ -52,7 +52,7 @@ sub getPubmedID{
      print "$SUB_NAME: Error: Parameter DOI not passed\n";
   }
   #### Get the XML data from NCBI
-  my $url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?'.
+  my $url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?'.
             'db=PubMed&retmode=xml&term='.$doi;
   use LWP::Simple;
   my $xml = get($url);
@@ -76,7 +76,7 @@ sub getPubmedID{
  
 
 ###############################################################################
-# getArticleInfo
+# getArticleRef
 ###############################################################################
 sub getArticleRef {
   my $SUB_NAME = 'getArticleRef';
@@ -96,25 +96,53 @@ sub getArticleRef {
 
   #### Return if supplied PubMedID isn't all digits
   unless ($PubMedID =~ /^\d+$/) {
-    print "$SUB_NAME: Error: Parameter PubMedID '$PubMedID'not valid\n"
-      if ($verbose);
+    print "$SUB_NAME: Error: Parameter PubMedID '$PubMedID'not valid\n" if ($verbose);
     return 0;
   }
 
 
-  #### Get the XML data from NCBI
-  my $url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?".
-    "db=pubmed&id=$PubMedID&retmode=xml";
-  use LWP::Simple;
-  my $xml = get($url);
+  #### Allow a few retries because NCBI seems to be unstable
+  my $success = 0;
+  my $tryNumber = 1;
+  my $xml;
+  while ( !$success ) {
 
-  print "------ Returned XML -------\n$xml\n-----------------------\n"
-    if ($verbose > 1);
+    #### Get the XML data from NCBI
+    my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=$PubMedID&retmode=xml";
+    use LWP::Simple;
+    $xml = get($url);
+
+    print "------ Returned XML -------\n$xml\n-----------------------\n" if ($verbose > 1);
+
+    if ( $xml && $xml =~ /<\/PubmedArticleSet>/ ) {
+      $success = 1;
+    } else {
+      print "WARNING: Invalid response from NCBI. Perhaps intermittent. Trying again..\n" if ($verbose);
+      sleep(1);
+      if ( $tryNumber > 5 ) {
+	print "ERROR: Tried 5 times to get data from NCBI and failed\n";
+	$success = -1;
+      }
+      $tryNumber++;
+    }
+
+  }
 
   #### Return if no XML was returned
   unless ($xml) {
-    print "$SUB_NAME: Error: No XML returned for PubMedID '$PubMedID'\n"
-      if ($verbose);
+    print "$SUB_NAME: Error: No XML returned for PubMedID '$PubMedID'\n" if ($verbose);
+    return 0;
+  }
+
+  #### Return if invalid XML was returned
+  if ( $success == -1 ) {
+    print "$SUB_NAME: Error: Invalid response from NCBI for PubMedID '$PubMedID'\n" if ($verbose);
+    return 0;
+  }
+
+  #### Return if no Author was in the result. Probably an invalid PubMedID
+  unless ( $xml =~ /Author/ ) {
+    print "$SUB_NAME: Error: Empty response from NCBI for PubMedID '$PubMedID'. Perhaps an invalid PubMedID?\n" if ($verbose);
     return 0;
   }
 
@@ -156,12 +184,11 @@ sub getArticleRef {
   }
   my $ref  = "$info{AuthorList}, $info{ArticleTitle} $info{MedlineTA}, $info{Volume}".
              "($info{Issue}):$info{MedlinePgn}($info{PublishedYear}) [".
-             "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed?term=$PubMedID\" target=\"_blank\">pubmed</a>]";
+             "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed?term=$PubMedID\" target=\"_blank\">pubmed</a>]";
  
   return ($info{PublicationName}, $ref);
 
 }
-
 
 
 ###############################################################################
@@ -244,45 +271,19 @@ sub characters {
   }
 
   if ($context eq 'Year' && $handler->{Context}->[-2] eq 'PubDate') {
-  
     $info{PublishedYear} = $string;
   }
-  if (!defined $info{PublishedYear}  && $handler->{Context}->[-2] eq 'PubDate') {
+
+  # Some kind of fudge for a missing item
   # 2001 Dec 20-27
+  # Adjusted 2016-11-01 EWD to quiet a warning
+  if ( !defined($info{PublishedYear}) && defined($handler->{Context}->[-2]) && $handler->{Context}->[-2] eq 'PubDate' ) {
     ($info{PublishedYear}) = $string =~ /^(\d{4})/;
-    
   }  
 
 }
 
 
-
-###############################################################################
-# getHTTPData
-#
-# Simple internal function to fetch data via HTTP
-###############################################################################
-sub getHTTPData {
-  my $url = shift || die("getHTTPData: Must supply the URL");
-
-  #### Create a user agent object pretending to be Mozilla
-  my $ua = new LWP::UserAgent;
-  $ua->agent("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.0.0)");
-
-  #### Create a request object with the supplied URL
-  my $request = HTTP::Request->new(GET=>$url);
-
-  #### Pass request to the user agent and get a response back
-  my $response = $ua->request($request);
-
-  #### Return the data
-  if ($response->is_success) {
-    return $response->content;
-  } else {
-    return '';
-  }
-
-}
 
 ###############################################################################
 
@@ -346,25 +347,6 @@ extracted into a simple hash.
 
       A hash reference of some article attributes if the fetch was
       successful, or 0 if the fetch was not successful.
-
-
-=item * B<getHTTPData( $url )>
-
-    This internal method is just a wrapper for LWP.  It returns the result
-    from a URL in a string.
-
-      my $url = 'http://db.systemsbiology.net/';
-      my $result = getHTTPData($url);
-
-    INPUT PARAMETERS:
-
-      $url: a string containing the URL to fetch
-
-    OUTPUT:
-
-      A string containing the contents fetched from the specified URL or the
-      empty string if the data could not be fetched.
-
 
 =back
 
