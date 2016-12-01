@@ -542,7 +542,7 @@ sub processAnnouncement {
           $info->{hasRightXSD} && $info->{hasRightXSD} eq 'passed') {
 
 	push(@{$response->{info}},"Validating XML...");
-	my @result = `export LD_LIBRARY_PATH=/tools/src/Xerces/xerces-c-src_2_7_0/lib; /tools/src/Xerces/xerces-c-src_2_7_0/bin/SAX2Count -v=always $filename 2>&1`;
+	my @result = `export LD_LIBRARY_PATH=/tools/xerces-c-src_2_7_0/lib; /tools/xerces-c-src_2_7_0/bin/SAX2Count -v=always $filename 2>&1`;
 
 	my $nLines = scalar(@result);
 
