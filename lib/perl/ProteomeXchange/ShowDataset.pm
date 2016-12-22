@@ -1041,6 +1041,38 @@ ProteomeXchange dataset $identifier has been reserved by the $PXPartner reposito
 
   }
 
+
+  if ( $PXPartner eq 'MassIVE' ) {
+
+    $url = "http://massive.ucsd.edu/ProteoSAFe/QueryPXD?id=$identifier";
+    $contact = "ccms\@proteomics.ucsd.edu";
+
+    $str .= qq~
+<B>If you are a reviewer of a manuscript that includes this dataset:</B><BR><BR>
+<UL>
+<LI> You should also have received a username and password to access this dataset $identifier.
+<LI> If you did not, contact your manuscript editor about obtaining this information.
+</UL>
+~;
+
+    $str .= qq~
+<UL>
+<LI> If you did, go to the <a href="$url">MassIVE dataset page $url</a> to enter the reviewer credentials and access the data.
+<LI> If you have questions or problems about this process, please contact <a href="mailto:$contact">$contact</a>
+</UL>
+    ~;
+
+    $str .= qq~
+<B>If you have seen this identifier in an accepted manuscript:</B><BR><BR>
+<UL>
+<LI> Then this dataset should be publicly released. Probably the authors and/or the journal have not contacted the original repository yet in order to trigger the public release.
+<LI> Please contact <a href="mailto:$contact">$contact</a> to request that the dataset be associated with the article and released.
+</UL>
+~;
+
+  }
+
+
   $str .= qq~
 <B>If you are just waiting for this dataset to be released:</B><BR><BR>
 <UL>
