@@ -377,6 +377,9 @@ sub printTablePageHeader {
   }
 }
 
+#####################################################################
+# printPageHeader                                                   #
+#####################################################################
 sub printPageHeader {
   my $self = shift;
   my %args = @_;
@@ -385,33 +388,36 @@ sub printPageHeader {
   my $outputMode=$params->{outputMode} || 'html';
   my $datasetID = $params->{ID} || $params->{id};
   #### Print the template
+  #print "Status: 404 Invalid dataset\r\nContent-type:text/html; charset=ISO-8859-1\r\n\r\n";
   print "Content-type:text/html; charset=ISO-8859-1\r\n\r\n";
 
   foreach my $line ( @$template ){
     #if ($line =~/meta/){
     #  $line =~ s/utf-8/ISO-8859-1/;
     #}
-		if($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
-			my $len = 9 - length($datasetID);
+    if ($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
+      my $len = 9 - length($datasetID);
       my $title = $datasetID;
-			$line =~ s/$1/ProteomeXchange Dataset $title/;
-			print "$line\n";
-		} elsif ($line =~ /class="node-inner-padding"/) {
-			#$line =~ s/>/style="padding: 0">/g;
-			print "$line\n";
-		} elsif ($line =~ /^<!-- BEGIN main content -->/) {
+      $line =~ s/$1/ProteomeXchange Dataset $title/;
+      print "$line\n";
+    } elsif ($line =~ /class="node-inner-padding"/) {
+      #$line =~ s/>/style="padding: 0">/g;
+      print "$line\n";
+    } elsif ($line =~ /^<!-- BEGIN main content -->/) {
       print "$line\n";
       print qq~
-				<link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
+	<link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
         <script type="text/javascript" src="/javascript/js/toggle.js"></script>
         ~;
-     }elsif($line =~ /END/){
+     } elsif ($line =~ /END/) {
         last;
-     }else{
+     } else {
        print "$line";
      }
   }
 }
+
+
 #####################################################################
 # printPagerFooter                                                    #
 #####################################################################
@@ -434,10 +440,11 @@ sub printPageFooter {
     }
   }
 }
+
+
 #####################################################################
 # processresult                                                     #
 #####################################################################
-
 sub process_result{
   my %args = @_;
   my $result = $args{result};
@@ -575,8 +582,10 @@ sub process_result{
 
   }
 }
+
+
 ###############################################################################
-# showDataset
+# Dataset
 ###############################################################################
 sub showDataset {
   my $self = shift;
@@ -692,16 +701,18 @@ sub showDataset {
         $header =  ucfirst($key);
         if ($header eq 'PXPartner'){
           $header = 'HostingRepository';
-					$result->{$key} = $PXPartner unless ($result->{$key});
+	  $result->{$key} = $PXPartner unless ($result->{$key});
         }
 
         if ($key eq 'announcementXML'){
           $str .= qq~
                 <li><b>$header</b>: <a href='GetDataset?ID=$datasetID&outputMode=XML&test=$test' target="_blank">$result->{$key}</a></li>
                 ~;
+
         } elsif ($key eq 'DigitalObjectIdentifier') {
           $str .= qq~<li><b>$header</b>: <a href="$result->{$key}" target="_blank">$result->{$key}</a></li>~;
-        }elsif ($key eq 'derivedDataset'){
+
+        } elsif ($key eq 'derivedDataset'){
            if(@derivedDatasets){
              $str .= '<li><b>Reprocessed datasets that are derived from this dataset</b>: ';
              foreach my $acc (@derivedDatasets){
@@ -709,12 +720,14 @@ sub showDataset {
              }
              $str .='</li>';
            }
-        }elsif($key eq 'datasetOrigin'){
+
+        } elsif($key eq 'datasetOrigin'){
            if($result->{$key} =~ /ProteomeXchange accession.*PXD\d+/i){
              $result->{$key} =~ s#(PXD\d+)#<a href="GetDataset?ID=$1&test=$test" target="_blank">$1<\/a>#;
            }
            $str .= qq~<li><b>$header</b>: $result->{$key}</li>~;
-        }else {
+
+        } else {
           $str .= qq~<li><b>$header</b>: $result->{$key}</li>~;
         }
       }
@@ -745,13 +758,13 @@ sub showDataset {
               $str .= "</ul>\n";
             }
           } else {
-						my @lists = split (";",  $result->{$key});
-						foreach my $list(@lists){
-							next if ($list !~ /\w/);
-							$str .= qq~<li>$list</li>~;
-						}
+	    my @lists = split (";",  $result->{$key});
+	    foreach my $list(@lists) {
+	      next if ($list !~ /\w/);
+	      $str .= qq~<li>$list</li>~;
+	    }
           }
-					$str .= "</ol>\n";
+	  $str .= "</ol>\n";
         }
       }
 
@@ -828,6 +841,7 @@ sub showDataset {
 					return;
 				}
       }
+
     } else {
       $response->{result} = "ERROR";
       $response->{message} = $str;
@@ -837,13 +851,13 @@ sub showDataset {
 
   #### Otherwise present the information as an HTML page
   } else {
-		#### Show the dataset information window
-     print qq~
+    #### Show the dataset information window
+    print qq~
        <div id="main">
        <div id="primary" class="site-content">
        <div><a href="$CGI_BASE_DIR/GetDataset$teststr"> << Full experiment listing </a></div>
-        <h1 class="entry-title"> $title </h1>
-     ~;
+       <h1 class="entry-title"> $title </h1>
+    ~;
 
 
 			#### Show what the tweet message would be
@@ -869,9 +883,9 @@ sub showDataset {
 		 #### Finish the display card window
 
      print qq~
-				 </div><!-- #content -->
-				 </div><!-- #primary .site-content -->
-				 </div><!-- #main -->
+	 </div><!-- #content -->
+	 </div><!-- #primary .site-content -->
+	 </div><!-- #main -->
       ~;
   }
 
