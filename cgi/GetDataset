@@ -78,21 +78,28 @@ my $outputMode = $params->{outputMode} || 'html';
 my $HTML  = new ProteomeXchange::ShowDataset;
 #### Handle a dataset identifier
 
+#### If the action is to search
 if ($params->{action} && $params->{action} =~ /search/i){
   if ($params->{ID}  && $params->{ID} ne '') {
-    $HTML -> showDataset(params=>$params,response=>$response);
-  }else{
-    $HTML -> listDatasets(params=>$params,response=>$response);
+    $HTML->showDataset(params=>$params,response=>$response);
+  } else {
+    $HTML->listDatasets(params=>$params,response=>$response);
   }
+
+#### Otherwise, if action is not to search
 } else {
+
+  #### If an ID was directly provided, provide that one
   if ($params->{ID} && $params->{ID} ne '') {
-    if ($outputMode =~ /html/i){
-      $HTML -> printPageHeader (template => \@template);
-      $HTML -> showDataset(params=>$params,response=>$response);
-      $HTML -> printPageFooter (template => \@template);
-    }else{
+    if ($outputMode =~ /html/i) {
+      my $headerStr = $HTML->createPageHeader(template=>\@template);
+      $HTML->showDataset(params=>$params, response=>$response, headerStr=>$headerStr);
+      $HTML->printPageFooter(template=>\@template);
+    } else {
       $HTML -> showDataset(params=>$params,response=>$response);
     }
+
+  #### Otherwise list render a whole listing of datasets
   } else {
     if ($outputMode =~ /html/i){
       #$HTML -> printPageHeader (template => \@template);
