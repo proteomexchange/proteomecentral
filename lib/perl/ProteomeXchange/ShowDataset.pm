@@ -378,43 +378,66 @@ sub printTablePageHeader {
 }
 
 #####################################################################
-# printPageHeader                                                   #
+# createPageHeader                                                   #
 #####################################################################
-sub printPageHeader {
+sub createPageHeader {
   my $self = shift;
   my %args = @_;
+
   my $template = $args{template};
   my $params = $args{params};
   my $outputMode=$params->{outputMode} || 'html';
   my $datasetID = $params->{ID} || $params->{id};
-  #### Print the template
-  #print "Status: 404 Invalid dataset\r\nContent-type:text/html; charset=ISO-8859-1\r\n\r\n";
-  print "Content-type:text/html; charset=ISO-8859-1\r\n\r\n";
 
+  #### If there is no datasetID, make up something
+  $datasetID = 'PXD000000' unless ( $datasetID );
+
+  #### Create a buffer for storing the content
+  my $buf = '';
+
+  #### Create a HTTP content preamble
+  $buf .= "Status: 200 OK\r\nContent-type:text/html; charset=ISO-8859-1\r\n\r\n";
+
+  #### Loop over each line in the template, adjusting it
   foreach my $line ( @$template ){
+
+    #### Some relic for fixing encoding??
     #if ($line =~/meta/){
     #  $line =~ s/utf-8/ISO-8859-1/;
     #}
+
+    #### Adjust the title
     if ($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
       my $len = 9 - length($datasetID);
       my $title = $datasetID;
       $line =~ s/$1/ProteomeXchange Dataset $title/;
-      print "$line\n";
+      $buf .= "$line\n";
+
+    #### Obsolete adjustment??
     } elsif ($line =~ /class="node-inner-padding"/) {
       #$line =~ s/>/style="padding: 0">/g;
-      print "$line\n";
+      $buf .= "$line\n";
+
+    #### At the beginning of the main content area, add some custom code
     } elsif ($line =~ /^<!-- BEGIN main content -->/) {
-      print "$line\n";
-      print qq~
-	<link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
-        <script type="text/javascript" src="/javascript/js/toggle.js"></script>
-        ~;
-     } elsif ($line =~ /END/) {
-        last;
-     } else {
-       print "$line";
-     }
-  }
+      $buf .= "$line\n";
+      $buf .= qq~
+	 <link rel='stylesheet' id='style-css'  href='../javascript/css/patchwork.css' type='text/css' media='all' />
+         <script type="text/javascript" src="/javascript/js/toggle.js"></script>
+      ~;
+
+    #### When we reach the END, terminate loop
+    } elsif ($line =~ /END/) {
+      last;
+
+    #### Or if any other line, just pass through
+    } else {
+      $buf .= "$line";
+    }
+
+  } # end foreach
+
+  return $buf;
 }
 
 
@@ -585,7 +608,7 @@ sub process_result{
 
 
 ###############################################################################
-# Dataset
+# showDataset
 ###############################################################################
 sub showDataset {
   my $self = shift;
@@ -598,6 +621,7 @@ sub showDataset {
   my $outputmode = $params->{outputMode} || '';
   my $datasetID = $params->{ID} || die("[$SUB_NAME] ERROR: datasetID not passed");
   my $test = $params->{test} || 'no';
+  my $headerStr = $args{headerStr};
 
   my $table_name = 'dataset';
   my $path = '/local/wwwspecial/proteomecentral/var/submissions';
@@ -620,18 +644,24 @@ sub showDataset {
   my ($title,$status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetTitle);
   my ($datasetSubmitter,$datasetLabHead,$datasetSpeciesString);
 
+  #### Set the default status to be set later
+  $response->{httpStatus} = "200 OK";
+  $response->{status} = "OK";
+  $response->{code} = "0";
+  $response->{message} = "Request completed normally";
 
-  my $pageStatus = 'OK';
   my $str = '';
   $title  = $params->{ID};
 
   #### If a valid identifier was not obtained
   if ( $datasetID !~ /^\d+$/) {
-    $str = "The input identifier is not valid and should be of the form PXDnnnnnn or numbers only.";
-    $pageStatus = 'ERROR';
+    $response->{httpStatus} = "404 Malformed identifier";
+    $response->{status} = "ERROR";
+    $response->{code} = "1001";
+    $response->{message} = "Identifier '$title' is not valid and should be of the form PXDnnnnnn or numbers only";
   }
 
-  if ($pageStatus eq 'OK') {
+  if ($response->{status} eq 'OK') {
     my $len = 9 - length($datasetID);
     $title = substr ($prefix."000001",0, $len) . "$datasetID";
     #### Fetch results from dataset table
@@ -659,21 +689,23 @@ sub showDataset {
 
     #### If no row was returned, then this identifer must not have been assigned yet
     if ( scalar(@results) == 0) {
-      $str = "The identifier $title has not yet been assigned. Please check the identifier and type it in again.";
-      $pageStatus = 'ERROR';
+      $response->{httpStatus} = "404 Identifier not assigned";
+      $response->{status} = "ERROR";
+      $response->{code} = "1002";
+      $response->{message} = "Identifier '$title' has not yet been assigned to a repository";
     }
+
     #### If more than one row is returned, this suggests database corruption or some other problem
     if ( scalar(@results) > 1) {
-      $str = "Too many rows returned. Please report error GDSsD0001 to administrator.";
-      $pageStatus = 'ERROR';
+      $response->{httpStatus} = "404 Identifier not assigned";
+      $response->{status} = "ERROR";
+      $response->{code} = "1099";
+      $response->{message} = "Too many rows returned for '$title'. Please report error GDSsD0001 to administrator.";
     }
 
-    if ( $pageStatus eq 'OK' ) {
+    if ( $response->{status} eq 'OK' ) {
       ($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier) = @{$results[0]};
       $title = $datasetIdentifier;
-
-      #print "Content-Type: text/html\n\nLooking for data file <BR>\n";
-      #print "Looking for data file $path/$announcementXML<BR>\n";
 
       my $parser = new ProteomeXchange::DatasetParser;
       $parser->parse('announcementXML' => $announcementXML, 'response' => $response, filename=> "$path/$announcementXML" );
@@ -804,53 +836,81 @@ sub showDataset {
   } # end else
 
 
-  if ( $pageStatus eq 'OK' && $status =~ /requested/ ) {
+  if ( $response->{status} eq 'OK' && $status =~ /requested/ ) {
+    $response->{httpStatus} = "404 Dataset not yet accessible";
+    $response->{status} = "ERROR";
+    $response->{code} = "1003";
+    $response->{message} = "The identifier '$title' has been reserved but it not yet accessible";
     $str = getNotAccessibleMessage( identifier => $title, PXPartner => $PXPartner );
-    $pageStatus = 'ERROR';
   }
 
 
-  #### Special handling if the output mode is XML
+  #### If the output mode is XML, render output as XML
   if ( $outputmode =~ /XML/i ) {
-    if ( $pageStatus eq 'OK' ) {
+
+    #### If data was successfully accessed
+    if ( $response->{status} eq 'OK' ) {
 
       #### If there's no filename available, error out
       if ( !defined($announcementXML) || $announcementXML eq '' ) {
-				$response->{result} = "ERROR";
-				$response->{message} = "no submission found for $params->{ID}\n";
-				sendResponse(response=>$response);
+	$response->{httpStatus} = "404 Dataset submission file undefined";
+	$response->{status} = "ERROR";
+	$response->{code} = "1004";
+	$response->{message} = "Submission file for dataset '$title' is undefined";
+	sendResponse(response=>$response);
+	return;
 
       #### Else open and dump the file
       } else {
 
-			#### If the file exists
-			if ( -e "$path/$announcementXML" ) {
-				open (INFILE, "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
-				print "Content-type: text/plain\n\n";
-				my $inline;
-				while ($inline = <INFILE>) {
-					print $inline;
-				}
-				close(INFILE);
+	#### If the file exists
+	if ( -e "$path/$announcementXML" ) {
+	  open (INFILE, "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
+	  print "Content-type: text/plain\n\n";
+	  my $inline;
+	  while ($inline = <INFILE>) {
+	    print $inline;
+	  }
+	  close(INFILE);
 
-				#### Or if the file doesn't exist, error out
-				} else {
-					$response->{result} = "ERROR";
-					$response->{message} = "cannot find submission file $announcementXML\n";
-					sendResponse(response=>$response);
-					return;
-				}
+	#### Or if the file doesn't exist, error out
+        } else {
+	  $response->{httpStatus} = "404 Dataset submission file unavailable";
+	  $response->{status} = "ERROR";
+	  $response->{code} = "1005";
+	  $response->{message} = "Submission file for dataset '$title' is not available at $announcementXML";
+	  sendResponse(response=>$response);
+	  return;
+        }
       }
 
+    #### Something went wrong, so just error out
     } else {
-      $response->{result} = "ERROR";
-      $response->{message} = $str;
       sendResponse(response=>$response);
       return;
     }
 
   #### Otherwise present the information as an HTML page
   } else {
+
+    #### If the dataset information is not being provided, then return status 404 per ELIXIR request
+    if ( $headerStr ) {
+      if ( $response->{status} ne 'OK' ) {
+	$headerStr =~ s/200 OK/$response->{httpStatus}/;
+      }
+      print $headerStr;
+    } else {
+      $response->{httpStatus} = "500 Internal Error: No header available";
+      $response->{status} = "ERROR";
+      $response->{code} = "1098";
+      $response->{message} = "Proper HTML header is not available. Please report to administrator.";
+      sendResponse(response=>$response);
+      return;
+    }
+
+    #### If there isn't some content already defined, there was probably an error, so set the content to the error message
+    $str = $response->{message} unless ( $str );
+
     #### Show the dataset information window
     print qq~
        <div id="main">
@@ -990,11 +1050,25 @@ sub sendResponse {
   #### Decode the argument list
   my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
 
-  print "Content-type: text/plain\n\n";
+  #### Default HTTP code
+  my $httpCode = "200 OK\n";
 
-  print "result=$response->{result}\n";
-  print "message=$response->{message}\n" if ($response->{result});
+  #### If there's an explicit HTTP error code, then set it
+  if ( $response->{httpStatus} ) {
+    $httpCode = "$response->{httpStatus}\n";
+  }
+
+  #### Send HTTP header
+  $httpCode = "Status: $httpCode" if ( $httpCode );
+  print "${httpCode}Content-type: text/plain\n\n";
+
+  #### Preferred status is the new status keyword but allow older result
+  my $status = $response->{status} || $response->{result};
+  
+  print "result=$status\n";
+  print "message=$response->{message}\n" if ($response->{message});
   print "identifier=$response->{identifier}\n" if ($response->{identifier});
+  print "code=$response->{code}\n" if ($response->{code});
 
   #if ($response->{info} && $response->{verbose}) {
   if ($response->{info}) {
