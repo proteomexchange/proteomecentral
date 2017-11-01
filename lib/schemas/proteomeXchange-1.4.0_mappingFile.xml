@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="https://psidev.svn.sourceforge.net/svnroot/psidev/psi/tools/current/xsl/cv-mapping/CvMappingRules.xsl" type="text/xsl"?>
+<!-- Incomplete start for a ProteomeXchange XML 1.4.0 mapping file created by EWD -->
+<CvMapping xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="http://www.psidev.info/sites/default/files/CvMapping.xsd" modelName="proteomeXchange-1.4.0.xsd" modelURI="http://proteomecentral.proteomexchange.org/schemas/proteomeXchange-1.4.0.xsd" modelVersion="1.4.0">
+
+    <CvReferenceList>
+      <CvReference cvName="PSI-MS" cvIdentifier="MS"/>
+      <CvReference cvName="Brenda" cvIdentifier="BTO"/>
+      <CvReference cvName="GO" cvIdentifier="GO"/>
+      <CvReference cvName="PATO" cvIdentifier="PATO"/>
+      <CvReference cvName="UO" cvIdentifier="UO"/>    
+    </CvReferenceList>
+
+    <CvMappingRuleList>
+
+        <!-- contact -->
+        <CvMappingRule id="contact_must" cvElementPath="/ProteomeXchangeDataset/ContactList/Contact/cvParam/@accession" requirementLevel="MUST" scopePath="/ProteomeXchangeDataset/ContactList/Contact" cvTermsCombinationLogic="AND" >
+          <CvTerm termAccession="MS:1000586" useTermName="false" useTerm="true" termName="contact name" isRepeatable="false" allowChildren="false" cvIdentifierRef="MS" />
+          <CvTerm termAccession="MS:1000590" useTermName="false" useTerm="true" termName="contact organization" isRepeatable="false" allowChildren="false" cvIdentifierRef="MS" />
+        </CvMappingRule>
+        <CvMappingRule id="contact_may" cvElementPath="/ProteomeXchangeDataset/ContactList/Contact/cvParam/@accession" requirementLevel="MAY" scopePath="/ProteomeXchangeDataset/ContactList/Contact" cvTermsCombinationLogic="OR" >
+          <CvTerm termAccession="MS:1000585" useTermName="false" useTerm="false" termName="contact person attribute" isRepeatable="true" allowChildren="true" cvIdentifierRef="MS" />
+        </CvMappingRule>
+
+        <!-- instrument  -->
+        <CvMappingRule id="instrumentconfiguration_must" cvElementPath="/ProteomeXchangeDataset/InstrumentList/Instrument/cvParam/@accession" requirementLevel="MUST" scopePath="/ProteomeXchangeDataset/InstrumentList/Instrument" cvTermsCombinationLogic="AND">
+          <CvTerm termAccession="MS:1000031" useTerm="true" termName="instrument model" isRepeatable="true" allowChildren="true" cvIdentifierRef="MS"></CvTerm>
+        </CvMappingRule>
+        <CvMappingRule id="instrumentconfiguration_may" cvElementPath="/ProteomeXchangeDataset/InstrumentList/Instrument/cvParam/@accession" requirementLevel="MAY" scopePath="/ProteomeXchangeDataset/InstrumentList/Instrument" cvTermsCombinationLogic="OR">
+          <CvTerm termAccession="MS:1000496" useTerm="false" termName="instrument attribute" isRepeatable="true" allowChildren="true" cvIdentifierRef="MS"></CvTerm>
+        </CvMappingRule>
+
+        <!-- DatasetFile -->
+        <CvMappingRule id="DatasetFile_must" cvElementPath="/ProteomeXchangeDataset/DatasetFileList/DatasetFile/cvParam/@accession" requirementLevel="MUST" scopePath="/ProteomeXchangeDataset/DatasetFileList/DatasetFile" cvTermsCombinationLogic="AND">
+          <CvTerm termAccession="PRIDE:0000403" useTerm="false" termName="Associated file URI" isRepeatable="true" allowChildren="true" cvIdentifierRef="MS"></CvTerm>
+        </CvMappingRule>
+
+    </CvMappingRuleList>
+
+</CvMapping>

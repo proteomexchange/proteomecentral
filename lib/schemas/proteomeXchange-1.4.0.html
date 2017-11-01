@@ -1,0 +1,1702 @@
+<html><head>
+
+	  <style type="text/css">
+	      body {  font-family: Helvetica, Arial, sans-serif; font-size: 9pt; background-color: #ffffff;}
+	      table{  border: 1px solid black; border-collapse: collapse; }
+	       th   {  border: 1px solid black; font-family: Helvetica, Arial, sans-serif; font-size: 9pt; font-weight: bold;
+	       background-color: #dddddd;}
+	       td   {  border: 1px solid black; font-family: Helvetica, Arial, sans-serif; font-size: 9pt; padding:3px; vertical-align:top;}
+	       table.zero{  border: 0px ; border-collapse: collapse; }
+	       td.zero {  border: 0px ; font-family: Helvetica, Arial, sans-serif; font-size: 9pt; padding:3px; vertical-align:top;}
+	       form   {  font-family: Helvetica, Arial, sans-serif; font-size: 9pt}
+	       pre    {  font-family: Courier New, Courier; font-size: 8pt}
+	       h1   {  font-family: Helvetica, Arial, sans-serif; font-size: 14pt; font-weight: bold}
+	       h2   {  font-family: Helvetica, Arial, sans-serif; font-size: 12pt; font-weight: bold;
+		     padding: 5px;
+		     border: 2px dotted black;
+		       background-color: #ddddff;
+		   }
+	       h3   {  font-family: Helvetica, Arial, sans-serif; font-size: 12pt}
+	       h4   {  font-family: AHelvetica, rial, sans-serif; font-size: 12pt}
+	    </style>
+		</head>
+<body>
+<H2>Element &lt;<a name="ProteomeXchangeDataset">ProteomeXchangeDataset</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Top-level element for a ProteomeXchange XML document describing a dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ProteomeXchangeDatasetType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>formatVersion</TD><TD>versionRegex</TD><TD>required</TD><TD>Version number of this ProteomeXchange XML format.</TD></TR>
+<TR><TD>id</TD><TD>xs:string</TD><TD>required</TD><TD>Unique identifier for this ProteomeXchange XML document.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#CvList">CvList</a></TD><TD>1</TD><TD>1</TD><TD>The list of controlled vocabularies used in the file.</TD></TR>
+<TR><TD><a href="#ChangeLog">ChangeLog</a></TD><TD>0</TD><TD>1</TD><TD>The change log message to record what changes and updates were made to this dataset for a revised announcement.</TD></TR>
+<TR><TD><a href="#DatasetSummary">DatasetSummary</a></TD><TD>1</TD><TD>1</TD><TD>Broad description of the dataset being announced, inlcuding a title, abstract, review level, etc.</TD></TR>
+<TR><TD><a href="#DatasetIdentifierList">DatasetIdentifierList</a></TD><TD>1</TD><TD>1</TD><TD>The list of identifiers associated with this dataset, not just the PXD identifier, but possibly DOIs and other identifiers.</TD></TR>
+<TR><TD><a href="#DatasetOriginList">DatasetOriginList</a></TD><TD>1</TD><TD>1</TD><TD>The list of the origins of this dataset. This list can link to other ProteomeXchange datasets or other resources. 
+        If this dataset contains previously unreported data, then a 'new dataset' annotation should be used.</TD></TR>
+<TR><TD><a href="#SpeciesList">SpeciesList</a></TD><TD>1</TD><TD>1</TD><TD>The list of species from which the data has been generated.</TD></TR>
+<TR><TD><a href="#InstrumentList">InstrumentList</a></TD><TD>1</TD><TD>1</TD><TD>The list of instruments on which the data generation was performed.</TD></TR>
+<TR><TD><a href="#ModificationList">ModificationList</a></TD><TD>1</TD><TD>1</TD><TD>The list of amino acid mass modifications caused or considered, defined as cvParams.</TD></TR>
+<TR><TD><a href="#ContactList">ContactList</a></TD><TD>1</TD><TD>1</TD><TD>The list of contacts related to the ProteomeXchange dataset.</TD></TR>
+<TR><TD><a href="#PublicationList">PublicationList</a></TD><TD>1</TD><TD>1</TD><TD>The list of publications from which the dataset was collected or wherein it is published</TD></TR>
+<TR><TD><a href="#KeywordList">KeywordList</a></TD><TD>1</TD><TD>1</TD><TD>Keywords defined by controlled vocabulary or free text categorised by a controlled vocabolary term 
+        (e.g. 'journal article keyword', 'submitter keyword' or 'curator keyword').</TD></TR>
+<TR><TD><a href="#FullDatasetLinkList">FullDatasetLinkList</a></TD><TD>1</TD><TD>1</TD><TD>The list of links to the complete ProteomeXchange dataset.</TD></TR>
+<TR><TD><a href="#DatasetFileList">DatasetFileList</a></TD><TD>0</TD><TD>1</TD><TD>The list of ALL files comprising this ProteomeXchange submission.</TD></TR>
+<TR><TD><a href="#RepositoryRecordList">RepositoryRecordList</a></TD><TD>0</TD><TD>1</TD><TD>The list of records as found in the repository the data was submitted to (for example PRIDE experiment records).</TD></TR>
+<TR><TD><a href="#AdditionalInformation">AdditionalInformation</a></TD><TD>0</TD><TD>1</TD><TD>A place for all additional information that may be added to the 
+        broadcast message and that could not be fit into another location. Here should 
+        also go references to other ProteomeXchange submissions.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;ProteomeXchangeDataset id=&quot;PXD004574&quot; formatVersion=&quot;1.4.0&quot; xsi:noNamespaceSchemaLocation=&quot;proteomeXchange-1.4.0.xsd&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+    &lt;CvList&gt;
+        &lt;Cv fullName=&quot;PSI-MS&quot; uri=&quot;https://raw.githubusercontent.com/HUPO-PSI/psi-ms-CV/master/psi-ms.obo&quot; id=&quot;MS&quot;/&gt;
+        &lt;Cv fullName=&quot;PRIDE&quot; uri=&quot;https://raw.githubusercontent.com/PRIDE-Utilities/pride-ontology/master/pride_cv.obo&quot; id=&quot;PRIDE&quot;/&gt;
+        &lt;Cv fullName=&quot;PSI-MOD&quot; uri=&quot;https://raw.githubusercontent.com/MICommunity/psidev/master/psi/mod/data/PSI-MOD.obo&quot; id=&quot;MOD&quot;/&gt;
+        &lt;Cv fullName=&quot;UNIMOD&quot; uri=&quot;http://www.unimod.org/obo/unimod.obo&quot; id=&quot;UNIMOD&quot;/&gt;
+    &lt;/CvList&gt;
+  ...
+&lt;/ProteomeXchangeDataset&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="AdditionalInformation">AdditionalInformation</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A place for all additional information that may be added to the 
+        broadcast message and that could not be fit into another location. Here should 
+        also go references to other ProteomeXchange submissions.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>AdditionalInformationType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>0</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+<TR><TD><a href="#userParam">userParam</a></TD><TD>0</TD><TD>unbounded</TD><TD>A single user-defined parameter.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="AnnotationList">AnnotationList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Any additional annotation of the record/experiment that the 
+            submitter/generator of the message deems important enough to announce.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>AdditionalInformationType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>0</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+<TR><TD><a href="#userParam">userParam</a></TD><TD>0</TD><TD>unbounded</TD><TD>A single user-defined parameter.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="ChangeLog">ChangeLog</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The change log message to record what changes and updates were made to this dataset for a revised announcement.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ChangeLogType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#ChangeLogEntry">ChangeLogEntry</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single change log entry giving providing the date on the change, a new version number of the dataset and a description of the change/update.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;ChangeLog&gt;
+    &lt;ChangeLogEntry date=&quot;2017-06-19&quot;&gt;Updated publication reference for PubMed record(s): 25652787, 28604659.&lt;/ChangeLogEntry&gt;
+&lt;/ChangeLog&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="ChangeLogEntry">ChangeLogEntry</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A single change log entry giving providing the date on the change, a new version number of the dataset and a description of the change/update.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ChangeLogEntryType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>date</TD><TD>xs:date</TD><TD>optional</TD><TD>The date of this entry. This is largely handled by the central ProteomeXchange service anyway, and is largly ignored.</TD></TR>
+<TR><TD>version</TD><TD>xs:string</TD><TD>optional</TD><TD>The version number of this document. The first change would be version 2 here. This is largely handled by the central ProteomeXchange service anyway, and is largly ignored.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;ChangeLogEntry date=&quot;2017-06-19&quot;&gt;Updated publication reference for PubMed record(s): 25652787, 28604659.&lt;/ChangeLogEntry&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Contact">Contact</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Contact person related to the ProteomeXchange dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ContactType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>id</TD><TD>xs:ID</TD><TD>required</TD><TD>Identifier for the contact to be used for referencing within a document.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;Contact id=&quot;project_lab_head&quot;&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002332&quot; name=&quot;lab head&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000586&quot; name=&quot;contact name&quot; value=&quot;Claire Brehelin&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000589&quot; name=&quot;contact email&quot; value=&quot;claire.brehelin@u-bordeaux.fr&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000590&quot; name=&quot;contact affiliation&quot; value=&quot;Laboratory of Membrane Biogenesis, University of Bordeaux, France&quot;/&gt;
+&lt;/Contact&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><PRE>Path /ProteomeXchangeDataset/ContactList/Contact
+MAY supply a *child* term of <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000585">MS:1000585</a> (<span title="Details about a person or organization to contact in case of concern or discussion about the file." class="popup">contact attribute</span>) one or more times
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000586">MS:1000586</a> (<span title="Name of the contact person or organization." class="popup">contact name</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000587">MS:1000587</a> (<span title="Postal address of the contact person or organization." class="popup">contact address</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000588">MS:1000588</a> (<span title="Uniform Resource Locator related to the contact person or organization." class="popup">contact URL</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000589">MS:1000589</a> (<span title="Email address of the contact person or organization." class="popup">contact email</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000590">MS:1000590</a> (<span title="Home institution of the contact person." class="popup">contact affiliation</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1001267">MS:1001267</a> (<span title="Software vendor role." class="popup">software vendor</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1001268">MS:1001268</a> (<span title="Programmer role." class="popup">programmer</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1001269">MS:1001269</a> (<span title="Instrument vendor role." class="popup">instrument vendor</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1001270">MS:1001270</a> (<span title="Lab personnel role." class="popup">lab personnel</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1001271">MS:1001271</a> (<span title="Researcher role." class="popup">researcher</span>) 
+  <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000585">et al.</a>
+MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000590">MS:1000590</a> (<span title="Home institution of the contact person." class="popup">contact affiliation</span>) only once
+MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000586">MS:1000586</a> (<span title="Name of the contact person or organization." class="popup">contact name</span>) only once
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000586&quot; name=&quot;contact name&quot; value=&quot;George Rosenberger&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000589&quot; name=&quot;contact email&quot; value=&quot;rosenberger@imsb.biol.ethz.ch&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000590&quot; name=&quot;contact affiliation&quot; value=&quot;Institute of Molecular Systems Biology ETH Zurich&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002037&quot; name=&quot;dataset submitter&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002332&quot; name=&quot;lab head&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="ContactList">ContactList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of contacts related to the ProteomeXchange dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ContactListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Contact">Contact</a></TD><TD>1</TD><TD>unbounded</TD><TD>Contact person related to the ProteomeXchange dataset.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;ContactList&gt;
+    &lt;Contact id=&quot;project_submitter&quot;&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000586&quot; name=&quot;contact name&quot; value=&quot;George Rosenberger&quot;/&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000589&quot; name=&quot;contact email&quot; value=&quot;rosenberger@imsb.biol.ethz.ch&quot;/&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000590&quot; name=&quot;contact affiliation&quot; value=&quot;Institute of Molecular Systems Biology ETH Zurich&quot;/&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1002037&quot; name=&quot;dataset submitter&quot;/&gt;
+    &lt;/Contact&gt;
+  ...
+&lt;/ContactList&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Cv">Cv</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A source controlled vocabulary (CV) from which cvParams will be obtained.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>CvType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>fullName</TD><TD>xs:string</TD><TD>required</TD><TD>The full name of the CV.</TD></TR>
+<TR><TD>id</TD><TD>xs:ID</TD><TD>required</TD><TD>The unique identifier of this CV within the document to be referenced by cvParam elements. </TD></TR>
+<TR><TD>uri</TD><TD>xs:anyURI</TD><TD>required</TD><TD>The URI of the source CV.</TD></TR>
+<TR><TD>version</TD><TD>xs:string</TD><TD>optional</TD><TD>The version of the CV.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;Cv fullName=&quot;PRIDE&quot; uri=&quot;https://raw.githubusercontent.com/PRIDE-Utilities/pride-ontology/master/pride_cv.obo&quot; id=&quot;PRIDE&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="CvList">CvList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of controlled vocabularies used in the file.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>CvListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Cv">Cv</a></TD><TD>1</TD><TD>unbounded</TD><TD>A source controlled vocabulary (CV) from which cvParams will be obtained.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;CvList&gt;
+    &lt;Cv fullName=&quot;PSI-MS&quot; uri=&quot;https://raw.githubusercontent.com/HUPO-PSI/psi-ms-CV/master/psi-ms.obo&quot; id=&quot;MS&quot;/&gt;
+    &lt;Cv fullName=&quot;PRIDE&quot; uri=&quot;https://raw.githubusercontent.com/PRIDE-Utilities/pride-ontology/master/pride_cv.obo&quot; id=&quot;PRIDE&quot;/&gt;
+    &lt;Cv fullName=&quot;PSI-MOD&quot; uri=&quot;https://raw.githubusercontent.com/MICommunity/psidev/master/psi/mod/data/PSI-MOD.obo&quot; id=&quot;MOD&quot;/&gt;
+    &lt;Cv fullName=&quot;UNIMOD&quot; uri=&quot;http://www.unimod.org/obo/unimod.obo&quot; id=&quot;UNIMOD&quot;/&gt;
+&lt;/CvList&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="cvParam">cvParam</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A single entry from an ontology or a controlled vocabulary.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>CvParamType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>accession</TD><TD>xs:string</TD><TD>required</TD><TD>The accession or ID number of this CV term in the source CV.
+            </TD></TR>
+<TR><TD>cvRef</TD><TD>xs:IDREF</TD><TD>required</TD><TD>A reference to the cv element from which this term originates.
+            </TD></TR>
+<TR><TD>name</TD><TD>xs:string</TD><TD>required</TD><TD>The name of the parameter.</TD></TR>
+<TR><TD>unitAccession</TD><TD>xs:string</TD><TD>optional</TD><TD>An accession number identifying the unit within the OBO foundry Unit CV.
+        </TD></TR>
+<TR><TD>unitCvRef</TD><TD>xs:string</TD><TD>optional</TD><TD>If a unit term is referenced, this attribute MUST refer to the CV 'id' attribute
+          defined in the cvList in this file.
+        </TD></TR>
+<TR><TD>unitName</TD><TD>xs:string</TD><TD>optional</TD><TD>The name of the unit.</TD></TR>
+<TR><TD>value</TD><TD>xs:string</TD><TD>optional</TD><TD>The user-entered value of the parameter.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000400&quot; name=&quot;Reference&quot; value=&quot;Brocard L, Immel F, Coulon D, Esnay N, Tuphile K, Pascal S, Claverol S, Fouillen L, Bessoule JJ, Bréhélin C. Proteomic Analysis of Lipid Droplets from Arabidopsis Aging Leaves Brings New Insight into Their Biogenesis and Functions. Front Plant Sci. 2017 May 29;8:894. eCollection 2017&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetFile">DatasetFile</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Description of the source file, including location and type.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetFileType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>id</TD><TD>xs:ID</TD><TD>required</TD><TD>Identifier for the sourceFile to be used for referencing within a document.</TD></TR>
+<TR><TD>name</TD><TD>xs:string</TD><TD>required</TD><TD>Name of the source file, without reference to location (either URI or local path).</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;DatasetFile id=&quot;FILE_2&quot; name=&quot;uniprot_human_20150223_decoys_irt_apoe.fasta&quot;&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000403&quot; name=&quot;Associated file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2017/06/PXD004574/uniprot_human_20150223_decoys_irt_apoe.fasta&quot;/&gt;
+&lt;/DatasetFile&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><PRE>Path /ProteomeXchangeDataset/DatasetFileList/DatasetFile
+MUST supply a *child* term of <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=PRIDE:0000403">PRIDE:0000403</a> (<span title="???" class="popup">Associated file URI</span>) one or more times
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000408&quot; name=&quot;Search engine output file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2017/06/PXD004574/iprophet_apoe.pep.xml&quot;/&gt;
+&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000403&quot; name=&quot;Associated file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2017/06/PXD004574/db_assays_spectral_library.tgz&quot;/&gt;
+&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000410&quot; name=&quot;'Other' type file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2017/06/PXD004574/comet.params.tgz&quot;/&gt;
+&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000404&quot; name=&quot;Associated raw file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2017/06/PXD004574/yanliu_L130104_002.mzXML.gz&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetFileList">DatasetFileList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of ALL files comprising this ProteomeXchange submission.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetFileListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#DatasetFile">DatasetFile</a></TD><TD>1</TD><TD>unbounded</TD><TD>Description of the source file, including location and type.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;DatasetFileList&gt;
+    &lt;DatasetFile id=&quot;FILE_0&quot; name=&quot;iprophet_apoe.pep.xml&quot;&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000408&quot; name=&quot;Search engine output file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2017/06/PXD004574/iprophet_apoe.pep.xml&quot;/&gt;
+    &lt;/DatasetFile&gt;
+    &lt;DatasetFile id=&quot;FILE_1&quot; name=&quot;db_assays_spectral_library.tgz&quot;&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000403&quot; name=&quot;Associated file URI&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2017/06/PXD004574/db_assays_spectral_library.tgz&quot;/&gt;
+    &lt;/DatasetFile&gt;
+  ...
+&lt;/DatasetFileList&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetIdentifier">DatasetIdentifier</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>An identifier associated with this dataset, defined by CV term.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetIdentifierType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;DatasetIdentifier&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD004574&quot;/&gt;
+&lt;/DatasetIdentifier&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD004574&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetIdentifierList">DatasetIdentifierList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of identifiers associated with this dataset, not just the PXD identifier, but possibly DOIs and other identifiers.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetIdentifierListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#DatasetIdentifier">DatasetIdentifier</a></TD><TD>1</TD><TD>unbounded</TD><TD>An identifier associated with this dataset, defined by CV term.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;DatasetIdentifierList&gt;
+    &lt;DatasetIdentifier&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001919&quot; name=&quot;ProteomeXchange accession number&quot; value=&quot;PXD004574&quot;/&gt;
+    &lt;/DatasetIdentifier&gt;
+&lt;/DatasetIdentifierList&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetOrigin">DatasetOrigin</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Specifies via CV term whether this is an original dataset or is a re-interpretation of a previous ProteomeXchange dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetOriginType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;DatasetOrigin&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000402&quot; name=&quot;Original data&quot;/&gt;
+&lt;/DatasetOrigin&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000402&quot; name=&quot;Original data&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetOriginList">DatasetOriginList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of the origins of this dataset. This list can link to other ProteomeXchange datasets or other resources. 
+        If this dataset contains previously unreported data, then a 'new dataset' annotation should be used.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetOriginListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#DatasetOrigin">DatasetOrigin</a></TD><TD>1</TD><TD>unbounded</TD><TD>Specifies via CV term whether this is an original dataset or is a re-interpretation of a previous ProteomeXchange dataset.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;DatasetOriginList&gt;
+    &lt;DatasetOrigin&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000402&quot; name=&quot;Original data&quot;/&gt;
+    &lt;/DatasetOrigin&gt;
+&lt;/DatasetOriginList&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="DatasetSummary">DatasetSummary</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Broad description of the dataset being announced, inlcuding a title, abstract, review level, etc.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>DatasetSummaryType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>announceDate</TD><TD>xs:date</TD><TD>required</TD><TD>The date that this announcement was prepared.</TD></TR>
+<TR><TD>hostingRepository</TD><TD>HostingRepositoryType</TD><TD>required</TD><TD>The hosting repository that handled this dataset and that prepared this ProteomeXchange message.</TD></TR>
+<TR><TD>title</TD><TD>xs:string</TD><TD>required</TD><TD>A descriptive title for the dataset.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Description">Description</a></TD><TD>1</TD><TD>1</TD><TD>A brief description of the dataset, usually about one paragraph long.</TD></TR>
+<TR><TD><a href="#ReviewLevel">ReviewLevel</a></TD><TD>1</TD><TD>1</TD><TD>Level of review on this dataset/associated paper.</TD></TR>
+<TR><TD><a href="#RepositorySupport">RepositorySupport</a></TD><TD>1</TD><TD>1</TD><TD>To what extend the data is supported in the hosting repository.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;DatasetSummary announceDate=&quot;2017-06-19&quot; hostingRepository=&quot;PRIDE&quot; title=&quot;Label free comparative proteome analysis of Arabidopsis lipid droplets from 6 week old leaves&quot;&gt;
+    &lt;Description&gt;Lipid droplets from 6 week old Arabidopsis leaves were purified on sucrose gradient. The abundance of the proteins in the lipid droplet fraction was established by label free and compared to soluble, membrane and plastoglobule fractions, and total leaf extract in order to identify the proteins specifically enriched in lipid droplets. Three independent biological replicates, from three independent cultures were performed. For each biological replicates, three preparations of lipid droplets (and other fractions) within each of the three independent cultures were obtained.&lt;/Description&gt;
+    &lt;ReviewLevel&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000414&quot; name=&quot;Peer-reviewed dataset&quot;/&gt;
+    &lt;/ReviewLevel&gt;
+    &lt;RepositorySupport&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000417&quot; name=&quot;Unsupported dataset by repository&quot;/&gt;
+  ...
+&lt;/DatasetSummary&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Description">Description</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A brief description of the dataset, usually about one paragraph long.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>xs:string
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;Description&gt;Lipid droplets from 6 week old Arabidopsis leaves were purified on sucrose gradient. The abundance of the proteins in the lipid droplet fraction was established by label free and compared to soluble, membrane and plastoglobule fractions, and total leaf extract in order to identify the proteins specifically enriched in lipid droplets. Three independent biological replicates, from three independent cultures were performed. For each biological replicates, three preparations of lipid droplets (and other fractions) within each of the three independent cultures were obtained.&lt;/Description&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="FullDatasetLink">FullDatasetLink</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A single link to the full dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>FullDatasetLinkType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>1</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;FullDatasetLink&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000411&quot; name=&quot;Dataset FTP location&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2017/06/PXD004574&quot;/&gt;
+&lt;/FullDatasetLink&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000411&quot; name=&quot;Dataset FTP location&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2017/06/PXD004574&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001930&quot; name=&quot;PRIDE project URI&quot; value=&quot;http://www.ebi.ac.uk/pride/archive/projects/PXD004574&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="FullDatasetLinkList">FullDatasetLinkList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of links to the complete ProteomeXchange dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>FullDatasetLinkListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#FullDatasetLink">FullDatasetLink</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single link to the full dataset.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;FullDatasetLinkList&gt;
+    &lt;FullDatasetLink&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000411&quot; name=&quot;Dataset FTP location&quot; value=&quot;ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2017/06/PXD004574&quot;/&gt;
+    &lt;/FullDatasetLink&gt;
+    &lt;FullDatasetLink&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001930&quot; name=&quot;PRIDE project URI&quot; value=&quot;http://www.ebi.ac.uk/pride/archive/projects/PXD004574&quot;/&gt;
+    &lt;/FullDatasetLink&gt;
+  ...
+&lt;/FullDatasetLinkList&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Instrument">Instrument</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Instrument on which the data has been generated.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>InstrumentType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>id</TD><TD>xs:ID</TD><TD>required</TD><TD>Identifier for the instrument to be used for referencing within a document</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;Instrument id=&quot;Instrument_1&quot;&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000932&quot; name=&quot;TripleTOF 5600&quot;/&gt;
+&lt;/Instrument&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><PRE>Path /ProteomeXchangeDataset/InstrumentList/Instrument
+MAY supply a *child* term of <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000496">MS:1000496</a> (<span title="Instrument properties that are associated with a value." class="popup">instrument attribute</span>) one or more times
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000032">MS:1000032</a> (<span title="Free text description of a single customization made to the instrument; for several modifications, use several entries." class="popup">customization</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000236">MS:1000236</a> (<span title="The ratio of the number of ions leaving a region of a mass spectrometer to the number entering that region." class="popup">transmission</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000529">MS:1000529</a> (<span title="Serial Number of the instrument." class="popup">instrument serial number</span>) 
+MUST supply term <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000031">MS:1000031</a> (<span title="Instrument model name not including the vendor's name." class="popup">instrument model</span>) or any of its children one or more times
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000139">MS:1000139</a> (<span title="Applied Biosystems/MDS SCIEX Q 4000 TRAP MS." class="popup">4000 QTRAP</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000140">MS:1000140</a> (<span title="Applied Biosystems/MDS SCIEX 4700 Proteomics Analyzer MS." class="popup">4700 Proteomics Analyzer</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000141">MS:1000141</a> (<span title="Bruker Daltonics' apex IV: ESI, MALDI, Nanospray, APCI, APPI, Qh-FT_ICR." class="popup">apex IV</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000142">MS:1000142</a> (<span title="Bruker Daltonics' apex Q: ESI, MALDI, Nanospray, APCI, APPI, Qh-FT_ICR." class="popup">apex Q</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000143">MS:1000143</a> (<span title="Applied Biosystems/MDS SCIEX API 150EX MS." class="popup">API 150EX</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000144">MS:1000144</a> (<span title="Applied Biosystems/MDS SCIEX API 150EX Prep MS." class="popup">API 150EX Prep</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000145">MS:1000145</a> (<span title="Applied Biosystems/MDS SCIEX API 2000 MS." class="popup">API 2000</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000146">MS:1000146</a> (<span title="Applied Biosystems/MDS SCIEX API 3000 MS." class="popup">API 3000</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000147">MS:1000147</a> (<span title="Applied Biosystems/MDS SCIEX API 4000 MS." class="popup">API 4000</span>) 
+  e.g.: <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000148">MS:1000148</a> (<span title="Bruker Daltonics' autoflex II: MALDI TOF." class="popup">autoflex II</span>) 
+  <a target="new" href="http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=MS:1000031">et al.</a>
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000932&quot; name=&quot;TripleTOF 5600&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000449&quot; name=&quot;LTQ Orbitrap&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="InstrumentList">InstrumentList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of instruments on which the data generation was performed.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>InstrumentListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Instrument">Instrument</a></TD><TD>1</TD><TD>unbounded</TD><TD>Instrument on which the data has been generated.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;InstrumentList&gt;
+    &lt;Instrument id=&quot;Instrument_1&quot;&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000932&quot; name=&quot;TripleTOF 5600&quot;/&gt;
+    &lt;/Instrument&gt;
+&lt;/InstrumentList&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="InstrumentRef">InstrumentRef</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Container for a reference to the id of an Instrument within this submission
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RefType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD>A reference to an element with and id in this document.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="KeywordList">KeywordList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Keywords defined by controlled vocabulary or free text categorised by a controlled vocabolary term 
+        (e.g. 'journal article keyword', 'submitter keyword' or 'curator keyword').
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>KeywordListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;KeywordList&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001925&quot; name=&quot;submitter keyword&quot; value=&quot;human, blood plasma, PTM, OpenSWATH, IPF&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001926&quot; name=&quot;curator keyword&quot; value=&quot;Technical&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001926&quot; name=&quot;curator keyword&quot; value=&quot;Biomedical&quot;/&gt;
+&lt;/KeywordList&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001925&quot; name=&quot;submitter keyword&quot; value=&quot;human, blood plasma, PTM, OpenSWATH, IPF&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001926&quot; name=&quot;curator keyword&quot; value=&quot;Technical&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="ModificationList">ModificationList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of amino acid mass modifications caused or considered, defined as cvParams.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ModificationListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;ModificationList&gt;
+    &lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00599&quot; name=&quot;monomethylated residue&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:01152&quot; name=&quot;carboxylated residue&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00696&quot; name=&quot;phosphorylated residue&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00544&quot; name=&quot;6x(13)C labeled residue&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00394&quot; name=&quot;acetylated residue&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00400&quot; name=&quot;deamidated residue&quot;/&gt;
+  ...
+&lt;/ModificationList&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00599&quot; name=&quot;monomethylated residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:01152&quot; name=&quot;carboxylated residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00696&quot; name=&quot;phosphorylated residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00544&quot; name=&quot;6x(13)C labeled residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00394&quot; name=&quot;acetylated residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00400&quot; name=&quot;deamidated residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00397&quot; name=&quot;iodoacetamide derivatized residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00398&quot; name=&quot;carbamoylated residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00695&quot; name=&quot;sulfated residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00674&quot; name=&quot;amidated residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00492&quot; name=&quot;ubiquitination signature dipeptidyl lysine&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00425&quot; name=&quot;monohydroxylated residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00493&quot; name=&quot;formylated residue&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00461&quot; name=&quot;nitrosylation&quot;/&gt;
+&lt;cvParam cvRef=&quot;MOD&quot; accession=&quot;MOD:00417&quot; name=&quot;S-carboxamidoethyl-L-cysteine&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Publication">Publication</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Reference to a publication in which the dataset is published.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>PublicationType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>id</TD><TD>xs:ID</TD><TD>required</TD><TD>Identifier for the publication to be used for referencing within a document</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;Publication id=&quot;PMID28611809&quot;&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000879&quot; name=&quot;PubMed identifier&quot; value=&quot;28611809&quot;/&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000400&quot; name=&quot;Reference&quot; value=&quot;Brocard L, Immel F, Coulon D, Esnay N, Tuphile K, Pascal S, Claverol S, Fouillen L, Bessoule JJ, Bréhélin C. Proteomic Analysis of Lipid Droplets from Arabidopsis Aging Leaves Brings New Insight into Their Biogenesis and Functions. Front Plant Sci. 2017 May 29;8:894. eCollection 2017&quot;/&gt;
+&lt;/Publication&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000879&quot; name=&quot;PubMed identifier&quot; value=&quot;25652787&quot;/&gt;
+&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000400&quot; name=&quot;Reference&quot; value=&quot;Liu Y, Buil A, Collins BC, Gillet LC, Blum LC, Cheng LY, Vitek O, Mouritsen J, Lachance G, Spector TD, Dermitzakis ET, Aebersold R. Quantitative variability of 342 plasma proteins in a human twin population. Mol Syst Biol. 2015 Feb 4;11(1):786&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="PublicationList">PublicationList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of publications from which the dataset was collected or wherein it is published
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>PublicationListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Publication">Publication</a></TD><TD>1</TD><TD>unbounded</TD><TD>Reference to a publication in which the dataset is published.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;PublicationList&gt;
+    &lt;Publication id=&quot;PMID25652787&quot;&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000879&quot; name=&quot;PubMed identifier&quot; value=&quot;25652787&quot;/&gt;
+        &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000400&quot; name=&quot;Reference&quot; value=&quot;Liu Y, Buil A, Collins BC, Gillet LC, Blum LC, Cheng LY, Vitek O, Mouritsen J, Lachance G, Spector TD, Dermitzakis ET, Aebersold R. Quantitative variability of 342 plasma proteins in a human twin population. Mol Syst Biol. 2015 Feb 4;11(1):786&quot;/&gt;
+    &lt;/Publication&gt;
+    &lt;Publication id=&quot;PMID28604659&quot;&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1000879&quot; name=&quot;PubMed identifier&quot; value=&quot;28604659&quot;/&gt;
+  ...
+&lt;/PublicationList&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="PublicationRef">PublicationRef</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>to reference the 'id' of a 'Publication' within this submission
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RefType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD>A reference to an element with and id in this document.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="RepositoryRecord">RepositoryRecord</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A record in the repository the data was submitted to corresponding to this dataset (for an example PRIDE experiment record).
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RepositoryRecordType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>label</TD><TD>xs:string</TD><TD>optional</TD><TD>Short label for the type of repository record.</TD></TR>
+<TR><TD>name</TD><TD>xs:string</TD><TD>required</TD><TD>Short name for the repository record, usually like a sample name.</TD></TR>
+<TR><TD>recordID</TD><TD>xs:string</TD><TD>required</TD><TD>A unique identifier for the record within the repository.</TD></TR>
+<TR><TD>repositoryID</TD><TD>HostingRepositoryType</TD><TD>required</TD><TD>Identifier that uniquely defines the hosting repository which holds the data records.</TD></TR>
+<TR><TD>uri</TD><TD>xs:anyURI</TD><TD>required</TD><TD>URI that links to the repository record.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#SourceFileRef">SourceFileRef</a></TD><TD>0</TD><TD>unbounded</TD><TD>to reference the 'id' of a 'DatasetFile' within this submission</TD></TR>
+<TR><TD><a href="#PublicationRef">PublicationRef</a></TD><TD>0</TD><TD>unbounded</TD><TD>to reference the 'id' of a 'Publication' within this submission</TD></TR>
+<TR><TD><a href="#InstrumentRef">InstrumentRef</a></TD><TD>0</TD><TD>unbounded</TD><TD>Container for a reference to the id of an Instrument within this submission</TD></TR>
+<TR><TD><a href="#SampleList">SampleList</a></TD><TD>0</TD><TD>1</TD><TD>The list of samples that are analyzed in this dataset.</TD></TR>
+<TR><TD><a href="#ModificationList">ModificationList</a></TD><TD>0</TD><TD>1</TD><TD>The list of amino acid mass modifications caused or considered, defined as cvParams.</TD></TR>
+<TR><TD><a href="#AnnotationList">AnnotationList</a></TD><TD>0</TD><TD>1</TD><TD>Any additional annotation of the record/experiment that the 
+            submitter/generator of the message deems important enough to announce.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;RepositoryRecord name=&quot;Inference and quantification of peptidoforms in large sample cohorts by SWATH-MS: Twin blood plasma quantitative variance components&quot; label=&quot;PRIDE project&quot; recordID=&quot;PXD004574&quot; repositoryID=&quot;PRIDE&quot; uri=&quot;http://www.ebi.ac.uk/pride/archive/projects/PXD004574&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="RepositoryRecordList">RepositoryRecordList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of records as found in the repository the data was submitted to (for example PRIDE experiment records).
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RepositoryRecordListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#RepositoryRecord">RepositoryRecord</a></TD><TD>1</TD><TD>unbounded</TD><TD>A record in the repository the data was submitted to corresponding to this dataset (for an example PRIDE experiment record).</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;RepositoryRecordList&gt;
+    &lt;RepositoryRecord name=&quot;Inference and quantification of peptidoforms in large sample cohorts by SWATH-MS: Twin blood plasma quantitative variance components&quot; label=&quot;PRIDE project&quot; recordID=&quot;PXD004574&quot; repositoryID=&quot;PRIDE&quot; uri=&quot;http://www.ebi.ac.uk/pride/archive/projects/PXD004574&quot;/&gt;
+&lt;/RepositoryRecordList&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="RepositorySupport">RepositorySupport</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>To what extend the data is supported in the hosting repository.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RepositorySupportType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>1</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;RepositorySupport&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000417&quot; name=&quot;Unsupported dataset by repository&quot;/&gt;
+&lt;/RepositorySupport&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000417&quot; name=&quot;Unsupported dataset by repository&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="ReviewLevel">ReviewLevel</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>Level of review on this dataset/associated paper.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>ReviewLevelType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>1</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;ReviewLevel&gt;
+    &lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000414&quot; name=&quot;Peer-reviewed dataset&quot;/&gt;
+&lt;/ReviewLevel&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;PRIDE&quot; accession=&quot;PRIDE:0000414&quot; name=&quot;Peer-reviewed dataset&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Sample">Sample</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A summary of the sample describtion. This should be a (sub) selection 
+        of cvParams used to describe the sample. Minimally this should contain information like 
+        species, tissue, etc..., but could also contain sample preparation information.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>SampleType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>name</TD><TD>xs:string</TD><TD>required</TD><TD>Short name for the sample analyzed in this dataset.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="SampleList">SampleList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of samples that are analyzed in this dataset.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>SampleListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Sample">Sample</a></TD><TD>1</TD><TD>unbounded</TD><TD>A summary of the sample describtion. This should be a (sub) selection 
+        of cvParams used to describe the sample. Minimally this should contain information like 
+        species, tissue, etc..., but could also contain sample preparation information.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="SourceFileRef">SourceFileRef</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>to reference the 'id' of a 'DatasetFile' within this submission
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>RefType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>ref</TD><TD>xs:IDREF</TD><TD>required</TD><TD>A reference to an element with and id in this document.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="Species">Species</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The species from which the data has been generated.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>SpeciesType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#cvParam">cvParam</a></TD><TD>1</TD><TD>unbounded</TD><TD>A single entry from an ontology or a controlled vocabulary.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;Species&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001469&quot; name=&quot;taxonomy: scientific name&quot; value=&quot;Arabidopsis thaliana (Mouse-ear cress)&quot;/&gt;
+    &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001467&quot; name=&quot;taxonomy: NCBI TaxID&quot; value=&quot;3702&quot;/&gt;
+&lt;/Species&gt;
+</PRE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>cvParam Mapping Rules:</b></td>
+<td class='zero'><font color="red">WARNING: There are no cvParam mapping rules for this element even though cvParam is an allowed subelement.</a></td>
+</tr>
+<tr>
+<td class='zero'><b>Example cvParams:</b></td>
+<td class='zero'><PRE>&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001469&quot; name=&quot;taxonomy: scientific name&quot; value=&quot;Homo sapiens (Human)&quot;/&gt;
+&lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001467&quot; name=&quot;taxonomy: NCBI TaxID&quot; value=&quot;9606&quot;/&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="SpeciesList">SpeciesList</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>The list of species from which the data has been generated.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>SpeciesListType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Subelement Name</TH><TH>minOccurs</TH><TH>maxOccurs</TH><TH>Definition</TH></TR>
+<TR><TD><a href="#Species">Species</a></TD><TD>1</TD><TD>unbounded</TD><TD>The species from which the data has been generated.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE>&lt;SpeciesList&gt;
+    &lt;Species&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001469&quot; name=&quot;taxonomy: scientific name&quot; value=&quot;Arabidopsis thaliana (Mouse-ear cress)&quot;/&gt;
+        &lt;cvParam cvRef=&quot;MS&quot; accession=&quot;MS:1001467&quot; name=&quot;taxonomy: NCBI TaxID&quot; value=&quot;3702&quot;/&gt;
+    &lt;/Species&gt;
+&lt;/SpeciesList&gt;
+</PRE>
+</td>
+</tr>
+</table><br/>
+
+<H2>Element &lt;<a name="userParam">userParam</a>&gt;</H2>
+
+<table class='zero'>
+<tr>
+<td class='zero'><b>Definition:</b></td>
+<td class='zero'>A single user-defined parameter.
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Type:</b></td>
+<td class='zero'>UserParamType
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Attributes:</b></td>
+<td class='zero'><TABLE border="1">
+<TR><TH>Attribute Name</TH><TH>Data Type</TH><TH>Use</TH><TH>Definition</TH></TR>
+<TR><TD>name</TD><TD>xs:string</TD><TD>required</TD><TD>The name of the parameter.</TD></TR>
+<TR><TD>unitAccession</TD><TD>xs:string</TD><TD>optional</TD><TD>An accession number identifying the unit within the OBO foundry Unit CV.
+        </TD></TR>
+<TR><TD>unitCvRef</TD><TD>xs:string</TD><TD>optional</TD><TD>If a unit term is referenced, this attribute MUST refer to the CV 'id' attribute
+          defined in the cvList in this file.
+        </TD></TR>
+<TR><TD>unitName</TD><TD>xs:string</TD><TD>optional</TD><TD>The name of the unit.</TD></TR>
+<TR><TD>value</TD><TD>xs:string</TD><TD>optional</TD><TD>The user-entered value of the parameter.</TD></TR>
+</TABLE>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Subelements:</b></td>
+<td class='zero'>none<BR>
+</td>
+</tr>
+<tr>
+<td class='zero'><b>Example Context:</b></td>
+<td class='zero'><PRE></PRE>
+</td>
+</tr>
+</table><br/>
+
+</body></html>
