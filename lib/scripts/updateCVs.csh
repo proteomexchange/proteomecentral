@@ -4,11 +4,11 @@ echo "Updating controlled vocabularies for ProteomeXchange"
 date
 echo " "
 
-echo " "
-echo "Update PSI MS CV from SourceForge"
-cd /net/dblocal/wwwspecial/proteomecentral/extern/PSI-MS/controlledVocabulary
-setenv CVS_RSH ssh
-cvs update
+#echo " "
+#echo "Update PSI MS CV from SourceForge"
+#cd /net/dblocal/wwwspecial/proteomecentral/extern/PSI-MS/controlledVocabulary
+#setenv CVS_RSH ssh
+#cvs update
 
 echo " "
 echo "Update PSI MS CV from GitHub"
@@ -16,9 +16,9 @@ cd /net/dblocal/wwwspecial/proteomecentral/extern/PSI-MS/GitHub/psi-ms-CV
 git pull
 
 echo " "
-echo "Update PRIDE CV from Google Code"
-cd /net/dblocal/wwwspecial/proteomecentral/extern/PRIDE/schema
-svn update
+echo "Update PRIDE CV from GitHub"
+cd /net/dblocal/wwwspecial/proteomecentral/extern/PRIDE/pride-ontology
+git pull
 
 echo " "
 echo "Update PSI MOD CV from SourceForge"
