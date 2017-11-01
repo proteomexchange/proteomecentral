@@ -97,9 +97,9 @@ validateXML</td><td>This is similar to submitXML, except that the uploaded XML i
 <P>But most likely you will want to interact with the service programmatically. Here are a few examples:
 
 <UL>
-<LI> <a href="http://code.google.com/p/proteomexchange/source/browse/proteomecentral/lib/test/simplestValidateXML.pl">Simplest example</a> of Perl code using the service to validate a ProteomeXchange XML file
-<LI> <a href="http://code.google.com/p/proteomexchange/source/browse/proteomecentral/lib/java/px-xml-validator/PxXmlValidator.java">Simplest example</a> of Java code using the service to validate a ProteomeXchange XML file
-<LI> <a href="http://code.google.com/p/proteomexchange/source/browse/proteomecentral/lib/test/testDatasetInterface.pl">Simple Perl example</a> of testing and using the service
+<LI> <a href="https://github.com/proteomexchange/proteomecentral/tree/master/lib/test/simplestValidateXML.pl">Simplest example</a> of Perl code using the service to validate a ProteomeXchange XML file
+<LI> <a href="https://github.com/proteomexchange/proteomecentral/tree/master/lib/java/px-xml-validator/PxXmlValidator.java">Simplest example</a> of Java code using the service to validate a ProteomeXchange XML file
+<LI> <a href="https://github.com/proteomexchange/proteomecentral/tree/master/lib/test/testDatasetInterface.pl">Simple Perl example</a> of testing and using the service
 </UL>
 
 
