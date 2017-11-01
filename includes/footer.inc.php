@@ -1,5 +1,5 @@
 
-	<!-- End main content area -->
+	<!-- Begin Footer -->
 
 	<br>
 
@@ -14,7 +14,4 @@
 	</table>			
 	<table width="100%"><tr><td bgcolor="#c6dee7" height="15"></td></tr></table>
 	<table height="100%" width="100%" bgcolor="#000000"><tr><td></td></tr></table>	
-	
-	
 	</body>
-</html>

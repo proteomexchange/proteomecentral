@@ -11,7 +11,5 @@
 	<tr align="center"><td><a href="http://www.proteomexchange.org/" border="0"><img src="/images/proteomexchange.png"></a></td><td><a href="http://proteomecentral.proteomexchange.org/" border="0"><img src="/images/proteomecentral.png"></a></td></tr>
 	</table>	
 
-	<br>
-
 	<!-- Main content area here -->
 
