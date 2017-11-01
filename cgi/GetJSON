@@ -5,6 +5,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib/perl";
 use JSON;
 use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use Data::Dumper;
 use XML::Writer;
 use ProteomeXchange::Log;
@@ -302,7 +303,7 @@ sub get_instruments {
         } elsif ( $s =~ /XL/ ) {
           $cleaned = 'Orbitrap XL';
         } else {
-          print "$s\n";
+          $cleaned = 'Orbitrap';
         }
 
       }
