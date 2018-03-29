@@ -92,7 +92,7 @@ if ($params->{action} && $params->{action} =~ /search/i){
   #### If an ID was directly provided, provide that one
   if ($params->{ID} && $params->{ID} ne '') {
     if ($outputMode =~ /html/i) {
-      my $headerStr = $HTML->createPageHeader(template=>\@template);
+      my $headerStr = $HTML->createPageHeader(template=>\@template,params=>$params);
       $HTML->showDataset(params=>$params, response=>$response, headerStr=>$headerStr);
       $HTML->printPageFooter(template=>\@template);
     } else {
