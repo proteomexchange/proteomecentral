@@ -497,6 +497,7 @@
       <xs:enumeration value="iProX"/>
       <xs:enumeration value="jPOST"/>
       <xs:enumeration value="Firmiana"/>
+      <xs:enumeration value="PanoramaPublic"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="versionRegex">
