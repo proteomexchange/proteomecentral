@@ -396,7 +396,7 @@ sub createPageHeader {
   my $buf = '';
 
   #### Create a HTTP content preamble
-  $buf .= "Status: 200 OK\r\nContent-type:text/html; charset=ISO-8859-1\r\n\r\n";
+  $buf .= "Status: 200 OK\r\nContent-type:text/html; charset=UTF-8\r\n\r\n";
 
   #### Loop over each line in the template, adjusting it
   foreach my $line ( @$template ){
@@ -790,7 +790,7 @@ sub showDataset {
               $str .= "</ul>\n";
             }
           } else {
-	    my @lists = split (";",  $result->{$key});
+	    my @lists = split (/; /,  $result->{$key});
 	    foreach my $list(@lists) {
 	      next if ($list !~ /\w/);
 	      $str .= qq~<li>$list</li>~;

@@ -347,8 +347,8 @@ sub parse {
        next unless (defined($str));
        next if ($str eq '');
        if ( defined $dataset->{publication} ){
-         $dataset->{publication} .= ";$str";
-         $dataset->{publicationList} .= ";$str";
+         $dataset->{publication} .= "; $str";
+         $dataset->{publicationList} .= "; $str";
        }else{
           $dataset->{publication} = "$str";
           $dataset->{publicationList} = "$str";
@@ -381,14 +381,14 @@ sub parse {
            if ($cvParam->attr('name') =~ /PRIDE experiment URI/i){
              if ($cvParam->attr('value') =~ /.*=(\d+)/) {
                $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
-                                                ' target="_blank">'.  "PRIDE experiment $1 </a>;";
+                                                ' target="_blank">'.  "PRIDE experiment $1 </a>; ";
 	     }
            } else {
            $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
-                                              ' target="_blank">'.  $cvParam->attr('name') .'</a>;';
+                                              ' target="_blank">'.  $cvParam->attr('name') .'</a>; ';
            }
          }else{
-           $dataset->{fullDatasetLinkList} .= $cvParam->attr('name') .": ". $cvParam->attr('value') .";";
+           $dataset->{fullDatasetLinkList} .= $cvParam->attr('name') .": ". $cvParam->attr('value') ."; ";
          }
       }
     }
