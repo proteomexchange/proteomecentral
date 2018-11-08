@@ -188,8 +188,12 @@ sub validateMzML {
 
   $CONTENT_HANDLER->readNotesFile(input_file=>$OPTIONS{notesFile});
   $CONTENT_HANDLER->readCvMappingFile(input_file=>$OPTIONS{cvMappingFile});
-  $CONTENT_HANDLER->readControlledVocabularyFile(input_file=>$OPTIONS{cvFile});
   $CONTENT_HANDLER->readFiguresMappingFile(input_file=>$OPTIONS{figuresMappingFile});
+
+  my @cvFiles = split(/,/,$OPTIONS{cvFile});
+  foreach my $cvFile ( @cvFiles ) {
+    $CONTENT_HANDLER->readControlledVocabularyFile(input_file=>$cvFile);
+  }
 
   my $outputFile = $inputfile;
   $outputFile =~ s/\.xsd//;
