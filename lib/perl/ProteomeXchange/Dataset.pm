@@ -734,6 +734,186 @@ sub processAnnouncement {
   return($response);
 }
 
+
+###############################################################################
+# validatePXXMLDocument: Carefully check a submitted file for issues
+###############################################################################
+sub validatePXXMLDocument {
+  my $self = shift;
+  my %args = @_;
+  my $SUB_NAME = 'validatePXXMLDocument';
+
+  #### Decode the argument list
+  my $filename = $args{'filename'} || die("[$SUB_NAME] ERROR: filename not passed");
+  my $params = $args{'params'} || die("[$SUB_NAME] ERROR: params not passed");
+  my $permitOldSchemas = $args{'permitOldSchemas'} || 0;
+
+  my $response;
+  $response->{result} = "ERROR";
+  $response->{message} = "Internal error";
+  $response->{validationWarnings} = [];
+  $response->{validationErrors} = [];
+  $response->{info} = [];
+
+  #### Check to make sure the file exists
+  unless ( -f $filename ) {
+    $response->{message} = "File '$filename' not found";
+    return($response);
+  }
+
+  #### Open the file or report an error
+  unless (open(INFILE,$filename)) {
+    $response->{message} = "File '$filename' exists, but cannot be opened for read";
+    return($response);
+  }
+
+  #### Check to make sure this is an XML file that reports the right SchemaLocation
+  my $nLines = 0;
+  my $info;
+  my $schema = '';
+  while ($nLines < 50) {
+    my $line = <INFILE>;
+    if ($line && $line =~ /\<\?xml/) {
+      push(@{$response->{info}},"File does appear to be XML");
+      $info->{isXML} = 'passed';
+    }
+    if ($line && $line =~ /SchemaLocation=\"(.+?)\"/) {
+      $schema = $1;
+      if ( $permitOldSchemas ) {
+        if ( $schema =~ /^proteomeXchange-1.[0-4].0.xsd$/ ) {
+	  push(@{$response->{info}},"File has as acceptable XSD $schema");
+	  $info->{hasRightXSD} = 'passed';
+        } else {
+	  $response->{result} = "ERROR";
+	  $response->{message} = "File has unexpected XSD '$schema'. Cannot process this file. Sorry.";
+	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.[0-4].0.xsd");
+	  $info->{hasRightXSD} = 'failed';
+        }
+      } else {
+        if ($schema eq 'proteomeXchange-1.2.0.xsd' || $schema eq 'proteomeXchange-1.3.0.xsd' || $schema eq 'proteomeXchange-1.4.0.xsd') {
+	  push(@{$response->{info}},"File has as acceptable XSD $schema");
+	  $info->{hasRightXSD} = 'passed';
+        } else {
+	  $response->{result} = "ERROR";
+	  $response->{message} = "File has unexpected XSD '$schema'. Cannot process this file. Sorry.";
+	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.2.0.xsd, proteomeXchange-1.3.0.xsd, proteomeXchange-1.4.0.xsd are supported");
+	  $info->{hasRightXSD} = 'failed';
+        }
+      }
+    }
+    $nLines++;
+  }
+  close(INFILE);
+
+
+  #### Return unless everything is okay thus far
+  if ( $info->{isXML} && $info->{isXML} eq 'passed' &&
+	   $info->{hasRightXSD} && $info->{hasRightXSD} eq 'passed') {
+    #### All is well
+  } else {
+    unless ($info->{isXML} && $info->{isXML} eq 'passed') {
+      $response->{message} = "The uploaded file does not appear to be proper XML. It is missing the expected preamble, at least.";
+    }
+    unless ($info->{hasRightXSD} && $info->{hasRightXSD} eq 'passed') {
+      $response->{message} = "The uploaded file does not appear to have the needed schema reference. Please check schema definition.";
+    }
+    return($response);
+  }
+
+
+  #### Check to make sure we have the schema available
+  my $root = '';
+  if ( $filename =~ /^(.+)\/(.+)$/ ) {
+    $root = $1;
+  }
+  unless ( -f "$root/$schema" ) {
+    $response->{message} = "The schema $schema is not found on the local system. Please report this internal error.";
+    return($response);
+  }
+
+
+  #### Run the XML through a validating parser
+  push(@{$response->{info}},"Validating XML...");
+  my @result = `export LD_LIBRARY_PATH=/tools/xerces-c-src_2_7_0/lib; /tools/xerces-c-src_2_7_0/bin/SAX2Count -v=always $filename 2>&1`;
+  my $nLines = scalar(@result);
+
+  #### If the file is valid XML
+  if ($nLines == 1 && $result[0] =~ /elems,/) {
+    push(@{$response->{info}},"Submitted XML is valid according to the XSD.");
+  #### If it is not valid XML
+  } else {
+    $response->{message} = "File does not validate against the schema. Cannot process this file. Sorry.";
+    foreach my $line ( @result ) {
+      chomp($line);
+      push(@{$response->{info}},$line);
+    }
+    return($response);
+  }
+
+
+  #### Run the file through our own parser to check semantic issues
+  my $parser = new ProteomeXchange::DatasetParser;
+  $parser->parse(filename=>$filename,response=>$response);
+  my $dataset = $response->{dataset};
+
+  #### If there are cvErrors, put them in info
+  my $nCvErrors = 0;
+  if ($parser->{cvErrors}) {
+    foreach my $error ( @{$parser->{cvErrors}} ) {
+      my $count = $parser->{cvErrorHash}->{$error}->{count} || -1;
+      $error .= " ($count times)" if ($count != 1);
+      $nCvErrors++;
+      push(@{$response->{info}},$error);
+      push(@{$response->{validationErrors}},$error);
+    }
+  }
+  push(@{$response->{info}},"There were a total of $nCvErrors different CV errors or warnings.");
+
+
+  #### If there are other warnings or errors, put them in info
+  my $nErrors = 0;
+  foreach my $error ( @{$response->{warnings}} ) {
+    $nErrors++;
+    push(@{$response->{info}},$error);
+  }
+  push(@{$response->{info}},"There was a total of $nErrors other errors or warnings.");
+
+
+  ### If the PXPartner does not match the one in XML file, report an error
+  if ($params->{PXPartner} ne 'ANY' && $params->{PXPartner} ne $dataset->{PXPartner} ){
+    my $message = "PXPartners in input ($params->{PXPartner}) and in xml ($dataset->{PXPartner}) don't match.";
+    push(@{$response->{info}},$message);
+    push(@{$response->{validationErrors}},$message);
+  }
+
+  ### If the description is not at least 50 characters, report an error
+  if ( !exists($dataset->{description}) || !defined($dataset->{description}) || length($dataset->{description}) < 50 ){
+    my $message = "The description for the submission is not sufficient. It must be at least 50 characters.";
+    push(@{$response->{info}},$message);
+    push(@{$response->{validationErrors}},$message);
+  }
+
+  ### If the title is not at least 30 characters, report an error
+  if ( !exists($dataset->{title}) || !defined($dataset->{title}) || length($dataset->{title}) < 30 ){
+    my $message = "The title for the submission is not sufficient. It must be at least 30 characters.";
+    push(@{$response->{info}},$message);
+    push(@{$response->{validationErrors}},$message);
+  }
+
+  #### Finish
+  my $nErrors = scalar(@{$response->{validationErrors}});
+  if ( $nErrors ) {
+    $response->{result} = "FoundValidationErrors";
+    $response->{message} = "PX XML document parsing completed with errors";
+  } else {
+    $response->{result} = "OK";
+    $response->{message} = "PX XML document parsing completed without error";
+  }
+
+  return($response);
+}
+
+
 ###############################################################################
 1;
 
