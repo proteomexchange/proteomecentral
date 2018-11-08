@@ -1,0 +1,22 @@
+#!/bin/tcsh
+# Invoke this with:
+#   findMissingArticles.run
+#
+# The program will kick off findMissingArticles
+
+
+  set OUTFILE = /tmp/findMissingArticles.html
+
+  unalias cd
+  if ( -e $OUTFILE ) /bin/rm $OUTFILE
+
+  echo 'The result may be viewed here:'
+  echo 'http://proteomecentral.proteomexchange.org/cache/findMissingArticles.html'
+
+  /net/dblocal/wwwspecial/proteomecentral/devED/lib/scripts/findMissingArticles > $OUTFILE
+
+  set CACHEFILE = /net/dblocal/wwwspecial/proteomecentral/cache/findMissingArticles.html
+  if ( -e $CACHEFILE ) /bin/rm $CACHEFILE
+  mv $OUTFILE $CACHEFILE
+
+
