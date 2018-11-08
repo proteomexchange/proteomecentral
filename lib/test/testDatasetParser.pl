@@ -30,8 +30,11 @@ $response->{message} = "Parsed";
 my @tmp = ('Initialize');
 $response->{info} = \@tmp;
 
-my $result = $parser -> parse (uploadFilename =>$file,
-  response => $response, path => '');
+my $result = $parser -> parse (
+  filename =>$file,
+  response => $response,
+  path => ''
+);
 
 print Dumper(%$result);
 
