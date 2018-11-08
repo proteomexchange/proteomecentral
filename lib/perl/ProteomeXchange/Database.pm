@@ -144,6 +144,23 @@ sub createTables {
 
   ~;
 
+  $ddl = qq~
+  CREATE TABLE server (
+    server_id          int AUTO_INCREMENT NOT NULL,
+    name               varchar(50) NULL,
+    domain             varchar(50) NULL,
+    state              varchar(50) NOT NULL,
+    type               varchar(50) NOT NULL,
+    url                char(255) NOT NULL,
+    proxiUrl           char(255) NOT NULL,
+    description        char(255) NULL,
+    creationDate       datetime NOT NULL,
+    modificationDate   datetime NOT NULL,
+    modificationLogEntry char(255) NULL,
+    PRIMARY KEY (server_id)
+  ) ENGINE=InnoDB;
+  ~;
+
   my $result = $self->executeSQL(sql=>$ddl);
 
   if ($result) {
@@ -166,7 +183,7 @@ sub dropTables {
 
   my $ddl = qq~
 
-  DROP TABLE dataset;
+  argh!DROP TABLE dataset;
 
   ~;
 
@@ -192,7 +209,7 @@ sub modifyTables {
 
   my $ddl = qq~
 
-  DROP TABLE datasetHistory_test;
+  argh!DROP TABLE datasetHistory_test;
 
   ~;
 
