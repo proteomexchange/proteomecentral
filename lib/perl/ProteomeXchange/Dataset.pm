@@ -16,6 +16,9 @@ use ProteomeXchange::EMailProcessor;
 use vars qw($db);
 $db = new ProteomeXchange::Database;
 
+#my $TESTSUFFIX = "_newschema";
+my $TESTSUFFIX = "_test";
+
 
 ###############################################################################
 # Constructor
@@ -181,80 +184,153 @@ sub updateRecord{
   my $mainTableName = 'dataset';
   my $historyTableName = 'datasetHistory';
   if ($test && ($test =~ /yes/i || $test =~ /true/i)) {
-    $mainTableName .= '_test';
-    $historyTableName .= '_test';
+    $mainTableName .= $TESTSUFFIX;
+    $historyTableName .= $TESTSUFFIX;
   }
 
-  if ( $datasetidentifier eq '' ){
+
+  #### Verify that we have a dataset identifier
+  if ( ! $datasetidentifier ) {
      $response->{result} = "ERROR";
      $response->{message} = "datasetidentifier not parsed";
      return;
   }
 
-  #### Query the information for the current record
-  push(@{$response->{info}},"Checking current database record for '$datasetidentifier'");
-  my $sql = "select dataset_id,SubmissionDate,identifierVersion from $mainTableName where datasetIdentifier='$datasetidentifier'";
-  my @rows = $db->selectSeveralColumns($sql);
 
-  if (@rows > 1){
-    $response->{result} = "ERROR";
-    $response->{message} = "more than one record found for identifier \"$datasetidentifier\".\n";
-    return;
-  } elsif (@rows == 0 ) {
-    $response->{result} = "ERROR";
-    $response->{message} ="no record found for identifier \"$datasetidentifier\". Please request ID first.\n";
-    return;
-  }
+  #### Set the revision and realanysis states
+  my $isReanalysis = 0;
+  my $isRevision = 0;
+  $isReanalysis = 1 if ( $datasetidentifier =~ /^RPX/ );
+  $isRevision = 1 if ( $result->{revisionNumber} );
 
-  #### Extract the current-row information
-  my @row = @{$rows[0]};
-  my ($dataset_id,$submissionDate,$identifierVersion) = @row;
-  
-  my $changeLogEntry = $result->{changeLogEntry};
 
   #### Verify that the ChangeLogEntry information is appropriate
+  my $changeLogEntry = $result->{changeLogEntry};
+  $response->{changeLogEntry} = $changeLogEntry;
+
   #### If this should be a new submission
-  push(@{$response->{info}},"Current database identifierVersion is $identifierVersion");
-  if ($identifierVersion == 0) {
+  if ( $isRevision == 0 ) {
     if ($changeLogEntry) {
       $response->{result} = "ERROR";
-      $response->{message} = "This should be an initial submission for \"$datasetidentifier\" and should not have a ChangeLogEntry\n";
+      $response->{message} = "There is no revision number specified for \"$datasetidentifier\" and therefore should NOT have a ChangeLogEntry\n";
       return;
+    } else {
+      # good
     }
   #### Otherwise this should be a revision with a Changlog
   } else {
-    unless ($changeLogEntry) {
+    if ( $changeLogEntry ) {
+      # good
+    } else {
       $response->{result} = "ERROR";
       $response->{message} = "There was already an announcement for this dataset, and thus, this submission is a revision, which must have a ChangeLogEntry. Yet it does not. Please add a ChangeLogEntry to make it clear how this record has been altered in this revised submission.";
       return;
     }
   }
-  $response->{changeLogEntry} = $changeLogEntry;
 
-  #### Increment and check the identifier versions
-  $identifierVersion++;
-  $response->{identifierVersion} = $identifierVersion;
-  if ($result->{identifierVersion}) {
-    if ($result->{identifierVersion} eq $identifierVersion) {
-      push(@{$response->{info}},"The identifierVersion in the document is correct at $identifierVersion");
+
+  #### Query the information for the current record
+  push(@{$response->{info}},"Checking current database records for '$datasetidentifier'");
+  my $sql = "select dataset_id,SubmissionDate,RevisionDate,revisionNumber,reanalysisNumber from $historyTableName where datasetIdentifier='$datasetidentifier'";
+  my @rows = $db->selectSeveralColumns($sql);
+  my $nRows = scalar(@rows);
+
+
+  #### If there's no row yet, then an ID needs to be requested first
+  if (@rows == 0 ) {
+    $response->{result} = "ERROR";
+    $response->{message} ="no record found for identifier '$datasetidentifier'. Please request ID first.\n";
+    return;
+  }
+
+
+  #### Record all the revisions we have already by reanalysis number if appropriate
+  my ($dataset_id,$submissionDate,$revisionDate,$revisionNumber,$reanalysisNumber);
+  my %revisionNumbersByReanalysis;
+  foreach my $row ( @rows ) {
+    ($dataset_id,$submissionDate,$revisionDate,$revisionNumber,$reanalysisNumber) = @{$row};
+    $reanalysisNumber = 0 unless ( $reanalysisNumber );
+    $revisionNumber = 1 unless ( $revisionNumber );
+    $revisionNumbersByReanalysis{$reanalysisNumber}->{$revisionNumber} = 1;
+    push(@{$response->{info}},"Found history record: $dataset_id,$submissionDate,$revisionDate,$revisionNumber,$reanalysisNumber");
+  }
+
+  #### Compute the maximum revision numbers
+  foreach my $iReanalysisNumber ( keys(%revisionNumbersByReanalysis) ) {
+    foreach my $iRevisionNumber ( keys(%{$revisionNumbersByReanalysis{$iReanalysisNumber}}) ) {
+      $revisionNumbersByReanalysis{$iReanalysisNumber}->{max} = 0 unless ($revisionNumbersByReanalysis{$iReanalysisNumber}->{max});
+      $revisionNumbersByReanalysis{$iReanalysisNumber}->{max} = $iRevisionNumber if ( $iRevisionNumber > $revisionNumbersByReanalysis{$iReanalysisNumber}->{max} );
+    }
+  }
+
+
+  #### If this is a re-analysis, check the number
+  my $expectedRevisionNumber = 1;
+  my $thisReanalysisNumber = 0;
+  if ( $isReanalysis ) {
+    if ( $result->{reanalysisNumber} && $result->{reanalysisNumber} =~ /^\s*\d+\s*$/ ) {
+      $thisReanalysisNumber = $result->{reanalysisNumber};
     } else {
-      push(@{$response->{info}},"The identifierVersion in the document is incorrect. It should be '$identifierVersion', but instead is '$result->{identifierVersion}'. Will force it to '$identifierVersion'. Please correct the mismatch.");
+      $response->{result} = "ERROR";
+      $response->{message} = "This dataset '$datasetidentifier' appears to be a reanalyzed datasets, but the reanalysisNumber '$result->{reanalysisNumber}' is not valid";
+      return;
     }
   } else {
-    push(@{$response->{info}},"The document has no identifierVersion. It should be '$identifierVersion', Will force it to '$identifierVersion'.");
+    $thisReanalysisNumber = 0;
   }
+
+  #### If there are already some revisions for this reanalysis (or no reanalysis), then set the expectation
+  if ( exists($revisionNumbersByReanalysis{$thisReanalysisNumber}) ) {
+    $expectedRevisionNumber = $revisionNumbersByReanalysis{$thisReanalysisNumber}->{max} + 1;
+  }
+
+  #### Now check the revision number
+  my $thisRevisionNumber = $result->{revisionNumber} || '';
+  if ( $expectedRevisionNumber > 1 && ! $thisRevisionNumber ) {
+    $response->{result} = "ERROR";
+    $response->{message} = "A submission for dataset '$datasetidentifier' already exists and a revision number '$expectedRevisionNumber' was expected, but none was provided. This is unexpected. Please check carefully and fix or report a server problem.";
+    return;
+
+  } elsif ( $isRevision == 0 && $thisRevisionNumber eq '' & $expectedRevisionNumber == 1 ) {
+    push(@{$response->{info}},"For this new submission, the revision is implicitly set to 1");
+    $thisRevisionNumber = 1;
+  } elsif ( $thisRevisionNumber == $expectedRevisionNumber ) {
+    push(@{$response->{info}},"The revisionNumber in the document is as expected at $thisRevisionNumber");
+  } else {
+    $response->{result} = "ERROR";
+    $response->{message} = "The provided revision number for this document for '$datasetidentifier' (reanalysis $thisReanalysisNumber) was expected to be '$expectedRevisionNumber' but was provided as '$thisRevisionNumber'. This is unexpected. Please check carefully and fix or report a server problem.";
+    return;
+  }
+
+
+  #### Set the final revision and reanalysis
+  $revisionNumber = $thisRevisionNumber;
+  $reanalysisNumber = $thisReanalysisNumber;
+
 
   #### If there is a dataset origin, add it, else just insert NULL
   my $datasetOrigin = 'NULL';
-  if ($result->{datasetOriginAccession}) {
-    $datasetOrigin = join(",", @{$result->{datasetOriginAccession}});
+  if ($result->{datasetOrigins}) {
+    $datasetOrigin = '';
+    foreach my $origin ( @{$result->{datasetOrigins}} ) {
+      if ( $origin->{original} ) {
+	$datasetOrigin .= "original;";
+      } elsif ( $origin->{derived} ) {
+	$datasetOrigin .= "$origin->{identifier},";
+      } else {
+	$datasetOrigin .= "???,";
+      }
+    }
+    chop($datasetOrigin);
   }
+
 
   my %rowdata = (
     'primarySubmitter' => $result->{primarySubmitter}, 
     'title' => $result->{title},
-    'identifierVersion' => $identifierVersion,
-    'isLatestVersion' => 'Y',
+    'revisionNumber' => $revisionNumber,
+    'reanalysisNumber' => $reanalysisNumber,
+    'isLatestRevision' => 'Y',
     'status' => 'announced',
     'instrument' => $result->{instrument},
     'publication' => $result->{publication},
@@ -282,13 +358,14 @@ sub updateRecord{
   }
 
   my $value = $db->updateOrInsertRow(
-				     update => 1,
-				     table_name => $mainTableName,
-				     rowdata_ref => \%rowdata,
-				     PK => 'dataset_id',
-				     PK_value => $dataset_id,
-                                     @testFlags,
-				     );
+    update => 1,
+    table_name => $mainTableName,
+    rowdata_ref => \%rowdata,
+    PK => 'dataset_id',
+    PK_value => $dataset_id,
+    @testFlags,
+  );
+
   if ($value == 1 ) {
     $response->{result} = "Success";
     $response->{message} = "Database was updated. ";
@@ -301,11 +378,11 @@ sub updateRecord{
     $rowdata{changeLogEntry} = $changeLogEntry;
 
     $value = $db->updateOrInsertRow(
-				     insert => 1,
-				     table_name => $historyTableName,
-				     rowdata_ref => \%rowdata,
-             @testFlags,
-				     );
+      insert => 1,
+      table_name => $historyTableName,
+      rowdata_ref => \%rowdata,
+      @testFlags,
+    );
 
     if ($value == 1 ) {
       $response->{result} = "Success";
@@ -344,8 +421,8 @@ sub createNewIdentifier {
   my $testPhrase = "";
   my $accessionTemplate = 'PXD000000';
   if ($test && ($test =~ /yes/i || $test =~ /true/i)) {
-    $mainTableName .= '_test';
-    $historyTableName .= '_test';
+    $mainTableName .= $TESTSUFFIX;
+    $historyTableName .= $TESTSUFFIX;
     $testPhrase = "Test ";
     $accessionTemplate = 'PXT000000';
   }
@@ -386,8 +463,8 @@ sub createNewIdentifier {
     #### Set database row fields
     my %rowdata = (
       PXPartner => $PXPartner,
-      identifierVersion => 0,
-      isLatestVersion => 'Y',
+      revisionNumber => 0,
+      isLatestRevision => 'Y',
       status => 'ID requested',
       identifierDate => 'CURRENT_TIMESTAMP',
     );
@@ -430,8 +507,8 @@ sub createNewIdentifier {
 				%rowdata = (
 					dataset_id => $dataset_id,
 					datasetIdentifier => $datasetIdentifier,
-					identifierVersion => 0,
-					isLatestVersion => 'Y',
+					revisionNumber => 0,
+					isLatestRevision => 'Y',
           PXPartner => $PXPartner,
           status => 'ID requested',
           identifierDate => 'CURRENT_TIMESTAMP',
@@ -494,7 +571,7 @@ sub processAnnouncement {
   $noEmailBroadcast = 0 if (!defined($noEmailBroadcast));
 
   #### Testing
-  if (0) {
+  if ( 0 ) {
     push(@{$response->{info}},"noDatabaseUpdate=$noDatabaseUpdate, but forcing it to yes");
     push(@{$response->{info}},"noEmailBroadcast=$noEmailBroadcast, but forcing it to yes");
     $noEmailBroadcast = 'yes';
@@ -507,230 +584,130 @@ sub processAnnouncement {
 
   push(@{$response->{info}},"File has been uploaded. Begin processing it.");
 
-  #### If we can't find the file as specified, try with a prepended path
-  my $filename = $uploadFilename;
-  unless ( -f $uploadFilename ) {
-    $filename = "$path/$uploadFilename";
+  #### Parse and check the validity of the submitted file
+  my $result = $self->validatePXXMLDocument( filename => "$path/$uploadFilename", params => $params );
+  $response = $result;
+
+  #### If things did not go perfectly, then return
+  my $nWarnings = @{$response->{warnings}};
+  if ( $response->{result} ne 'OK' ) {
+    return($response);
+  }
+  if ( $nWarnings ) {
+    $response->{result} = "ERROR";
+    $response->{message} = "Unresolved issues with the submitted XML. Please correct and try again.";
+    return($response);
   }
 
-  if ( -f "$filename" ) {
-    if (open(INFILE,$filename)) {
-      my $nLines = 0;
-      my $info;
-      while ($nLines < 50) {
-	my $line = <INFILE>;
-	if ($line && $line =~ /\<\?xml/) {
-	  push(@{$response->{info}},"File does appear to be XML");
-	  $info->{isXML} = 'passed';
-	}
-	if ($line && $line =~ /SchemaLocation=\"(.+?)\"/) {
-	  if ($1 eq 'proteomeXchange-1.2.0.xsd' || $1 eq 'proteomeXchange-1.3.0.xsd' || $1 eq 'proteomeXchange-1.4.0.xsd') {
-	    push(@{$response->{info}},"File has as acceptable XSD $1");
-	    $info->{hasRightXSD} = 'passed';
-	  } else {
-	    $response->{result} = "ERROR";
-	    $response->{message} = "File has unexpected XSD '$1'. Cannot process this file. Sorry.";
-	    push(@{$response->{info}},"File has unexpected XSD '$1'. Cannot process this file. Sorry. At present, only proteomeXchange-1.2.0.xsd, proteomeXchange-1.3.0.xsd, proteomeXchange-1.4.0.xsd are supported");
-	    $info->{hasRightXSD} = 'failed';
-	  }
-	}
-	$nLines++;
-      }
-      close(INFILE);
+  #### Extract the dataset and proceed. This is very messy. FIXME
+  $result = $response->{dataset};
 
-      if ($info->{isXML} && $info->{isXML} eq 'passed' &&
-          $info->{hasRightXSD} && $info->{hasRightXSD} eq 'passed') {
+  #### If the method is just to test the XML, then we're done
+  if ($method eq 'validateXML') {
+    push(@{$response->{info}},"XML and CV validation complete.");
+    $response->{result} = "SUCCESS";
+    $response->{message} = "XML validation complete. See INFO lines for validation problems.";
+    return($response);
+  }
 
-	push(@{$response->{info}},"Validating XML...");
-	my @result = `export LD_LIBRARY_PATH=/tools/xerces-c-src_2_7_0/lib; /tools/xerces-c-src_2_7_0/bin/SAX2Count -v=always $filename 2>&1`;
+  push(@{$response->{info}},"Ready to update database record");
 
-	my $nLines = scalar(@result);
+  #### For debugging, escape out here for no database change or email
+  if ( 0 ) {
+    push(@{$response->{info}},"The database would be updated here and an email sent, but escape for test.");
+    $response->{result} = "TESTSUCCESSFUL";
+    $response->{message} = "Test processing was successful, although no database changes occurred.";
+    return($response);
+  }
 
-	#### If the file is valid XML
-	if ($nLines == 1 && $result[0] =~ /elems,/) {
-	  push(@{$response->{info}},"Submitted XML is valid according to the XSD.");
+  #### If we're not just validating, then begin the database update and announcement
+  $self -> updateRecord (
+    result => $result,
+    response => $response,
+    test => $params->{test},
+    noDatabaseUpdate => $noDatabaseUpdate,
+  );
+  push(@{$response->{info}},"Update returned '$response->{result}'");
 
-	  my $parser = new ProteomeXchange::DatasetParser;
-	  $parser -> parse (filename=>$filename,response=>$response);
-	  my $result = $response->{dataset};
-
-	  #### If there are cvErrors, put them in info
-	  my $nCvErrors = 0;
-	  if ($parser->{cvErrors}) {
-	    foreach my $error ( @{$parser->{cvErrors}} ) {
-	      my $count = $parser->{cvErrorHash}->{$error}->{count} || -1;
-	      $error .= " ($count times)" if ($count != 1);
-	      $nCvErrors++;
-	      push(@{$response->{info}},$error);
-	    }
-	  }
-	  push(@{$response->{info}},"There was a total of $nCvErrors different CV errors or warnings.");
-
-	  #### If there are other warnings or errors, put them in info
-	  my $nErrors = 0;
-	  foreach my $error ( @{$response->{warnings}} ) {
-	    $nErrors++;
-	    push(@{$response->{info}},$error);
-	  }
-	  push(@{$response->{info}},"There was a total of $nErrors other errors or warnings.");
-
-	  ### If the PXPartner does not match the one in XML file, report an error
-	  if ($params->{PXPartner} ne $result->{PXPartner} ){
-	    if ($method eq 'validateXML') {
-	      push(@{$response->{info}},"WARNING: PXPartners in input ($params->{PXPartner}) and in xml ($result->{PXPartner}) don't match.");
-	    } else {
-	      $response->{result} = "ERROR";
-	      $response->{message} = "PXPartners in input ($params->{PXPartner}) and in xml ($result->{PXPartner}) don't match.";
-	      return($response);
-	    }
-	  }
-
-	  ### If the description is not at least 50 characters, report an error
-	  if ( !exists($result->{description}) || !defined($result->{description}) || length($result->{description}) < 50 ){
-	    if ($method eq 'validateXML') {
-	      push(@{$response->{info}},"ERROR: The description for the submission is not sufficient. It must be at least 50 characters.");
-	    } else {
-	      $response->{result} = "ERROR";
-	      $response->{message} = "The description for the submission is not sufficient. It must be at least 50 characters.";
-	      return($response);
-	    }
-	  }
-
-	  #### Else everything is okay, so record the result and email the announcement
-	  if ( 1 ) {
-
-	    #### If the method is just to test the XML, then we're done
-	    if ($method eq 'validateXML') {
-	      push(@{$response->{info}},"XML and CV validation complete.");
-	      $response->{result} = "SUCCESS";
-	      $response->{message} = "XML validation complete. See INFO lines for validation problems.";
-	      return($response);
-	    }
-
-	    push(@{$response->{info}},"Ready to update database record");
-
-	    #### For debugging, escape out here for no database change or email
-	    if (0 == 1) {
-	      push(@{$response->{info}},"The database would be updated here and an email sent, but escape for test.");
-	      $response->{result} = "TESTSUCCESSFUL";
-	      $response->{message} = "Test processing was successful, although no database changes occurred.";
-	      return($response);
-	    }
-	    #### If we're not just validating, then begin the database update and announcement
-	    $self -> updateRecord (
-              result => $result,
-              response => $response,
-              test => $params->{test},
-              noDatabaseUpdate => $noDatabaseUpdate,
-            );
-	    push(@{$response->{info}},"Update returned '$response->{result}'");
-
-	    #### If the dataset update did not return an error, then send an email
-	    if ( $response->{result} ne "ERROR" ) {
-	      my @toRecipients;
-	      my $testFlag = '';
-	      my $testClause = '';
-	      if ($params->{test} =~ /^[yt]/i) {
-		$testFlag = ' (test only)';
-		@toRecipients = (
-				 'ProteomeXchange Test','proteomexchange-test@googlegroups.com',
-				 );
-		#@toRecipients = (
-		#		 'Eric Deutsch','edeutsch@systemsbiology.org',
-		#		 );
-		$testClause = '&test=yes';
-	      } else {
-		@toRecipients = (
-				 'ProteomeXchange','proteomexchange@googlegroups.com',
-				 );
-	      }
-	      my @ccRecipients = ();
-	      my @bccRecipients = ();
-	      my $identifier = $result->{identifier} || '??';
-	      my %messageType = ( status=> 'new', titleIntro => 'New', midSentence => 'new' );
-	      if ($response->{identifierVersion} && $response->{identifierVersion} > 1) {
-		%messageType = ( status => 'revision', titleIntro => 'Updated information for', midSentence => 'revision to a' );
-	      }
-
-	      my $modeClause = '&outputMode=XML';
-	      my $description = $result->{description} || '???';
-	      $description =~ s/[\r\n]//g;
-
-	      my $changeLogEntry = '';
-	      if ($result->{changeLogEntry}) {
-	        $changeLogEntry = "Changes: $result->{changeLogEntry}\n";
-	      }
-
-              #### Create a tweet message from the available information
-              use ProteomeXchange::Tweet;
-              my $tweet = new ProteomeXchange::Tweet;
-              $tweet->prepareTweetContent(
-                datasetTitle => $result->{title},
-                PXPartner => $params->{PXPartner},
-                datasetIdentifier => $identifier,
-                datasetSubmitter  => $result->{primarySubmitter},
-                datasetLabHead => $result->{labHead},
-                datasetSpeciesString => $result->{species},
-                datasetStatus => $messageType{status},
-              );
-              my $tweetString = $tweet->getTweet();
-
-	      #### If emailing has been temporarily disabled, just create an INFO entry about it
-	      if ($noEmailBroadcast && $noEmailBroadcast !~ /no/i && $noEmailBroadcast !~ /false/i) {
-		push(@{$response->{info}},"Will pretend to send around an email to ".join(',',@toRecipients)." but won't really do it because noEmailBroadcast=$noEmailBroadcast.");
-
-              #### Otherwise, send the email!
-	      } else {
-		push(@{$response->{info}},"Sending an announcement email to ".join(',',@toRecipients));
-		my $emailProcessor = new ProteomeXchange::EMailProcessor;
-	        $emailProcessor -> sendEmail(
-					   toRecipients=>\@toRecipients,
-					   ccRecipients=>\@ccRecipients,
-					   bccRecipients=>\@bccRecipients,
-					   subject=>"$messageType{titleIntro} ProteomeXchange dataset $identifier$testFlag",
-					   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}HostingRepository: $params->{PXPartner}\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\n\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
-					   );
-
-		#### Send a tweet too if this is a new dataset
-	        if ( $messageType{status} eq 'new' && !$testClause ) {
-		  push(@{$response->{info}},"Sending tweet to ProteomeXchange");
-		  my $tweetResponse = $tweet->sendTweet();
-		  push(@{$response->{info}},"Result from tweet: $tweetResponse");
-		} else {
-		  push(@{$response->{info}},"Tweet of revision suppressed");
-		}
-
-	      }
-	    }
-	  }
-
-	#### else the file does not validate against the schema. Report the error
-	} else {
-	  $response->{result} = "ERROR";
-	  $response->{message} = "File does not validate against the schema. Cannot process this file. Sorry.";
-	  foreach my $line ( @result ) {
-	    chomp($line);
-	    push(@{$response->{info}},$line);
-	  }
-	}
-
-      } else {
-	unless ($info->{isXML} && $info->{isXML} eq 'passed') {
-	  $response->{message} = "The uploaded file does not appear to be proper XML. It is missing the expected preamble, at least.";
-	}
-	unless ($info->{hasRightXSD} && $info->{hasRightXSD} eq 'passed') {
-	  $response->{message} = "The uploaded file does not appear to have the needed schema reference. Please check schema definition.";
-	}
-      }
-
+  #### If the dataset update did not return an error, then send an email
+  if ( $response->{result} ne "ERROR" ) {
+    my @toRecipients;
+    my $testFlag = '';
+    my $testClause = '';
+    if ($params->{test} =~ /^[yt]/i) {
+	$testFlag = ' (test only)';
+	@toRecipients = (
+			 'ProteomeXchange Test','proteomexchange-test@googlegroups.com',
+			 );
+	#@toRecipients = (
+	#		 'Eric Deutsch','edeutsch@systemsbiology.org',
+	#		 );
+	$testClause = '&test=yes';
     } else {
-      $response->{message} = "Internal error. Unable to open stored file.";
+	@toRecipients = (
+			 'ProteomeXchange','proteomexchange@googlegroups.com',
+			 );
+    }
+    my @ccRecipients = ();
+    my @bccRecipients = ();
+    my $identifier = $result->{identifier} || '??';
+    my %messageType = ( status=> 'new', titleIntro => 'New', midSentence => 'new' );
+    if ($response->{revisionNumber} && $response->{revisionNumber} > 1) {
+	%messageType = ( status => 'revision', titleIntro => 'Updated information for', midSentence => 'revision to a' );
     }
 
-  } else {
-    $response->{message} = "Internal error. Unable to find stored file.";
+    my $modeClause = '&outputMode=XML';
+    my $description = $result->{description} || '???';
+    $description =~ s/[\r\n]//g;
+
+    my $changeLogEntry = '';
+    if ($result->{changeLogEntry}) {
+      $changeLogEntry = "Changes: $result->{changeLogEntry}\n";
+    }
+
+    #### Create a tweet message from the available information
+    use ProteomeXchange::Tweet;
+    my $tweet = new ProteomeXchange::Tweet;
+    $tweet->prepareTweetContent(
+      datasetTitle => $result->{title},
+      PXPartner => $params->{PXPartner},
+      datasetIdentifier => $identifier,
+      datasetSubmitter  => $result->{primarySubmitter},
+      datasetLabHead => $result->{labHead},
+      datasetSpeciesString => $result->{species},
+      datasetStatus => $messageType{status},
+    );
+    my $tweetString = $tweet->getTweet();
+
+    #### If emailing has been temporarily disabled, just create an INFO entry about it
+    if ($noEmailBroadcast && $noEmailBroadcast !~ /no/i && $noEmailBroadcast !~ /false/i) {
+	push(@{$response->{info}},"Will pretend to send around an email to ".join(',',@toRecipients)." but won't really do it because noEmailBroadcast=$noEmailBroadcast.");
+
+    #### Otherwise, send the email!
+    } else {
+	push(@{$response->{info}},"Sending an announcement email to ".join(',',@toRecipients));
+	my $emailProcessor = new ProteomeXchange::EMailProcessor;
+      $emailProcessor -> sendEmail(
+				   toRecipients=>\@toRecipients,
+				   ccRecipients=>\@ccRecipients,
+				   bccRecipients=>\@bccRecipients,
+				   subject=>"$messageType{titleIntro} ProteomeXchange dataset $identifier$testFlag",
+				   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}HostingRepository: $params->{PXPartner}\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\n\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
+				   );
+
+	#### Send a tweet too if this is a new dataset
+      if ( $messageType{status} eq 'new' && !$testClause ) {
+	  push(@{$response->{info}},"Sending tweet to ProteomeXchange");
+	  my $tweetResponse = $tweet->sendTweet();
+	  push(@{$response->{info}},"Result from tweet: $tweetResponse");
+	} else {
+	  push(@{$response->{info}},"Tweet of revision suppressed");
+	}
+
+    }
   }
 
+  #### Processing complete
   return($response);
 }
 
@@ -790,13 +767,13 @@ sub validatePXXMLDocument {
 	  $info->{hasRightXSD} = 'failed';
         }
       } else {
-        if ($schema eq 'proteomeXchange-1.2.0.xsd' || $schema eq 'proteomeXchange-1.3.0.xsd' || $schema eq 'proteomeXchange-1.4.0.xsd') {
+        if ($schema eq 'proteomeXchange-1.4.0.xsd') {
 	  push(@{$response->{info}},"File has as acceptable XSD $schema");
 	  $info->{hasRightXSD} = 'passed';
         } else {
 	  $response->{result} = "ERROR";
 	  $response->{message} = "File has unexpected XSD '$schema'. Cannot process this file. Sorry.";
-	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.2.0.xsd, proteomeXchange-1.3.0.xsd, proteomeXchange-1.4.0.xsd are supported");
+	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.4.0.xsd is permitted");
 	  $info->{hasRightXSD} = 'failed';
         }
       }
@@ -835,7 +812,7 @@ sub validatePXXMLDocument {
   #### Run the XML through a validating parser
   push(@{$response->{info}},"Validating XML...");
   my @result = `export LD_LIBRARY_PATH=/tools/xerces-c-src_2_7_0/lib; /tools/xerces-c-src_2_7_0/bin/SAX2Count -v=always $filename 2>&1`;
-  my $nLines = scalar(@result);
+  $nLines = scalar(@result);
 
   #### If the file is valid XML
   if ($nLines == 1 && $result[0] =~ /elems,/) {
@@ -901,7 +878,7 @@ sub validatePXXMLDocument {
   }
 
   #### Finish
-  my $nErrors = scalar(@{$response->{validationErrors}});
+  $nErrors = scalar(@{$response->{validationErrors}});
   if ( $nErrors ) {
     $response->{result} = "FoundValidationErrors";
     $response->{message} = "PX XML document parsing completed with errors";
