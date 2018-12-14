@@ -24,7 +24,6 @@ sub new {
 
     #### Process constructor argument class variables
     my %args = @_;
-    $self->setMassType($args{massType}) if ($args{massType});
 
     #### Process constructor argument object variables
     # none
@@ -62,13 +61,30 @@ sub findArticle {
 
   if ($searchTitle) {
     print "DEBUG[$METHOD]: Search by title: $searchTitle\n" if ($DEBUG);
-    $searchResult = $pubMed->find($searchTitle, "title");
-    $pmids = $searchResult->get_all_ids();
+    eval {
+      $searchResult = $pubMed->find($searchTitle, "title");
+      $pmids = $searchResult->get_all_ids();
+    };
+    if ($@) {
+      print STDERR "Error attempting to search Pubmed titles for '$searchTitle': $!\n";
+    }
   } elsif ($searchAbstract) {
     print "DEBUG[$METHOD]: Search in abstract: $searchAbstract\n" if ($DEBUG);
-    $searchResult = $pubMed->find($searchAbstract, "abstract");
-    $pmids = $searchResult->get_all_ids();
+    eval {
+      $searchResult = $pubMed->find($searchAbstract, "abstract");
+      $pmids = $searchResult->get_all_ids();
+    };
+    if ($@) {
+      print STDERR "Error attempting to search Pubmed abstracts for '$searchAbstract': $!\n";
+    }
+
+  } else {
+    print STDERR "Neither searchTitle nor searchAbstract provided\n";
+    $pmids = undef;
+    $result{message} = 'Unknown error trying to fetch data from PubMed';
   }
+
+  return(\%result) unless ($pmids);
 
   my $nMatches = scalar(@{$pmids});
   print "  $nMatches articles found\n" if ($DEBUG);
