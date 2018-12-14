@@ -142,6 +142,14 @@ sub createTables {
     PRIMARY KEY (datasetHistory_id)
   ) ENGINE=InnoDB;
 
+  CREATE TABLE supplementalLinkList (
+    supplementalLinkList_id   int AUTO_INCREMENT NOT NULL,
+    datasetIdentifier   varchar(50) NOT NULL,
+    PXPartner           varchar(50) NOT NULL,
+    supplementalXML     varchar(255) NULL,
+    PRIMARY KEY (supplementalLinkList_id)
+  ) ENGINE=InnoDB;
+
   ~;
 
   $ddl = qq~
