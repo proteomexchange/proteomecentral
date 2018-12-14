@@ -86,6 +86,8 @@ sub parse {
 
   my $dataset;
   my @warnings;
+  my @messages = ();
+
 
   #### Open the file
   unless (open(FH,$filename)){
@@ -93,9 +95,12 @@ sub parse {
     return($response);
   }
 
+
+  #### Parse the XML into an addressable tree
   use XML::TreeBuilder;
   my $doctree = XML::TreeBuilder->new();
   $doctree->parse(*FH);
+
 
   #### Check all the cvParams that they do not conflict with the CV
   push(@{$response->{info}},"Checking the cvParams in the document");
@@ -105,7 +110,6 @@ sub parse {
     my $paramName = $cvParam->attr('name');
     my $paramValue = $cvParam->attr('value');
     my $paramCvRef = $cvParam->attr('cvRef');
-    #print "Checking $paramAccession==$paramName\n";
     $self->checkCvParam(paramAccession=>$paramAccession,paramName=>$paramName,paramValue=>$paramValue,paramCvRef=>$paramCvRef);
   }
 
@@ -137,33 +141,102 @@ sub parse {
     }
   }
 
+
+  #### Extract the ChangeLogEntry. There could be multiple. Only the first is looked at here! FIXME
   my ($changeLogEntry) = $doctree->find_by_tag_name('ChangeLogEntry');
   if ($changeLogEntry) {
     $dataset->{changeLogEntry} = $changeLogEntry->as_text();
   }
 
+
+  #### Extract the DatasetIdentifier
   my @datasetIdentifiers = $doctree->find_by_tag_name('DatasetIdentifier');
   foreach my $datasetIdentifier ( @datasetIdentifiers ) {
     my @cvParams = $datasetIdentifier->find_by_tag_name('cvParam');
     foreach my $cvParam ( @cvParams ) {
-			if ($cvParam->attr('name') eq "ProteomeXchange accession number") {
-				$dataset->{identifier} = $cvParam->attr('value');
-			}
-			if ($cvParam->attr('name') eq "ProteomeXchange accession version number") {
-				$dataset->{identifierVersion} = $cvParam->attr('value');
-			}
-      if ($cvParam->attr('name') =~ /Digital Object Identifier/){
-        $dataset->{DigitalObjectIdentifier} =  "http://dx.doi.org/". $cvParam->attr('value');
+      if ($cvParam->attr('accession') eq "MS:1001919" || $cvParam->attr('name') eq "ProteomeXchange accession number") {
+	$dataset->{identifier} = $cvParam->attr('value');
       }
-	  }
+      if ($cvParam->attr('accession') eq "MS:1001921" || $cvParam->attr('name') eq "ProteomeXchange accession version number") {
+	$dataset->{revisionNumber} = $cvParam->attr('value');
+      }
+      if ($cvParam->attr('accession') eq "MS:1002997" || $cvParam->attr('name') eq "ProteomeXchange dataset identifier reanalysis number") {
+	$dataset->{reanalysisNumber} = $cvParam->attr('value');
+      }
+      if ($cvParam->attr('name') =~ /Digital Object Identifier/){
+	$dataset->{DigitalObjectIdentifier} =  "http://dx.doi.org/". $cvParam->attr('value');
+      }
+    }
   }
+
+  #### Ensure that there is an identifier
   unless ($dataset->{identifier}) {
-    #### Error: Unable to extract ProteomeXchange accession from the submitted document
+    $response->{message} = "Unable to extract PXD identifier";
+    return($response);
   }
 
-  foreach my $tag (qw (Species Instrument ModificationList DatasetOrigin)){
+  #### Ensure that reanalysis rules are followed
+  if ( $dataset->{identifier} =~ /^RPX/ ) {
+    if ( $dataset->{reanalysisNumber} ) {
+      # good
+    } else {
+      $self->addCvError(errorMessage=>"ERROR: RPXD is missing a MS:1002997 reanalysis number");
+    }
+  } else {
+    if ( $dataset->{reanalysisNumber} ) {
+      $self->addCvError(errorMessage=>"ERROR: An original data PXD should not have a reanalysis number");
+    } else {
+      # good
+    }
+  }
 
 
+  #### Extract the DatasetOrigins
+  my @datasetOriginTags = $doctree->find_by_tag_name('DatasetOrigin');
+  my @datasetOrigins = ();
+  foreach my $datasetOrigin ( @datasetOriginTags ) {
+    my @cvParams = $datasetOrigin->find_by_tag_name('cvParam');
+    my %origin = ();
+    foreach my $cvParam ( @cvParams ) {
+      if ($cvParam->attr('accession') eq "MS:1001919" || $cvParam->attr('name') eq "ProteomeXchange accession number") {
+	$origin{identifier} = $cvParam->attr('value');
+      } elsif ($cvParam->attr('accession') eq "PRIDE:0000397" || $cvParam->attr('name') eq "Data derived from previous dataset") {
+	$origin{derived} = 1;
+      } elsif ($cvParam->attr('accession') eq "MS:1002868" || $cvParam->attr('name') eq "Original data") {
+	$origin{original} = 1;
+      } else {
+        $self->addCvError(errorMessage=>"ERROR: DatasetOrigin has unrecognized term '".$cvParam->attr('accession')."'");
+      }
+    }
+    #### Do some basic checks on what we found and store it
+    if ( $origin{original} ) {
+      if ( $origin{derived} ) {
+        $self->addCvError(errorMessage=>"ERROR: The same DatasetOrigin may not be both original and derived. Use separate DatasetOrigins");
+      }
+      if ( $origin{identifier} ) {
+        $self->addCvError(errorMessage=>"ERROR: An original dataset may not reference an identifier. Use separate DatasetOrigins");
+      }
+      if ( $dataset->{identifier} !~ /^PX/ ) {
+        $self->addCvError(errorMessage=>"ERROR: An original dataset identifier must begin with a PXD prefix, not RPXD");
+      }
+    } elsif ( $origin{derived} ) {
+      unless ( $origin{identifier} ) {
+        $self->addCvError(errorMessage=>"ERROR: A derived dataset must be accompanied by an identifier of some sort");
+      }
+      if ( $dataset->{identifier} !~ /^RPX/ ) {
+        $self->addCvError(errorMessage=>"ERROR: A derived dataset identifier must begin with a RPXD prefix, not PXD");
+      }
+    } else {
+      $self->addCvError(errorMessage=>"ERROR: Each DatasetOrigin must be either original or derived");
+    }
+    push(@datasetOrigins,\%origin);
+  }
+  $dataset->{datasetOriginAccession} = "DEPRECATED";
+  $dataset->{DatasetOriginList} = \@datasetOrigins;
+
+
+  #### Parse some other document sections generically
+  foreach my $tag ( qw(Species Instrument ModificationList) ){
     my @lists = $doctree->find_by_tag_name($tag);
     foreach my $list ( @lists ) {
       #my  $list = $lists[0];
@@ -452,8 +525,11 @@ sub checkCvParam {
     my $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/psi-ms.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
     return unless ($self->{cv}->{status} eq 'read ok');
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/pride_cv.obo';
-    $self->readControlledVocabularyFile(input_file=>$infile);
+
+    #### The PRIDE CV is no longer supported
+    #$infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/pride_cv.obo';
+    #$self->readControlledVocabularyFile(input_file=>$infile);
+
     $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/PSI-MOD.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
     $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/cl.obo';
@@ -479,6 +555,12 @@ sub checkCvParam {
 
   unless ($name) {
     $self->addCvError(errorMessage=>"WARNING: term '$accession' does not have a corresponding name specified.");
+  }
+
+  #### Disallow the PRIDE CV now
+  if ( $accession =~ /^PRIDE:/ ) {
+    $self->addCvError(errorMessage=>"ERROR: the PRIDE CV is no longer supported at term '$accession'.");
+    return;
   }
 
   if ($self->{cv}->{terms}->{$accession}) {
@@ -613,6 +695,11 @@ sub readControlledVocabularyFile {
     }
   }
 
+  #### Create reverse lookup keys
+  foreach my $id ( keys(%{$self->{cv}->{terms}}) ) {
+    my $name = $self->{cv}->{terms}->{$id}->{name};
+    $self->{cv}->{names}->{$name} = $id;
+  }
 
   close(INFILE);
   $self->{cv}->{status} = 'read ok';
@@ -621,6 +708,192 @@ sub readControlledVocabularyFile {
 
 }
 
-###############################################################################
 
+###############################################################################
+# correctXMLFile: Correct a ProteomeXchange XML file for certain known issues
+###############################################################################
+sub correctXMLFile {
+  my $self = shift;
+  my %args = @_;
+  my $SUB_NAME = 'correctXMLFile';
+
+  #### Decode the argument list
+  my $filename = $args{'filename'};
+
+  #### Set a default error message in case something goes wrong
+  my $response;
+  $response->{result} = "ERROR";
+  $response->{message} = "ERROR: Unable to parse file: Unknown error";
+
+  #### Check the filename
+  unless ( $filename ) {
+    $response->{message} = "ERROR: Filename not specified!";
+    return($response);
+  }
+  if ( ! -f "$filename" ) {
+    $filename =~ s/local/net\/dblocal/;
+    if ( ! -f "$filename" ) {
+      $response->{message} = "ERROR: Unable to parse file. Does not exist!";
+      return($response);
+    }
+  }
+
+
+  #### Get the properties of the original file and open it
+  my @properties = stat($filename);
+  my $mode = $properties[2];
+
+  #### Open the input file
+  unless (open(INFILE,$filename)){
+    $response->{message} = "ERROR: Unable to open the document '$filename'";
+    return($response);
+  }
+
+  #### Loop through the file, putting the lines into an array
+  my @xmlArray;
+  while ( my $line = <INFILE> ) {
+    push(@xmlArray,$line);
+  }
+
+  close(INFILE);
+
+  $response = $self->correctXML( xmlArray=>\@xmlArray );
+
+  #### If there was a change made, then mv the change file to the
+  #### original file and set the original mode
+  if ( $response->{nXmlChanges} ) {
+
+    #### Open the input file
+    my $outputFilename = "$filename.tmp";
+    unless (open(OUTFILE,">$outputFilename")){
+      $response->{message} = "ERROR: Unable to open the temporary output file '$outputFilename'";
+      return($response);
+    }
+
+    #### Write out the new XML
+    foreach my $line ( @{$response->{xmlArray}} ) {
+      print OUTFILE $line;
+    }
+    close(OUTFILE);
+
+    #### Check that the new file seems good
+    my @newProperties = stat($outputFilename);
+    my $originalSize = $properties[7];
+    my $newSize = $newProperties[7];
+    if ( $originalSize && $newSize && $newSize*1.05 > $originalSize ) {
+      rename($outputFilename,$filename);
+      chmod($mode,$filename);
+      $response->{message} = "File fixed";
+    } else {
+      $response->{result} = "FileSizesProblem";
+      $response->{message} = "ERROR: Original file size $originalSize and new file size $newSize, which is a suspected problem. Aborting.";
+    }
+
+  #### If no change was made, then just remove the change file
+  } else {
+    $response->{message} = "No change needed";
+  }
+
+  return($response);
+}
+
+
+###############################################################################
+# correctXML: Correct a ProteomeXchange XML for certain known issues
+###############################################################################
+sub correctXML {
+  my $self = shift;
+  my %args = @_;
+  my $SUB_NAME = 'correctXML';
+
+  #### Decode the argument list
+  my $xmlArray = $args{'xmlArray'};
+
+  #### Set a default error message in case something goes wrong
+  my $response;
+  $response->{result} = "ERROR";
+  $response->{message} = "ERROR: Unable to parse XML: Unknown error";
+
+  #### Check the xmlArray
+  unless ( $xmlArray ) {
+    $response->{message} = "xmlArray is undefined";
+    return($response);
+  }
+  my $nLines = scalar(@{$xmlArray});
+  unless ( $nLines ) {
+    $response->{message} = "xmlArray has no lines";
+    return($response);
+  }
+
+  #### Load the PRIDE CV if it has not already been loaded
+  unless ( exists($self->{PRIDEcv}) ) {
+
+    #### But if we've already loaded the main CV, then stash it away temporarily
+    if ( exists($self->{cv}) ) {
+      $self->{Savedcv} = $self->{cv};
+      delete($self->{cv});
+    }
+
+    my $cvfile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/pride_cv.obo';
+    print "INFO: Loading PRIDE CV\n";
+    $self->readControlledVocabularyFile(input_file=>$cvfile);
+    unless ($self->{cv}->{status} eq 'read ok') {
+      $response->{message} = "ERROR: Unable to read PRIDE CV";
+    }
+    #### Since the two CVs will have overlapping names, move the PRIDE CV data structure to its own name space
+    $self->{PRIDEcv} = $self->{cv};
+    delete($self->{cv});
+
+    #### Load the PSI-MS CV, unless it's already been stashed
+    if ( exists($self->{Savedcv} ) ) {
+      $self->{cv} = $self->{Savedcv};
+      delete($self->{Savedcv});
+    } else {
+      $cvfile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/psi-ms.obo';
+      print "INFO: Loading PSI-MS CV\n";
+      $self->readControlledVocabularyFile(input_file=>$cvfile);
+      unless ($self->{cv}->{status} eq 'read ok') {
+        $response->{message} = "ERROR: Unable to read PSI-MS CV";
+      }
+    }
+  }
+
+  #### Prepare a new array for the changed result
+  my @newArray;
+  my $nXmlChanges = 0;
+
+  #### Loop through the file, looking for problems to fix
+  foreach my $line ( @{$xmlArray} ) {
+    if ( $line =~ /pride_cv\.obo/ ) {
+      print "  -- Removing $line";
+      next;
+    } elsif ( $line =~ /(PRIDE:\d+)/ ) {
+      my $prideAccession = $1;
+      my $termName = $self->{PRIDEcv}->{terms}->{$prideAccession}->{name};
+      if ( $termName ) {
+	my $psiMsAccession = $self->{cv}->{names}->{$termName};
+	if ( $psiMsAccession ) {
+	  print("  -- Replacing $prideAccession --> $psiMsAccession ($termName)\n");
+	  $line =~ s/$prideAccession/$psiMsAccession/g;
+	  $line =~ s/cvRef="PRIDE"/cvRef="MS"/g;
+	  $nXmlChanges++;
+        } else {
+	  print("  ERROR: Unable to find match for $prideAccession ($termName)\n");
+        }
+      } else {
+	print("  ERROR: Unable to find $prideAccession in CV\n");
+      }
+    }
+    push(@newArray,$line);
+  }
+
+  $response->{result} = "OK";
+  $response->{xmlArray} = \@newArray;
+  $response->{nXmlChanges} = $nXmlChanges;
+  $response->{message} = "$nXmlChanges changes made to XML";
+  return($response);
+}
+
+
+###############################################################################
 1;
