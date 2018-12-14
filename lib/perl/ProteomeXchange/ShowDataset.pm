@@ -24,6 +24,8 @@ my $cgi = new CGI;
 our $CGI_BASE_DIR = $cgi->new->url();
 $CGI_BASE_DIR =~ s/cgi.*/cgi/;
 
+my $TESTSUFFIX = "_test";
+
 ###############################################################################
 # Constructor
 ###############################################################################
@@ -61,8 +63,8 @@ sub listDatasets {
 
   if ($test && ($test =~ /yes/i || $test =~ /true/i)){
     $teststr = "&test=$test";
-    $table_name = 'dataset_test';
     $path .= "/testing";
+    $table_name .= $TESTSUFFIX;
   }
 
 	my $dbh = new ProteomeXchange::Database;
@@ -628,7 +630,7 @@ sub showDataset {
   my $teststr = '';
 
   if ($test && ($test =~ /yes/i || $test =~ /true/i)){
-    $table_name = 'dataset_test';
+    $table_name .= $TESTSUFFIX;
     $path .= "/testing";
     $teststr = "?test=$test";
   }
@@ -993,14 +995,14 @@ sub showDatasetHistory {
   my $str = '';
 
   my $tableName = "datasetHistory";
-  $tableName .= "_test" if ($test =~ /yes|true/i);
+  $tableName .= $TESTSUFFIX if ($test =~ /yes|true/i);
 
   $str .= "<p><b>Dataset History</b></p>\n";
   #$str .= "test=$test  tableName=$tableName<BR>\n";
 
   $str .= "<table class=\"table\" cellpadding=\"2\">\n";
 
-  my $sql = "SELECT dataset_id,datasetIdentifier,identifierVersion,isLatestVersion,PXPartner,status,primarySubmitter,title,species,instrument,publication,keywordList,announcementXML,identifierDate,submissionDate,revisionDate,changeLogEntry FROM $tableName WHERE dataset_id = $dataset_id";
+  my $sql = "SELECT dataset_id,datasetIdentifier,revisionNumber,reanalysisNumber,isLatestRevision,PXPartner,status,primarySubmitter,title,species,instrument,publication,keywordList,announcementXML,identifierDate,submissionDate,revisionDate,changeLogEntry FROM $tableName WHERE dataset_id = $dataset_id ORDER BY reanalysisNumber,revisionNumber,revisionDate";
 
   my $db = new ProteomeXchange::Database;
 
@@ -1017,21 +1019,35 @@ sub showDatasetHistory {
     return $str;
   }
 
-  $str .= "<tr>";
-  foreach my $item ( 'Version','Datetime','Status','ChangeLog Entry' ) {
-    $str .= "<td class=\"tableTitle\">$item</td>";
-  }
-  $str .= "</tr>\n";
 
+  #### Print out the table of history information
+  my $iRow = 0;
   foreach my $row ( @rows ) {
-    my ( $dataset_id,$datasetIdentifier,$identifierVersion,$isLatestVersion,$PXPartner,$status,$primarySubmitter,$title,$species,$instrument,$publication,$keywordList,$announcementXML,$identifierDate,$submissionDate,$revisionDate,$changeLogEntry ) = @{$row};
+    my ( $dataset_id,$datasetIdentifier,$revisionNumber,$reanalysisNumber,$isLatestRevision,$PXPartner,$status,$primarySubmitter,$title,$species,$instrument,$publication,$keywordList,$announcementXML,$identifierDate,$submissionDate,$revisionDate,$changeLogEntry ) = @{$row};
 
+    #### If this is the first row, then first print out the header
+    if ( $iRow == 0 ) {
+      $str .= "<tr>";
+      my @columnTitles = ();
+      push(@columnTitles,'Reanalysis') if ( $datasetIdentifier =~ /^RPX/ );
+      push(@columnTitles,'Revision','Datetime','Status','ChangeLog Entry');
+      foreach my $item ( @columnTitles ) {
+	$str .= "<td class=\"tableTitle\">$item</td>";
+      }
+      $str .= "</tr>\n";
+    }
+
+    #### Print out the row
     $str .= "<tr>";
-    foreach my $item ( $identifierVersion,$revisionDate||$submissionDate||$identifierDate,$status,$changeLogEntry ) {
+    my @columns = ();
+    push(@columns,$reanalysisNumber) if ( $datasetIdentifier =~ /^RPX/ );
+    push(@columns,$revisionNumber,$revisionDate||$submissionDate||$identifierDate,$status,$changeLogEntry);
+    foreach my $item ( @columns ) {
       $item = '' unless (defined($item));
       $str .= "<td class=\"tableText\">$item</td>";
     }
     $str .= "</tr>\n";
+    $iRow++;
 
   }
   $str .= "</table>\n";
