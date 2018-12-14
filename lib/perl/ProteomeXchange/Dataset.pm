@@ -250,7 +250,7 @@ sub updateRecord{
   foreach my $row ( @rows ) {
     ($dataset_id,$submissionDate,$revisionDate,$revisionNumber,$reanalysisNumber) = @{$row};
     $reanalysisNumber = 0 unless ( $reanalysisNumber );
-    $revisionNumber = 1 unless ( $revisionNumber );
+    $revisionNumber = 0 unless ( defined($revisionNumber) );
     $revisionNumbersByReanalysis{$reanalysisNumber}->{$revisionNumber} = 1;
     push(@{$response->{info}},"Found history record: $dataset_id,$submissionDate,$revisionDate,$revisionNumber,$reanalysisNumber");
   }
