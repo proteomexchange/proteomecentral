@@ -16,6 +16,7 @@ use JSON::Parse;
 use ProteomeXchange::Dataset;
 use ProteomeXchange::DatasetParser;
 use ProteomeXchange::ArticleFinder;
+use ProteomeXchange::Configuration qw( %CONFIG );
 
 $| = 1;
 use CGI qw/:standard/;
@@ -492,7 +493,9 @@ sub fetchExceptions {
   my $maxRows = 10;
   my $requestRows = $maxRows+1;
 
-  my $url = "https://sheets.googleapis.com/v4/spreadsheets/1PNAwAWQFxzcIRO8Hmh3vI0hasbHQYR0zcb0k6zr26Mk/values/Sheet1\!A1:D${requestRows}/?key=AIzaSyBnJr2sMQ_XMa6Gs8zHS9vGe-TRY3m4WJw";
+  my $googleApiKey = $CONFIG{googleApiKey} || '??';
+
+  my $url = "https://sheets.googleapis.com/v4/spreadsheets/1PNAwAWQFxzcIRO8Hmh3vI0hasbHQYR0zcb0k6zr26Mk/values/Sheet1\!A1:D${requestRows}/?key=$googleApiKey";
 
   my $request = HTTP::Request->new( 'GET', $url );
   my $lwp = LWP::UserAgent->new;
