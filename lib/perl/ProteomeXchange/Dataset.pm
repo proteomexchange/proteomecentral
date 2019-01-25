@@ -291,7 +291,7 @@ sub updateRecord{
     $response->{message} = "A submission for dataset '$datasetidentifier' already exists and a revision number '$expectedRevisionNumber' was expected, but none was provided. This is unexpected. Please check carefully and fix or report a server problem.";
     return;
 
-  } elsif ( $isRevision == 0 && $thisRevisionNumber eq '' & $expectedRevisionNumber == 1 ) {
+  } elsif ( $isRevision == 0 && $thisRevisionNumber eq '' && $expectedRevisionNumber == 1 ) {
     push(@{$response->{info}},"For this new submission, the revision is implicitly set to 1");
     $thisRevisionNumber = 1;
   } elsif ( $thisRevisionNumber == $expectedRevisionNumber ) {
@@ -731,6 +731,7 @@ sub validatePXXMLDocument {
   $response->{validationWarnings} = [];
   $response->{validationErrors} = [];
   $response->{info} = [];
+  $response->{warnings} = [];
 
   #### Check to make sure the file exists
   unless ( -f $filename ) {
@@ -887,6 +888,66 @@ sub validatePXXMLDocument {
     $response->{message} = "PX XML document parsing completed without error";
   }
 
+  return($response);
+}
+
+
+
+###############################################################################
+# processSupplementalFullDatasetLinkList: Process a submitted SupplementalFullDatasetLinkList
+###############################################################################
+sub processSupplementalFullDatasetLinkList {
+  my $self = shift;
+  my %args = @_;
+  my $SUB_NAME = 'processSupplementalFullDatasetLinkList';
+
+  #### Decode the argument list
+  my $method = $args{'method'} || die("[$SUB_NAME] ERROR:method  not passed");
+  my $path = $args{'path'} || die("[$SUB_NAME] ERROR:path  not passed");
+  my $params = $args{'params'} || die("[$SUB_NAME] ERROR:params  not passed");
+  my $response = $args{'response'} || die("[$SUB_NAME] ERROR:response  not passed");
+  my $uploadFilename = $args{'uploadFilename'} || die("[$SUB_NAME] ERROR: uploadFilename not passed");
+
+  my $test = $params->{test};
+  $test = 'no' if (!defined($test));
+
+  #### Set a default error message in case something goes wrong
+  $response->{result} = "ERROR";
+  $response->{message} = "Unable to process XML: Unknown error.";
+
+  push(@{$response->{info}},"File has been uploaded. Begin processing it.");
+
+  #### Parse and check the validity of the submitted file
+  my $result = $self->validatePXXMLDocument( filename => "$path/$uploadFilename", params => $params );
+  $response = $result;
+
+  #### If things did not go perfectly, then return
+  my $nWarnings = @{$response->{warnings}};
+  if ( $response->{result} ne 'OK' ) {
+    return($response);
+  }
+  if ( $nWarnings ) {
+    $response->{result} = "ERROR";
+    $response->{message} = "Unresolved issues with the submitted XML. Please correct and try again.";
+    return($response);
+  }
+
+  #### Extract the dataset and proceed. This is very messy. FIXME
+  $result = $response->{dataset};
+
+  push(@{$response->{info}},"Ready to update database record");
+
+  #### Try to add or update the database for this submitted information
+  if ( 0 ) {
+    $self->updateSupplementalFullDatasetLinkListRecord(
+      result => $result,
+      response => $response,
+      test => $params->{test},
+    );
+    push(@{$response->{info}},"Update returned '$response->{result}'");
+  }
+
+  #### Processing complete
   return($response);
 }
 
