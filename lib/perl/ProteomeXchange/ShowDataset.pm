@@ -452,13 +452,14 @@ sub printPageFooter {
   my $outputMode=$params->{outputMode} || 'html';
   return if ($outputMode !~ /html/i);
 
-  my $begin =0;
-  foreach my $line (@$template){
-    if($line =~ /END main content/){
+  my $begin = 0;
+  foreach my $line (@$template) {
+    #### Inject some content at the end
+    if ($line =~ /END main content/) {
       $begin = 1;
-			print '<a href="http://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="50" height="15" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to receive all new ProteomeXchange announcements!</font></a>';
+      print '';
     }
-    if($begin){
+    if ($begin) {
       print "$line";
     }
   }
