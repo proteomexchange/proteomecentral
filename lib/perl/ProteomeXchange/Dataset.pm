@@ -849,12 +849,21 @@ sub validatePXXMLDocument {
 
 
   #### If there are other warnings or errors, put them in info
+  my $nWarnings = 0;
+  foreach my $warning ( @{$response->{warnings}} ) {
+    $nWarnings++;
+    push(@{$response->{info}},$warning);
+  }
+  push(@{$response->{info}},"There was a total of $nWarnings non-CV warnings.");
+
+  #### If there are other warnings or errors, put them in info
   my $nErrors = 0;
-  foreach my $error ( @{$response->{warnings}} ) {
+  foreach my $error ( @{$response->{errors}} ) {
     $nErrors++;
     push(@{$response->{info}},$error);
+    push(@{$response->{validationErrors}},$error);
   }
-  push(@{$response->{info}},"There was a total of $nErrors other errors or warnings.");
+  push(@{$response->{info}},"There was a total of $nErrors non-CV errors.");
 
 
   ### If the PXPartner does not match the one in XML file, report an error
@@ -864,18 +873,30 @@ sub validatePXXMLDocument {
     push(@{$response->{validationErrors}},$message);
   }
 
-  ### If the description is not at least 50 characters, report an error
-  if ( !exists($dataset->{description}) || !defined($dataset->{description}) || length($dataset->{description}) < 50 ){
-    my $message = "The description for the submission is not sufficient. It must be at least 50 characters.";
-    push(@{$response->{info}},$message);
-    push(@{$response->{validationErrors}},$message);
+  ### Check if the description is  at least 50 characters
+  if ( !exists($dataset->{description}) || !defined($dataset->{description}) || length($dataset->{description}) < 50 ) {
+    my $descriptionLength = length($dataset->{description});
+    if ( $dataset->{changeLogEntry} ) {
+      my $message = "WARNING: The description for the submission is supposed to be least 50 characters, but for a revision, $descriptionLength is allowed for now";
+      push(@{$response->{info}},$message);
+    } else {
+      my $message = "The description length for a NEW submission must be at least 50 characters, but here is only $descriptionLength.";
+      push(@{$response->{info}},$message);
+      push(@{$response->{validationErrors}},$message);
+    }
   }
 
-  ### If the title is not at least 30 characters, report an error
+  ### If the title is at least 30 characters
   if ( !exists($dataset->{title}) || !defined($dataset->{title}) || length($dataset->{title}) < 30 ){
-    my $message = "The title for the submission is not sufficient. It must be at least 30 characters.";
-    push(@{$response->{info}},$message);
-    push(@{$response->{validationErrors}},$message);
+    my $titleLength = length($dataset->{title});
+    if ( $dataset->{changeLogEntry} ) {
+      my $message = "WARNING: The title for the submission is supposed to be least 30 characters, but for a revision, $titleLength is allowed for now";
+      push(@{$response->{info}},$message);
+    } else {
+      my $message = "The title length for a NEW submission must be at least 30 characters, but here is only $titleLength.";
+      push(@{$response->{info}},$message);
+      push(@{$response->{validationErrors}},$message);
+    }
   }
 
   #### Finish
