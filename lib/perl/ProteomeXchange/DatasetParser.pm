@@ -200,10 +200,16 @@ sub parse {
     foreach my $cvParam ( @cvParams ) {
       if ($cvParam->attr('accession') eq "MS:1001919" || $cvParam->attr('name') eq "ProteomeXchange accession number") {
 	$origin{identifier} = $cvParam->attr('value');
-      } elsif ($cvParam->attr('accession') eq "PRIDE:0000397" || $cvParam->attr('name') eq "Data derived from previous dataset") {
+      } elsif ($cvParam->attr('accession') eq "MS:0002863" || $cvParam->attr('name') eq "Data derived from previous dataset") {
 	$origin{derived} = 1;
       } elsif ($cvParam->attr('accession') eq "MS:1002868" || $cvParam->attr('name') eq "Original data") {
 	$origin{original} = 1;
+      } elsif ($cvParam->attr('accession') eq "MS:1002487" || $cvParam->attr('name') eq "MassIVE dataset identifier" ||
+               $cvParam->attr('accession') eq "MS:1002872" || $cvParam->attr('name') eq "Panorama Public dataset identifier" ||
+               $cvParam->attr('accession') eq "MS:1002836" || $cvParam->attr('name') eq "iProX Public dataset identifier" ||
+               $cvParam->attr('accession') eq "MS:1002632" || $cvParam->attr('name') eq "jPOST Public dataset identifier"
+              ) {
+	$origin{identifier} = $cvParam->attr('value');
       } else {
         $self->addCvError(errorMessage=>"ERROR: DatasetOrigin has unrecognized term '".$cvParam->attr('accession')."'");
       }
