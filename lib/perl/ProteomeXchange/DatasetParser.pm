@@ -85,8 +85,9 @@ sub parse {
   }
 
   my $dataset;
-  my @warnings;
   my @messages = ();
+  my @warnings = ();
+  my @errors = ();
 
 
   #### Open the file
@@ -224,7 +225,8 @@ sub parse {
         $self->addCvError(errorMessage=>"ERROR: A derived dataset must be accompanied by an identifier of some sort");
       }
       if ( $dataset->{identifier} !~ /^RPX/ ) {
-        $self->addCvError(errorMessage=>"ERROR: A derived dataset identifier must begin with a RPXD prefix, not PXD");
+	#### By general consensus, there are plausible scenarios for this being valid, so not and error any more
+        #$self->addCvError(errorMessage=>"ERROR: A derived dataset identifier must begin with a RPXD prefix, not PXD");
       }
     } else {
       $self->addCvError(errorMessage=>"ERROR: Each DatasetOrigin must be either original or derived");
@@ -329,7 +331,8 @@ sub parse {
 
       if (exists($contact{'dataset submitter'})) {
 				if ($dataset->{primarySubmitter}) {
-					push(@warnings,'WARNING: There appears to be more than one dataset submitter. Only the first may appear in scalar uses.');
+					#push(@warnings,'WARNING: There appears to be more than one dataset submitter. Only the first may appear in scalar uses.');
+					push(@errors,'ERROR: There appears to be more than one dataset submitter. Only a single submitter may be specified.');
 				} else {
 					$dataset->{primarySubmitter} = $contact{'contact name'};
 				}
@@ -337,7 +340,9 @@ sub parse {
 
       if (exists($contact{'lab head'})) {
 				if ($dataset->{labHead}) {
-					push(@warnings,'WARNING: There appears to be more than one lab head. Only the first may appear in scalar uses.');
+				        #### Now permitted as per group discussion
+					#push(@warnings,'WARNING: There appears to be more than one lab head. Only the first may appear in scalar uses.');
+					$dataset->{labHead} .= ", ".$contact{'contact name'};
 				} else {
 					$dataset->{labHead} = $contact{'contact name'};
 				}
@@ -346,11 +351,11 @@ sub parse {
   }
 
   unless ($dataset->{primarySubmitter}) {
-    push(@warnings,"WARNING: No contact had the designation 'primary submitter'. Will assume that the first contact is the 'primary submitter'");
+    push(@errors,"ERROR: No contact had the designation 'dataset submitter'.");
     $dataset->{primarySubmitter} = $firstContact{'contact name'};
   }
   unless ($dataset->{labHead}) {
-    push(@warnings,"WARNING: No contact had the designation 'lab head'");
+    push(@errors,"ERROR: No contact had the designation 'lab head'");
   }
 
   my %lists=();
@@ -501,6 +506,7 @@ sub parse {
   #push(@{$response->{info}},"+++ datasets Keys are: ".join(",",keys(%{$dataset})));
   $response->{dataset} = $dataset;
   $response->{warnings} = \@warnings;
+  $response->{errors} = \@errors;
 
   #push(@{$response->{info}},"+++ response Keys are: ".join(",",keys(%{$response})));
   return($response);
@@ -549,29 +555,34 @@ sub checkCvParam {
   my $value = $paramValue;
 
   if ($accession =~ /\s/) {
-    $self->addCvError(errorMessage=>"WARNING: term '$accession' has whitespace in it. This is not good.");
+    $self->addCvError(errorMessage=>"ERROR: term '$accession' has whitespace in it. This is not good.");
     $accession =~ s/\s//g;
   }
 
   unless ($name) {
-    $self->addCvError(errorMessage=>"WARNING: term '$accession' does not have a corresponding name specified.");
+    $self->addCvError(errorMessage=>"ERROR: term '$accession' does not have a corresponding name specified.");
   }
 
   #### Disallow the PRIDE CV now
   if ( $accession =~ /^PRIDE:/ ) {
-    $self->addCvError(errorMessage=>"ERROR: the PRIDE CV is no longer supported at term '$accession'.");
+    $self->addCvError(errorMessage=>"WARNING: the PRIDE CV will soon no longer supported at term '$accession'.");
     return;
   }
 
   if ($self->{cv}->{terms}->{$accession}) {
     if ($self->{cv}->{terms}->{$accession}->{name} eq $name) {
       #print "INFO: $accession = $name matches CV\n";
-      $self->{cv}->{n_valid_terms}++;
+      if ( $name =~ /deprecated/i ) {
+	$self->addCvError(errorMessage=>"ERROR: $accession:$name is a deprecated term. Deprecated terms should not be used");
+	$self->{cv}->{n_deprecated_terms}++;
+      } else {
+	$self->{cv}->{n_valid_terms}++;
+      }
     } elsif ($self->{cv}->{terms}->{$accession}->{synonyms}->{$name}) {
       #print "INFO: $accession = $name matches CV\n";
       $self->{cv}->{n_valid_terms}++;
     } else {
-      $self->addCvError(errorMessage=>"WARNING: $accession should be ".
+      $self->addCvError(errorMessage=>"ERROR: $accession should be ".
 	"'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'");
       $self->{cv}->{mislabeled_terms}++;
       #print "replaceall.pl \"$name\" \"$self->{cv}->{terms}->{$accession}->{name}\" \$file\n";
@@ -600,12 +611,12 @@ sub checkCvParam {
 
   } else {
     #### Exceptions
-    if ($paramCvRef eq 'NEWT') {
-      #### Skip for now
-    } else {
-      $self->addCvError(errorMessage=>"WARNING: CV term $accession ('$name') is not in the cv");
+#    if ($paramCvRef eq 'NEWT') {
+#      #### Skip for now
+#    } else {
+      $self->addCvError(errorMessage=>"ERROR: CV term $accession ('$name') is not in the cv");
       $self->{cv}->{unrecognized_terms}++;
-    }
+#    }
   }
 
 }
