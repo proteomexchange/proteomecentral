@@ -13,6 +13,8 @@ use ProteomeXchange::Configuration qw(%CONFIG);
 use strict;
 use XML::Writer;
 use Data::Dumper;
+use JSON;
+
 my $log_dir = ( $CONFIG{basePath} ) ? $CONFIG{basePath} . '/logs/' :
                                     '/net/dblocal/wwwspecial/proteomecentral/devDC/logs/';
 my $log =  ProteomeXchange::Log->new( base => $log_dir, log_level => 'debug' );
@@ -182,7 +184,8 @@ sub listDatasets {
       ~;
 
 
-  }elsif($outputMode=~ /xml/i){
+  #### Or if output mode is 'xml', then wite results in XML
+  } elsif($outputMode=~ /xml/i) {
      print "Content-type:text/xml\r\n\r\n";
      my $writer = new XML::Writer(DATA_MODE => 1, DATA_INDENT => 4,ENCODING=>'UTF-8',);
      $writer->xmlDecl("UTF-8");
@@ -205,21 +208,49 @@ sub listDatasets {
      }
      $writer->endTag("ProteomeXchangeDataset");
      $writer->end();
-  }elsif($outputMode=~ /tsv/i){
+
+  #### Or if the output mode is 'tsv', the write results in tab-separated values
+  } elsif ($outputMode=~ /tsv/i) {
     print "Content-type:text/plain\r\n\r\n";
     foreach my $h (@headings){
-     print "$h\t";
+      print "$h\t";
     }
     print "\n";
     foreach my $values (@results){
-     print join("\t", @$values);
-     print "\n";
-   }
+      print join("\t", @$values);
+      print "\n";
+    }
+
+  #### Or if the output mode is 'json', the write results as JSON
+  } elsif ($outputMode=~ /json/i) {
+    print "Content-type: application/json\n\n";
+    my $json = new JSON;
+
+    my @datasets = ();
+    foreach my $row ( @results ) {
+      my %dataset = ();
+      my $index = 0;
+      foreach my $heading ( @headings ) {
+	$dataset{$heading} = $row->[$index];
+	$index++;
+      }
+      push(@datasets,\%dataset);
+    }
+    print $json->encode(\@datasets)."\n";
+
+  #### Or if the output mode is not recognized, write a simple error
+  } else {
+    print "Content-type: text/plain\r\n\r\n";
+    print "ERROR: Unrecognized outputMode '$outputMode'\n";
   }
 
   $self->log_em( "Finished" );
 }
 
+
+#####################################################################
+# log_em                                                            #
+#####################################################################
 sub log_em {
   my $self = shift;
   my $msg = shift;
@@ -231,10 +262,10 @@ sub log_em {
   $self->{prev_time} = $curr;
 }
 
+
 #####################################################################
 # printPageHeader                                                     #
 #####################################################################
-
 sub printTablePageHeader {
   my $self = shift;
   my %args = @_;
