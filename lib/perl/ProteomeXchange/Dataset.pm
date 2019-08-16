@@ -184,6 +184,7 @@ sub updateRecord{
   my $mainTableName = 'dataset';
   my $historyTableName = 'datasetHistory';
   if ($test && ($test =~ /yes/i || $test =~ /true/i)) {
+    $test = "true";
     $mainTableName .= $TESTSUFFIX;
     $historyTableName .= $TESTSUFFIX;
   }
@@ -200,9 +201,21 @@ sub updateRecord{
   #### Set the revision and realanysis states
   my $isReanalysis = 0;
   my $isRevision = 0;
-  $isReanalysis = 1 if ( $datasetidentifier =~ /^RPX/ );
-  $isRevision = 1 if ( $result->{revisionNumber} );
+  $isReanalysis = 1 if ( $datasetidentifier =~ /^RP/ );
+  $isRevision = 1 if ( $result->{revisionNumber} && $result->{revisionNumber} > 1 );
 
+
+  #### Verify that the test mode and the identifier types are compatible
+  if ( $test eq "true" && $datasetidentifier =~ /PXD/ ) {
+    $response->{result} = "ERROR";
+    $response->{message} = "The dataset identifier \"$datasetidentifier\" must be PXTnnnnnn not PXDnnnnnn if test=yes\n";
+    return;
+  }
+  if ( $test ne "true" && $datasetidentifier =~ /PXT/ ) {
+    $response->{result} = "ERROR";
+    $response->{message} = "The dataset identifier \"$datasetidentifier\" must be PXDnnnnnn not PXTnnnnnn if test=false\n";
+    return;
+  }
 
   #### Verify that the ChangeLogEntry information is appropriate
   my $changeLogEntry = $result->{changeLogEntry};
@@ -212,7 +225,7 @@ sub updateRecord{
   if ( $isRevision == 0 ) {
     if ($changeLogEntry) {
       $response->{result} = "ERROR";
-      $response->{message} = "There is no revision number specified for \"$datasetidentifier\" and therefore should NOT have a ChangeLogEntry\n";
+      $response->{message} = "This submission is not a revision (revision number is not specified or less than 2 for \"$datasetidentifier\" and therefore should NOT have a ChangeLogEntry\n";
       return;
     } else {
       # good
@@ -265,9 +278,11 @@ sub updateRecord{
 
 
   #### If this is a re-analysis, check the number
-  my $expectedRevisionNumber = 1;
-  my $thisReanalysisNumber = 0;
+  my $expectedRevisionNumber = -1;
+  my $thisReanalysisNumber = -1;
   if ( $isReanalysis ) {
+    $expectedRevisionNumber = 0;
+    $thisReanalysisNumber = 0;
     if ( $result->{reanalysisNumber} && $result->{reanalysisNumber} =~ /^\s*\d+\s*$/ ) {
       $thisReanalysisNumber = $result->{reanalysisNumber};
     } else {
@@ -275,30 +290,52 @@ sub updateRecord{
       $response->{message} = "This dataset '$datasetidentifier' appears to be a reanalyzed datasets, but the reanalysisNumber '$result->{reanalysisNumber}' is not valid";
       return;
     }
+
+  #### Else this is not a reanalysis
   } else {
+    $expectedRevisionNumber = 1;
     $thisReanalysisNumber = 0;
   }
 
-  #### If there are already some revisions for this reanalysis (or no reanalysis), then set the expectation
-  if ( exists($revisionNumbersByReanalysis{$thisReanalysisNumber}) ) {
-    $expectedRevisionNumber = $revisionNumbersByReanalysis{$thisReanalysisNumber}->{max} + 1;
+  #### if this is a reanalysis, check the revision
+  if ( $isReanalysis ) {
+    #### If there are already some revisions for this reanalysis, then set the expectation
+    if ( exists($revisionNumbersByReanalysis{$thisReanalysisNumber}) ) {
+      $expectedRevisionNumber = $revisionNumbersByReanalysis{$thisReanalysisNumber}->{max} + 1;
+    #### Otherwise, there must be a revision number of 0 for the container
+    } else {
+      $expectedRevisionNumber = 0;
+    }
   }
 
   #### Now check the revision number
-  my $thisRevisionNumber = $result->{revisionNumber} || '';
+  my $thisRevisionNumber = $result->{revisionNumber};
+  $thisRevisionNumber = '' if (!defined($thisRevisionNumber));
+  push(@{$response->{info}},"The revisionNumber in the document is listed as '$thisRevisionNumber'");
   if ( $expectedRevisionNumber > 1 && ! $thisRevisionNumber ) {
     $response->{result} = "ERROR";
     $response->{message} = "A submission for dataset '$datasetidentifier' already exists and a revision number '$expectedRevisionNumber' was expected, but none was provided. This is unexpected. Please check carefully and fix or report a server problem.";
     return;
 
-  } elsif ( $isRevision == 0 && $thisRevisionNumber eq '' && $expectedRevisionNumber == 1 ) {
+  } elsif ( $isReanalysis == 0 && $isRevision == 0 && $thisRevisionNumber eq '' && $expectedRevisionNumber == 1 ) {
     push(@{$response->{info}},"For this new submission, the revision is implicitly set to 1");
     $thisRevisionNumber = 1;
+
+  } elsif ( $isReanalysis && $thisRevisionNumber eq '' ) {
+    $response->{result} = "ERROR";
+    $response->{message} = "For reanalyses, revisionNumbers must always be specified, with 0 for the container. Please check carefully and fix or report a server problem.";
+    return;
+
   } elsif ( $thisRevisionNumber == $expectedRevisionNumber ) {
     push(@{$response->{info}},"The revisionNumber in the document is as expected at $thisRevisionNumber");
+
   } else {
     $response->{result} = "ERROR";
-    $response->{message} = "The provided revision number for this document for '$datasetidentifier' (reanalysis $thisReanalysisNumber) was expected to be '$expectedRevisionNumber' but was provided as '$thisRevisionNumber'. This is unexpected. Please check carefully and fix or report a server problem.";
+    my $reanalysisMessage = "";
+    my $reanalysisMessage2 = "";
+    $reanalysisMessage = " (reanalysis $thisReanalysisNumber)" if ( $datasetidentifier =~ /RPX/ );
+    $reanalysisMessage2 = " Note that container definitions are denoted with a revision number of 0." if ( $datasetidentifier =~ /RPX/ );
+    $response->{message} = "The provided revision number for this document for '$datasetidentifier'$reanalysisMessage was expected to be '$expectedRevisionNumber' but was provided as '$thisRevisionNumber'. This is unexpected. Please check carefully and fix or report a server problem.$reanalysisMessage2";
     return;
   }
 
