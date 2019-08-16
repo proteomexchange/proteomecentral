@@ -144,9 +144,17 @@ sub parse {
 
 
   #### Extract the ChangeLogEntry. There could be multiple. Only the first is looked at here! FIXME
-  my ($changeLogEntry) = $doctree->find_by_tag_name('ChangeLogEntry');
-  if ($changeLogEntry) {
-    $dataset->{changeLogEntry} = $changeLogEntry->as_text();
+  my @changeLogEntries = $doctree->find_by_tag_name('ChangeLogEntry');
+  my $iChangeLogEntry = 0;
+  if (@changeLogEntries) {
+    foreach my $changeLogEntry ( @changeLogEntries ) {
+      if ( $iChangeLogEntry == 0 ) {
+	$dataset->{changeLogEntry} = $changeLogEntry->attr('date').": ".$changeLogEntry->as_text();
+      } else {
+	$dataset->{changeLogEntry} .= "\n".$changeLogEntry->attr('date').": ".$changeLogEntry->as_text();
+      }
+      $iChangeLogEntry++;
+    }
   }
 
 
