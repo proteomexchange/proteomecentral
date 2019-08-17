@@ -299,14 +299,16 @@ sub updateRecord{
   my $thisRevisionNumber = $result->{revisionNumber};
   $thisRevisionNumber = '' if (!defined($thisRevisionNumber));
   push(@{$response->{info}},"The revisionNumber in the document is listed as '$thisRevisionNumber'");
+ 
+  if ( $isRevision == 0 && $thisRevisionNumber eq '' && $expectedRevisionNumber == 1 ) {
+    push(@{$response->{info}},"For this new submission, no revision number is provided, and therefore the revision is implicitly set to 1");
+    $thisRevisionNumber = 1;
+  }
+
   if ( $expectedRevisionNumber > 1 && ! $thisRevisionNumber ) {
     $response->{result} = "ERROR";
     $response->{message} = "A submission for dataset '$datasetidentifier' already exists and a revision number '$expectedRevisionNumber' was expected, but none was provided. This is unexpected. Please check carefully and fix or report a server problem.";
     return;
-
-  } elsif ( $isRevision == 0 && $thisRevisionNumber eq '' && $expectedRevisionNumber == 1 ) {
-    push(@{$response->{info}},"For this new submission, the revision is implicitly set to 1");
-    $thisRevisionNumber = 1;
 
   } elsif ( $thisRevisionNumber == $expectedRevisionNumber ) {
     push(@{$response->{info}},"The revisionNumber in the document is as expected at $thisRevisionNumber");
