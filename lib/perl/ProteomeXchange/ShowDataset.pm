@@ -661,28 +661,35 @@ sub showDataset {
   my $path = '/local/wwwspecial/proteomecentral/var/submissions';
   my $teststr = '';
 
-  if ($test && ($test =~ /yes/i || $test =~ /true/i)){
+  #### If a PXT was provided, then we should be in test mode
+  if ( $datasetID =~ /PXT/i ) {
+    $test = "yes";
+  }
+
+  #### If test mode was specified, set everything to test mode and normalize $test
+  if ($test && ($test =~ /yes/i || $test =~ /true/i || $test =~ /t/i)){
+    $test = "true";
     $table_name .= $TESTSUFFIX;
     $history_table_name .= $TESTSUFFIX;
     $path .= "/testing";
     $teststr = "?test=$test";
   }
 
-
   #### Parse the input identifier and extract the various components
   my $prefix = '';
-  if (($datasetID =~ /^(R?PXD)/i && $teststr eq '') ||
-      ($datasetID =~ /^(R?PXT)/i && $teststr ne '')) {
+  if ( $datasetID =~ /^(R?PX[DT])/i ) {
     $prefix = $1;
     $datasetID =~ s/$prefix//;
     $datasetID =~ s/^0+//;
   }
+
   #### Parse out the reanalysis number if present
   my $inputReanalysisNumber = '';
   if ( $datasetID =~ /\.(\d+)/ ) {
     $inputReanalysisNumber = $1;
     $datasetID =~ s/\.\d+//;
   }
+
   #### Parse out the revision number if present
   my $inputRevisionNumber = '';
   if ( $datasetID =~ /-(\d+)/ ) {
@@ -690,8 +697,15 @@ sub showDataset {
     $datasetID =~ s/-\d+//;
   }
 
-  #### Define the base identifier for later use
-  my $baseIdentifier = "$prefix$datasetID";
+  #### Find the record for this identifier and get the official identifier
+  my $dbh = new ProteomeXchange::Database;
+  my $sql = qq~
+    SELECT datasetIdentifier
+      FROM $table_name
+     WHERE dataset_id = "$datasetID"
+  ~;
+  my @datasets = $dbh->selectOneColumn($sql);
+  my $baseIdentifier = $datasets[0];
 
   #print STDERR "datasetID=$datasetID, inputReanalysisNumber=$inputReanalysisNumber, inputRevisionNumber=$inputRevisionNumber\n";
 
@@ -721,15 +735,14 @@ sub showDataset {
   my $datasetIDstr = $datasetID;
   if ($response->{status} eq 'OK') {
     my $len = 9 - length($datasetID);
-    $datasetIDstr = substr ($prefix."000001",0, $len) . "$datasetID";
+    $datasetIDstr = $baseIdentifier;
     $title = $datasetIDstr;
     $fullDatasetIDstr = $datasetIDstr;
     $fullDatasetIDstr .= ".$inputReanalysisNumber" if ( $inputReanalysisNumber );
     $fullDatasetIDstr .= "-$inputRevisionNumber" if ( $inputRevisionNumber );
 
-    #### Fetch results from dataset table
-    my $dbh = new ProteomeXchange::Database;
-    my $sql = qq~
+    #### Fetch results from dataset table FIXME ! FIXME ! FIXME ! FIXME ! FIXME ! FIXME ! FIXME ! 
+    $sql = qq~
                select datasetIdentifier
                from $table_name
                where dataset_id in (
@@ -741,7 +754,7 @@ sub showDataset {
 
     #### If this is a reanalysis identifier, and there is no reanalysis number selected (or it's 0), show the container (0)
     my $entityType = "Dataset";
-    if ( $params->{ID} =~ /^RP/ && ! $inputReanalysisNumber ) {
+    if ( $baseIdentifier =~ /^RP/ && ! $inputReanalysisNumber ) {
       $inputReanalysisNumber = 0;
       $entityType = "Reanalysis Container";
     }
