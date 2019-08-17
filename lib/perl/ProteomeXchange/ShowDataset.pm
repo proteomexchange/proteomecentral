@@ -489,7 +489,7 @@ sub printPageFooter {
   foreach my $line (@$template){
     if($line =~ /END main content/){
       $begin = 1;
-			print '<a href="http://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="50" height="15" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to receive all new ProteomeXchange announcements!</font></a>';
+			#print '<a href="http://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="50" height="15" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to receive all new ProteomeXchange announcements!</font></a>';
     }
     if($begin){
       print "$line";
@@ -689,6 +689,10 @@ sub showDataset {
     $inputRevisionNumber = $1;
     $datasetID =~ s/-\d+//;
   }
+
+  #### Define the base identifier for later use
+  my $baseIdentifier = "$prefix$datasetID";
+
   #print STDERR "datasetID=$datasetID, inputReanalysisNumber=$inputReanalysisNumber, inputRevisionNumber=$inputRevisionNumber\n";
 
   my ($title,$status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetTitle);
@@ -735,14 +739,21 @@ sub showDataset {
               ~;
     my @derivedDatasets = $dbh->selectOneColumn($sql);
 
+    #### If this is a reanalysis identifier, and there is no reanalysis number selected (or it's 0), show the container (0)
+    my $entityType = "Dataset";
+    if ( $params->{ID} =~ /^RP/ && ! $inputReanalysisNumber ) {
+      $inputReanalysisNumber = 0;
+      $entityType = "Reanalysis Container";
+    }
+
     #### Get all the record for this dataset from the history table
     $sql = qq~
-        SELECT STATUS,PXPARTNER,ANNOUNCEMENTXML,IDENTIFIERDATE,DATASETIDENTIFIER,DATASETORIGIN,reanalysisNumber,revisionNumber
+        SELECT STATUS,PXPARTNER,ANNOUNCEMENTXML,IDENTIFIERDATE,DATASETIDENTIFIER,DATASETORIGIN,title,reanalysisNumber,revisionNumber
           FROM $history_table_name
          WHERE dataset_id=$datasetID
     ~;
     $sql .= "   AND revisionNumber = $inputRevisionNumber\n" if ( $inputRevisionNumber );
-    $sql .= "   AND reanalysisNumber = $inputReanalysisNumber\n" if ( $inputReanalysisNumber );
+    $sql .= "   AND reanalysisNumber = $inputReanalysisNumber\n" if ( defined($inputReanalysisNumber) && $inputReanalysisNumber ne '' );
     $sql .= "   ORDER BY reanalysisNumber DESC, revisionNumber DESC\n";
 
     my @results = $dbh->selectSeveralColumns($sql);
@@ -755,15 +766,6 @@ sub showDataset {
       $response->{message} = "Identifier '$datasetIDstr' has not yet been assigned to a repository";
     }
 
-    #### More than one is now okay, just always take the first
-    #### If more than one row is returned, this suggests database corruption or some other problem
-    #if ( scalar(@results) > 1) {
-    #  $response->{httpStatus} = "404 Identifier not assigned";
-    #  $response->{status} = "ERROR";
-    #  $response->{code} = "1099";
-    #  $response->{message} = "Too many rows returned for '$title'. Please report error GDSsD0001 to administrator.";
-    #}
-
     my ($selectedReanalysisNumber, $selectedRevisionNumber);
     if ( $response->{status} eq 'OK' ) {
 
@@ -771,20 +773,20 @@ sub showDataset {
       my %reanalyses = ();
       my $datasetOrigin;
       foreach my $row ( @results ) {
-	($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetOrigin,$selectedReanalysisNumber,$selectedRevisionNumber) = @{$row};
+	($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetOrigin,$title,$selectedReanalysisNumber,$selectedRevisionNumber) = @{$row};
 	$reanalyses{$selectedReanalysisNumber} = 1 if ( $selectedReanalysisNumber );
       }
       $nReanalyses = scalar(keys(%reanalyses));
 
       #### If there were multiple reanalyses available and one was not specified, then simply list them all
-      if ( $nReanalyses > 1 && ! $inputReanalysisNumber ) {
-	$containerStr .= "This dataset identifier is a reanalysis container that holds $nReanalyses reanalyses.<BR>Below is a listing of all reanalyses and revisions for this container.<BR>Select the desired one to view by selecting a reanalysis number or revision number.";
-	$containerStr .= showDatasetHistory(dataset_id => $datasetID, test => $test);
-      }
+#      if ( $nReanalyses => 1 && ! $inputReanalysisNumber ) {
+#	$containerStr .= "This dataset identifier represents one more reanalyses of an original dataset. This identifier currently holds $nReanalyses reanalyses.<BR>Below is a listing of all reanalysis containers for this identifier.<BR>Select the desired one to view by selecting a reanalysis number.";
+#	$containerStr .= showDatasetHistory(dataset_id => $datasetID, test => $test, containersOnly => "true");
+#      }
 
-      ($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetOrigin,$selectedReanalysisNumber,$selectedRevisionNumber) = @{$results[0]};
+      ($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetOrigin,$title,$selectedReanalysisNumber,$selectedRevisionNumber) = @{$results[0]};
       $title = $datasetIdentifier;
-      #print STDERR "==$selectedReanalysisNumber,$selectedRevisionNumber\n";
+      #$str .= "==$datasetIdentifier,$selectedReanalysisNumber,$selectedRevisionNumber==\n";
 
       my $parser = new ProteomeXchange::DatasetParser;
       $parser->parse('announcementXML' => $announcementXML, 'response' => $response, filename=> "$path/$announcementXML" );
@@ -792,8 +794,23 @@ sub showDataset {
 
       my $header;
 
-      $str .= "<p> <b>DataSet Summary</b> </p>\n<ul>";
-      foreach my $key ( qw( PXPartner
+      #### Write out a little preamble based on what this is
+      if ( $datasetIdentifier =~ /^PX/ ) {
+	$str .= "$datasetIdentifier is an original dataset announced via ProteomeXchange.<BR><BR>";
+      } elsif ( $datasetIdentifier =~ /^RPX/ ) {
+	if ( $selectedReanalysisNumber == 0 ) {
+	  $str .= "$datasetIdentifier is container for one or more analyses. The general container metadata is provided below and the table under Dataset History provides links to the various reanalyses have been provided (if any) in this container.<BR><BR>";
+        } else {
+	  $str .= "$datasetIdentifier.$selectedReanalysisNumber is a reanalysis of an original dataset. Links to the overal container (Reanalysis=0) and other sibling reanalyses to this one (if any) are listed below in the Dataset History table. Other reanalyses (if any) may be accessed by clicking on the Reanalysis number in the first column. Note that there may also be multiple revisions of each reanalysis, generally to correct errors.<BR><BR>";
+        }
+      }
+
+
+      $str .= "<b>$entityType Summary</b> </p>\n<ul>";
+      foreach my $key ( qw( 
+           title
+           description
+           PXPartner
            announceDate
            announcementXML
            DigitalObjectIdentifier
@@ -801,9 +818,7 @@ sub showDataset {
            datasetOrigin
            derivedDataset
            RepositorySupport
-			     primarySubmitter
-           title
-           description
+	   primarySubmitter
            speciesList
            modificationList
            instrument
@@ -817,7 +832,7 @@ sub showDataset {
 
         if ($key eq 'announcementXML'){
           $str .= qq~
-                <li><b>$header</b>: <a href='GetDataset?ID=$datasetID&outputMode=XML&test=$test' target="_blank">$result->{$key}</a></li>
+                <li><b>$header</b>: <a href='GetDataset?ID=$baseIdentifier.$selectedReanalysisNumber-$selectedRevisionNumber&outputMode=XML&test=$test' target="_blank">$result->{$key}</a></li>
                 ~;
 
         } elsif ($key eq 'DigitalObjectIdentifier') {
@@ -1002,18 +1017,19 @@ sub showDataset {
 
 
     #### If there are multiple reanalyses and no one specified, list them all in special content
-    if ( $nReanalyses > 1 && ! $inputReanalysisNumber ) {
-      print qq~
-	<div class="entry-content">
-	$containerStr
-      ~;
-    #### Else show the card for this record
-    } else {
+    #### No longer relevant??
+#    if ( 0 && $nReanalyses => 1 && ! $inputReanalysisNumber ) {
+#      print qq~
+#	<div class="entry-content">
+#	$containerStr
+#      ~;
+#    #### Else show the card for this record
+#    } else {
       print qq~
 	<div class="entry-content">
 	$str
       ~;
-    }
+#    }
 
     #### Show what the tweet message would be
     use ProteomeXchange::Tweet;
@@ -1083,6 +1099,7 @@ sub showDatasetHistory {
   my $dataset_id = $args{dataset_id} || die("[$SUB_NAME] ERROR: dataset_id not passed");
   my $selectedReanalysisNumber = $args{selectedReanalysisNumber};
   my $selectedRevisionNumber = $args{selectedRevisionNumber};
+  my $containersOnly = $args{containersOnly};
   my $str = '';
 
   my $tableName = "datasetHistory";
@@ -1121,11 +1138,25 @@ sub showDatasetHistory {
       $str .= "<tr>";
       my @columnTitles = ();
       push(@columnTitles,'Reanalysis') if ( $datasetIdentifier =~ /^RPX/ );
-      push(@columnTitles,'Revision','Datetime','Status','ChangeLog Entry');
+      push(@columnTitles,'Revision','Datetime','Status');
+      if ( $datasetIdentifier =~ /^RP/ ) {
+	push(@columnTitles,'Title / <I>ChangeLog Entry</I>');
+      } else {
+	push(@columnTitles,'ChangeLog Entry');
+      }
+
       foreach my $item ( @columnTitles ) {
 	$str .= "<td class=\"tableTitle\">$item</td>";
       }
       $str .= "</tr>\n";
+    }
+
+    #### For containersOnly, skip non-containers
+    if ( $containersOnly && $containersOnly eq 'true' && 0 ) {
+      if ( $revisionNumber > 0 ) {
+	$iRow++;
+	next;
+      }
     }
 
     #### Print out the row
@@ -1139,18 +1170,27 @@ sub showDatasetHistory {
       $item = '' unless (defined($item));
 
       #### If in RPXD mode, create hyperlinks for both reanalysis and revision
-      if ( $datasetIdentifier =~ /^RPX/ ) {
+      if ( $datasetIdentifier =~ /^RP/ ) {
+
 	#### Insert a hyperlink in the Reanalysis column
-	if ( $iColumn == 0 && $item ) {
-	  if ( $selectedReanalysisNumber && $reanalysisNumber == $selectedReanalysisNumber && $selectedRevisionNumber && $revisionNumber == $selectedRevisionNumber ) {
+	if ( $iColumn == 0 && $item gt '') {
+	  if ( $selectedReanalysisNumber gt '' && $reanalysisNumber == $selectedReanalysisNumber && $selectedRevisionNumber && $revisionNumber == $selectedRevisionNumber ) {
 	    $tdclass = "highlightedRow";
           }
 	  $item = "<a href=\"GetDataset?ID=$datasetIdentifier.$reanalysisNumber&test=$test\">$item</a>";
+        } elsif ( $iColumn == 4 ) {
+	  if ( $item > '' ) {
+	    $item = "$title<BR><I>$item</I>";
+ 	  } else {
+	    $item = "$title";
+	  }
         }
+
 	#### Insert a hyperlink in the Revision column
 	if ( $iColumn == 1 && $item ) {
 	  $item = "<a href=\"GetDataset?ID=$datasetIdentifier.$reanalysisNumber-$revisionNumber&test=$test\">$item</a>";
         }
+
       #### Otherwise, for just a PXD, create a hyperlink for revision only
       } else {
 	#### Insert a hyperlink in the Revision column
