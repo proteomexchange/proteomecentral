@@ -186,13 +186,13 @@ sub parse {
 
   #### Ensure that reanalysis rules are followed
   if ( $dataset->{identifier} =~ /^RPX/ ) {
-    if ( $dataset->{reanalysisNumber} ) {
+    if ( defined($dataset->{reanalysisNumber}) ) {
       # good
     } else {
       $self->addCvError(errorMessage=>"ERROR: RPXD is missing a MS:1002997 reanalysis number");
     }
   } else {
-    if ( $dataset->{reanalysisNumber} ) {
+    if ( defined($dataset->{reanalysisNumber}) ) {
       $self->addCvError(errorMessage=>"ERROR: An original data PXD should not have a reanalysis number");
     } else {
       # good
