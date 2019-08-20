@@ -955,41 +955,49 @@ sub showDataset {
 
 
   #### If the output mode is XML, render output as XML
-  if ( $outputmode =~ /XML/i ) {
+  if ( $outputmode =~ /XML/i || $outputmode =~ /JSON/i ) {
 
     #### If data was successfully accessed
     if ( $response->{status} eq 'OK' ) {
 
       #### If there's no filename available, error out
       if ( !defined($announcementXML) || $announcementXML eq '' ) {
-	$response->{httpStatus} = "404 Dataset submission file undefined";
-	$response->{status} = "ERROR";
-	$response->{code} = "1004";
-	$response->{message} = "Submission file for dataset '$title' is undefined";
-	sendResponse(response=>$response);
-	return;
+        $response->{httpStatus} = "404 Dataset submission file undefined";
+        $response->{status} = "ERROR";
+        $response->{code} = "1004";
+        $response->{message} = "Submission file for dataset '$title' is undefined";
+        sendResponse(response=>$response);
+        return;
 
       #### Else open and dump the file
       } else {
 
-	#### If the file exists
-	if ( -e "$path/$announcementXML" ) {
-	  open (INFILE, "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
-	  print "Content-type: text/plain\n\n";
-	  my $inline;
-	  while ($inline = <INFILE>) {
-	    print $inline;
-	  }
-	  close(INFILE);
+        #### If the file exists
+        if ( -e "$path/$announcementXML" ) {
+        
+          if ( $outputmode =~ /XML/i ) {
+            open (INFILE, "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
+            print "Content-type: text/plain\n\n";
+            while ( my $inline = <INFILE> ) {
+              print $inline;
+            }
+            close(INFILE);
+          } else {
+            my $proxiParser = new ProteomeXchange::DatasetParser; 
+            my $result = $parser->proxiParse(filename =>"$path/$announcementXML");
+            print "Content-type: application/json\n\n";
+            my $json = new JSON;
+            print $json->encode($result->{proxiDataset})."\n";
+          }
 
-	#### Or if the file doesn't exist, error out
+        #### Or if the file doesn't exist, error out
         } else {
-	  $response->{httpStatus} = "404 Dataset submission file unavailable";
-	  $response->{status} = "ERROR";
-	  $response->{code} = "1005";
-	  $response->{message} = "Submission file for dataset '$title' is not available at $announcementXML";
-	  sendResponse(response=>$response);
-	  return;
+          $response->{httpStatus} = "404 Dataset submission file unavailable";
+          $response->{status} = "ERROR";
+          $response->{code} = "1005";
+          $response->{message} = "Submission file for dataset '$title' is not available at $announcementXML";
+          sendResponse(response=>$response);
+          return;
         }
       }
 
@@ -1005,7 +1013,7 @@ sub showDataset {
     #### If the dataset information is not being provided, then return status 404 per ELIXIR request
     if ( $headerStr ) {
       if ( $response->{status} ne 'OK' ) {
-	$headerStr =~ s/200 OK/$response->{httpStatus}/;
+        $headerStr =~ s/200 OK/$response->{httpStatus}/;
       }
       print $headerStr;
     } else {
