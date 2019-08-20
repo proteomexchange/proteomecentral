@@ -984,7 +984,7 @@ sub showDataset {
             close(INFILE);
           } else {
             my $proxiParser = new ProteomeXchange::DatasetParser; 
-            my $result = $parser->proxiParse(filename =>"$path/$announcementXML");
+            my $result = $proxiParser->proxiParse(filename =>"$path/$announcementXML");
             print "Content-type: application/json\n\n";
             my $json = new JSON;
             print $json->encode($result->{proxiDataset})."\n";
