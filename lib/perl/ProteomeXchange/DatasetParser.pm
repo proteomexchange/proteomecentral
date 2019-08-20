@@ -9,10 +9,9 @@ package ProteomeXchange::DatasetParser;
 ###############################################################################
 
 use strict;
-use ProteomeXchange::Database;
+use Data::Dumper;
 
-use vars qw($db);
-$db = new ProteomeXchange::Database;
+use ProteomeXchange::Configuration qw( %CONFIG );
 
 
 ###############################################################################
@@ -51,6 +50,209 @@ sub setAnnouncementXML {
 sub getAnnouncementXML {
   my $self = shift;
   return $self->{announcementXML};
+}
+
+
+###############################################################################
+# proxiParse: Parse a ProteomeXchange XML file into a PROXI Dataset format
+###############################################################################
+sub proxiParse {
+  my $self = shift;
+  my %args = @_;
+  my $SUB_NAME = 'proxiParse';
+
+  #### Decode the argument list
+  my $params = $args{'announcementXML'};
+  my $filename = $args{'filename'};
+
+  #### Set a default error message in case something goes wrong
+  our $response;
+  $response->{result} = "ERROR";
+  $response->{message} = "Unable to parse file: Unknown error";
+
+  #### Check the filename
+  unless ( $filename ) {
+    $response->{message} = "ERROR: [$SUB_NAME]: filename not specified!";
+    return($response);
+  }
+
+  #### Check the file existence
+  if ( ! -f $filename ) {
+    $response->{message} = "Unable to parse file. Does not exist!";
+    return($response);
+  }
+
+  #### Set up on basic structures
+
+  #### dataset gets a generic XML structure import that is a bit cumbersome
+  $response->{dataset} = { attributes=>{}, subelements=>[] };
+  $response->{stack} = [ { name=>"dataset", addr=>$response->{dataset} } ];
+  #### proxiDataset gets a special PROXI specific reformulation of the XML
+  $response->{proxiDataset} = { };
+  $response->{messages} = [];
+  $response->{warnings} = [];
+  $response->{errors} = [];
+
+  #### Define a simplified mapping from PX XML to PROXI JSON
+  our $mapping = { DatasetIdentifier => { name=>"accession", type=>"OntologyTerm" },
+                   Species => { name=>"species", type=>"OntologyTermList" },
+                   Instrument => { name=>"instruments", type=>"OntologyTerm" },
+                   ModificationList => { name=>"modifications", type=>"OntologyTerm" },
+                   Contact => { name=>"contacts", type=>"OntologyTermList" },
+                   Publication => { name=>"publications", type=>"OntologyTermList" },
+                   KeywordList => { name=>"keywords", type=>"OntologyTerm" },
+                   FullDatasetLink => { name=>"datasetLink", type=>"OntologyTerm" },
+                   DatasetFile => { name=>"dataFiles", type=>"OntologyTerm" },
+  };
+
+  #### Open the file
+  unless (open(INFILE,$filename)) {
+    $response->{message} = "Unable to open the document '$filename'";
+    return($response);
+  }
+
+  #### Set up the SAX Parser
+  use XML::Parser;
+  my $parser = XML::Parser->new(Handlers => {Start => \&proxiParse_start,
+                                   End   => \&proxiParse_end,
+                                   Char  => \&proxiParse_char});
+ 
+  $parser->parse(*INFILE, ProtocolEncoding => 'UTF-8');
+  close(INFILE);
+ 
+  return($response);
+}
+
+
+###############################################################################
+# proxiParse_start: proxiParser start tag handler
+###############################################################################
+sub proxiParse_start {
+  my $SUB_NAME = 'proxiParse_start';
+  our $response;
+  our $previousParentAddr;
+  our $previousContainerAddr;
+
+  #### Decode the argument list
+  my ($expat,$element,@attributes) = @_;
+  my %attributes = @attributes;
+  #print("  - start $element: ".join(",",@attributes)."\n");
+
+  #### Find parent in the stack
+  my @stack = @{$response->{stack}};
+  my $topItem = $stack[-1];
+  #print("    ( top item in stack is: ".Dumper($topItem)."\n");
+
+  my $object = { $element => { attributes => \%attributes, subelements => [], subelement_by_name => {} } };
+  push(@{$topItem->{addr}->{subelements}}, $object);
+  $topItem->{addr}->{subelement_by_name}->{$element} = $object->{$element};
+
+  push(@{$response->{stack}},{ name=>$element, addr=>$object->{$element} } );
+
+
+  #### Custom code to build the PROXI Dataset object
+  our $mapping;
+  if ( $element eq "DatasetSummary" ) {
+    $response->{proxiDataset}->{title} = $attributes{title};
+  }
+
+  #### Handle cvParam based on its parent
+  if ( $element eq "cvParam" ) {
+    my $parent = $topItem->{name};
+    if ($mapping->{$parent} ) {
+      if ( ! exists($response->{proxiDataset}->{$mapping->{$parent}->{name}}) ) {
+        $response->{proxiDataset}->{$mapping->{$parent}->{name}} = [];
+      }
+      my %ontologyTerm = %attributes;
+      delete($ontologyTerm{cvRef});
+
+      #### Handle the OntologyTerm type of mapping
+      if ( $mapping->{$parent}->{type} eq "OntologyTerm" ) {
+        push(@{$response->{proxiDataset}->{$mapping->{$parent}->{name}}}, \%ontologyTerm);
+
+      #### Handle the OntologyTermList type of mapping
+      } elsif ( $mapping->{$parent}->{type} eq "OntologyTermList" ) {
+
+        #### If this is the first term
+        my $needNewContainer = 0;
+        my $container = $previousContainerAddr;
+        my $arrayLength = @{$response->{proxiDataset}->{$mapping->{$parent}->{name}}};
+        if ( $arrayLength == 0 || ! defined($previousParentAddr) ) {
+          $needNewContainer = 1;
+          
+        } elsif ( $topItem->{addr} ne $previousParentAddr ) {
+          $needNewContainer = 1;
+          $previousParentAddr = $topItem->{addr};
+        }
+
+        #print("needNewContainer=$needNewContainer, previousParentAddr=$previousParentAddr, topItemAddr=$topItem->{addr}\n");
+        
+        #### If we need a new container, create it
+        if ( $needNewContainer == 1 ) {
+          $container = [];
+          my $ontologyTermList = { terms => $container };
+          push( @{$response->{proxiDataset}->{$mapping->{$parent}->{name}}}, $ontologyTermList );
+        }
+
+        #### Add the current ontologyTerm
+        push(@{$container}, \%ontologyTerm);
+
+        $previousParentAddr = $topItem->{addr};
+        $previousContainerAddr = $container;
+
+      } else {
+        die("ERROR: Unrecognized mapping type");
+      }
+    }
+  }
+
+  return;
+}
+
+
+###############################################################################
+# proxiParse_end: proxiParser end tag handler
+###############################################################################
+sub proxiParse_end {
+  my $SUB_NAME = 'proxiParse_end';
+  our $response;
+
+  #### Decode the argument list
+  my ($expat,$element) = @_;
+
+  #### Pop the top item off the stack and make sure it is the correct name
+  my $object = pop(@{$response->{stack}});
+  if ( $object->{name} ne $element ) {
+    print("ERROR: Expected to find top element on the stack of $element, but found $object->{name}!\n");
+    exit(11);
+  }
+
+  return;
+}
+
+
+###############################################################################
+# proxiParse_char: proxiParser character handler
+###############################################################################
+sub proxiParse_char {
+  my $SUB_NAME = 'proxiParse_char';
+  our $response;
+
+  #### Decode the argument list
+  my ($expat,$characterData) = @_;
+  return if ( $characterData =~ /^\s*$/ );
+
+  my @stack = @{$response->{stack}};
+  my $object = $stack[-1];
+  $object->{addr}->{character_data} = $characterData;
+
+  #### Custom code to build the PROXI Dataset object
+  my $parent = $object->{name};
+  if ( $parent eq "Description" ) {
+    $response->{proxiDataset}->{summary} = $characterData;
+  }
+
+  return;
 }
 
 
@@ -542,7 +744,7 @@ sub checkCvParam {
 
   #### Check all the CV params
   unless ($self->{cv}) {
-    my $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/psi-ms.obo';
+    my $infile = "$CONFIG{basePath}/extern/CVs/psi-ms.obo";
     $self->readControlledVocabularyFile(input_file=>$infile);
     return unless ($self->{cv}->{status} eq 'read ok');
 
@@ -550,7 +752,7 @@ sub checkCvParam {
     #$infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/pride_cv.obo';
     #$self->readControlledVocabularyFile(input_file=>$infile);
 
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/PSI-MOD.obo';
+    $infile = "$CONFIG{basePath}/extern/CVs/PSI-MOD.obo";
     $self->readControlledVocabularyFile(input_file=>$infile);
     $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/cl.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
@@ -558,7 +760,7 @@ sub checkCvParam {
     $self->readControlledVocabularyFile(input_file=>$infile);
     $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/doid.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/unimod.obo';
+    $infile = "$CONFIG{basePath}/extern/CVs/unimod.obo";
     $self->readControlledVocabularyFile(input_file=>$infile);
     my @tmp = ();
     $self->{cvErrors} = \@tmp;
