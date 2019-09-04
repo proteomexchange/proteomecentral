@@ -1,14 +1,22 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use FindBin;
-use lib "$FindBin::Bin/../lib/perl";
+use lib "$FindBin::Bin/../perl";
 
 use JSON;
 use XML::Writer;
+
+use HTTP::Request;
+use LWP::UserAgent;
+use JSON::Parse;
+
 use ProteomeXchange::Dataset;
 use ProteomeXchange::DatasetParser;
 use ProteomeXchange::ArticleFinder;
+use ProteomeXchange::Configuration qw( %CONFIG );
 
 $| = 1;
 use CGI qw/:standard/;
@@ -69,9 +77,11 @@ foreach my $arg ( @ARGV ) {
 
 $response->{verbose} = $params->{verbose};
 
-searchUnannouncedDatasets(params=>$params,response=>$response);
+my $exceptions = fetchExceptions();
 
-searchAnnouncedDatasets(params=>$params,response=>$response);
+searchUnannouncedDatasets(params=>$params, response=>$response, exceptions=>$exceptions);
+
+searchAnnouncedDatasets(params=>$params,response=>$response, exceptions=>$exceptions);
 
 exit;
 
@@ -113,6 +123,8 @@ sub searchAnnouncedDatasets {
   #### Decode the argument list
   my $params = $args{'params'}; 
   my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
+  my $exceptions = $args{'exceptions'}; 
+
   my $test = $params->{test} || 'no';
   my $outputMode=$params->{outputMode} || 'html';
   my $table_name = 'dataset';
@@ -153,18 +165,24 @@ sub searchAnnouncedDatasets {
   my @results = $dbh->selectSeveralColumns($sql);
 
   if ($outputMode =~ /html/i){
-    print "Content-type:text/html\r\n\r\n";
+    #print "Content-type:text/html\r\n\r\n";
     foreach my $line (@page){
+
+      #### Short circuit the header since we already did one
+      next unless ( $line =~ /^<!-- BEGIN main content -->/ );
+
       if($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
 	$line =~ s/$1/ProteomeXchange Datasets/;
 	print "$line\n";
+
       } elsif($line =~ /class="node-inner-padding"/){
 	#$line =~ s/>/style="padding: 0">/g;
 	print "$line\n";
+
       } elsif ($line =~ /^<!-- BEGIN main content -->/){
 	print "$line\n";
 
-	print "<H1>Searching announced datasets for possibly associated articles...</H1>\n";
+	print "<H1>Announced datasets with no listed publication but with a title that brings up a hit in PubMed</H1>\n";
 
 	#### Iterate through the datasets, looking for possible matches
 	my $counter = 0;
@@ -189,17 +207,31 @@ sub searchAnnouncedDatasets {
 
 	  my $searchResult = $articleFinder->findArticle(title=>$values->[5]);
 
+	  my $status = $values->[6] || '';
 	  #### If nothing was found
-	  if ( $searchResult->{message} eq 'No articles found' || $searchResult->{year} < 2012) {
-	    $stats{"Datasets of status '$values->[6]' with no articles found"}++;
+	  my $searchResultYear = $searchResult->{year} || '';
+	  if ( $searchResultYear !~ /^\d\d\d\d$/ ) {
+	    if ( $searchResultYear =~ /(\d\d\d\d)/ ) {
+	      $searchResultYear = $1;
+	    } else {
+	      $searchResultYear = '0';
+	    }
+	  }
+	  if ( !$searchResult->{message} || $searchResult->{message} eq 'No articles found' || $searchResultYear < 2012) {
+	    $stats{"Datasets of status '$status' with no articles found"}++;
 	    next;
 	  }
-
-	  $buffer .= "<B>Dataset title:</B> $values->[5]<BR>";
 
 	  my $referenceString = $searchResult->{referenceString};
 	  $referenceString =~ s#PMID (\d+)#<a href="http://www.ncbi.nlm.nih.gov/pubmed/?term=$1">PMID $1</a>#;
 
+	  my $pmid = $1;
+	  if ( $exceptions && $exceptions->{$values->[0]} && $exceptions->{$values->[0]} eq $pmid ) {
+	    print STDERR "INFO: Excluding known exception $values->[0] =/=> $pmid\n";
+	    next;
+	  }
+
+	  $buffer .= "<B>Dataset title:</B> $values->[5]<BR>";
 	  $buffer .= "<B>Possible reference:</B> $referenceString\n";
 	  $stats{"Datasets of status '$values->[6]' with a possible article found"}++;
 	  print $buffer;
@@ -296,6 +328,8 @@ sub searchUnannouncedDatasets {
   #### Decode the argument list
   my $params = $args{'params'}; 
   my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
+  my $exceptions = $args{'exceptions'}; 
+
   my $test = $params->{test} || 'no';
   my $outputMode=$params->{outputMode} || 'html';
   my $table_name = 'dataset';
@@ -336,18 +370,24 @@ sub searchUnannouncedDatasets {
   my @results = $dbh->selectSeveralColumns($sql);
 
   if ($outputMode =~ /html/i){
-    print "Content-type:text/html\r\n\r\n";
+    #print "Content-type:text/html\r\n\r\n";
     foreach my $line (@page){
-      if($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
+
+      if ($line =~ /(TEMPLATESUBTITLE|TEMPLATETITLE)/){
 	$line =~ s/$1/ProteomeXchange Datasets/;
 	print "$line\n";
+
       } elsif($line =~ /class="node-inner-padding"/){
 	#$line =~ s/>/style="padding: 0">/g;
 	print "$line\n";
+
       } elsif ($line =~ /^<!-- BEGIN main content -->/){
 	print "$line\n";
 
-	print "<H1>Searching unannounced datasets for possibly associated articles...</H1>\n";
+	my ($date) = `date`;
+	print "<H1>Last refresh: $date</H1>\n";
+
+	print "<H1>Articles in PubMed that reference a PXD that has not been announced</H1>\n";
 
 	#### Iterate through the datasets, looking for possible matches
 	my $counter = 0;
@@ -360,23 +400,30 @@ sub searchUnannouncedDatasets {
 	  my $buffer ='';
 
 	  $buffer .= "<HR>\n";
-	  $buffer .= "<a href=\"http://proteomecentral.proteomexchange.org/dataset/$values->[0]\">$values->[0]</a> \t$values->[6] (from $values->[1])<BR>\n";
+	  $buffer .= "<a href=\"http://proteomecentral.proteomexchange.org/dataset/$values->[0]\">$values->[0]</a> \t".($values->[6]||'')." (from $values->[1])<BR>\n";
 
 	  #print "Searching for $values->[0] ($values->[2])<BR>\n";
 
 	  my $searchResult = $articleFinder->findArticle(abstract=>$values->[0]);
 
 	  #### If nothing was found
-	  if ( $searchResult->{message} eq 'No articles found' || $searchResult->{year} < 2012) {
+	  if ( $searchResult->{message} eq 'No articles found' || !defined($searchResult->{year}) || $searchResult->{year} < 2012) {
 	    $stats{"Datasets of status '$values->[2]' with no articles found"}++;
 	    next;
 	  }
 
-	  $buffer .= "<B>Dataset title:</B> $values->[5]<BR>";
+	  my $title = $values->[5] || '';
 
 	  my $referenceString = $searchResult->{referenceString};
 	  $referenceString =~ s#PMID (\d+)#<a href="http://www.ncbi.nlm.nih.gov/pubmed/?term=$1">PMID $1</a>#;
 
+	  my $pmid = $1;
+	  if ( $exceptions && $exceptions->{$values->[0]} && $exceptions->{$values->[0]} eq $pmid ) {
+	    print STDERR "INFO: Excluding known exception $values->[0] =/=> $pmid\n";
+	    next;
+	  }
+
+	  $buffer .= "<B>Dataset title:</B> $title<BR>";
 	  $buffer .= "<B>Possible reference:</B> $referenceString\n";
 	  $stats{"Datasets of status '$values->[2]' with a possible article found"}++;
 	  print $buffer;
@@ -389,6 +436,8 @@ sub searchUnannouncedDatasets {
 	print "<BR><BR>\n";
 
 
+      } elsif($line =~ /END main content/){
+        last;
       } elsif($line =~ /<\/body/){
         print "$line\n";
       } else{
@@ -435,4 +484,71 @@ sub searchUnannouncedDatasets {
   }
 }
 
+
+###############################################################################
+# fetchExceptions
+###############################################################################
+sub fetchExceptions {
+
+  my $maxRows = 10;
+  my $requestRows = $maxRows+1;
+
+  my $googleApiKey = $CONFIG{googleApiKey} || '??';
+
+  my $url = "https://sheets.googleapis.com/v4/spreadsheets/1PNAwAWQFxzcIRO8Hmh3vI0hasbHQYR0zcb0k6zr26Mk/values/Sheet1\!A1:D${requestRows}/?key=$googleApiKey";
+
+  my $request = HTTP::Request->new( 'GET', $url );
+  my $lwp = LWP::UserAgent->new;
+  my $lwp_response = $lwp->request( $request );
+
+  my %exceptions = ();
+
+  if ( $lwp_response->is_success() ) {
+    my $response = JSON::Parse::parse_json($lwp_response->content());
+    if ( $response->{'values'} ) {
+      my @rows = @{$response->{'values'}};
+      my $iRow = 0;
+      foreach my $row (@rows) {
+        my $id = $row->[0] || '??';
+        my $pmid = $row->[1] || '??';
+	if ( $iRow == 0 ) {
+	  if ( $id ne "PXD identifier" ) {
+	    print "ERROR: First column is not 'PXD identifier'\n";
+	    last;
+	  }
+	  if ( $pmid ne "PMID to exclude" ) {
+	    print "ERROR: Second column is not 'PMID to exclude'\n";
+	    last;
+	  }
+        } else {
+	  $id =~ s/\s//g;
+	  if ( $id =~ /^PXD(\d+)$/ ) {
+	    my $number = $1;
+	    if ( length($id) < 9 ) {
+	      my $pad = "00000000000000";
+	      $id = "PXD".substr($pad,0,6-length($number)).$number;
+	    }
+          } else {
+	    print "ERROR: Invalid identifier $id\n";
+          }
+	  $exceptions{$id} = $pmid;
+        }
+	#print "$id\t$pmid\n";
+	$iRow++;
+      }
+      if ( $iRow >= $maxRows ) {
+	print STDERR "WARNING: Read in $iRow rows, but this is maxRows, so there might be more. Check the sheet and extend maxRows\n";
+      }
+    } else {
+      print($response->{message}."\n")
+    }
+  
+  } else {
+    print("ERROR: " . $lwp_response->status_line());
+  }
+  
+
+  return \%exceptions;
+
+}
 

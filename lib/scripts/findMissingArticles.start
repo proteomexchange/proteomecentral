@@ -1,0 +1,16 @@
+#!/bin/tcsh
+# Invoke this with:
+#   findMissingArticles.start
+#
+# The program will start the findMissingArticles launcher
+
+
+  set OUTFILE = /tmp/findMissingArticles.out
+
+  unalias cd
+  if ( -e $OUTFILE ) /bin/rm $OUTFILE
+
+  /net/dblocal/wwwspecial/proteomecentral/devED/lib/scripts/findMissingArticles.run >& $OUTFILE
+
+  cat $OUTFILE | mail -s "findMissingArticles completed" edeutsch@systemsbiology.org
+

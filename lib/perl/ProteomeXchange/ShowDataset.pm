@@ -13,6 +13,8 @@ use ProteomeXchange::Configuration qw(%CONFIG);
 use strict;
 use XML::Writer;
 use Data::Dumper;
+use JSON;
+
 my $log_dir = ( $CONFIG{basePath} ) ? $CONFIG{basePath} . '/logs/' :
                                     '/net/dblocal/wwwspecial/proteomecentral/devDC/logs/';
 my $log =  ProteomeXchange::Log->new( base => $log_dir, log_level => 'debug' );
@@ -23,6 +25,8 @@ use CGI qw/:standard/;
 my $cgi = new CGI;
 our $CGI_BASE_DIR = $cgi->new->url();
 $CGI_BASE_DIR =~ s/cgi.*/cgi/;
+
+my $TESTSUFFIX = "_test";
 
 ###############################################################################
 # Constructor
@@ -61,8 +65,8 @@ sub listDatasets {
 
   if ($test && ($test =~ /yes/i || $test =~ /true/i)){
     $teststr = "&test=$test";
-    $table_name = 'dataset_test';
     $path .= "/testing";
+    $table_name .= $TESTSUFFIX;
   }
 
 	my $dbh = new ProteomeXchange::Database;
@@ -180,7 +184,8 @@ sub listDatasets {
       ~;
 
 
-  }elsif($outputMode=~ /xml/i){
+  #### Or if output mode is 'xml', then wite results in XML
+  } elsif($outputMode=~ /xml/i) {
      print "Content-type:text/xml\r\n\r\n";
      my $writer = new XML::Writer(DATA_MODE => 1, DATA_INDENT => 4,ENCODING=>'UTF-8',);
      $writer->xmlDecl("UTF-8");
@@ -203,21 +208,49 @@ sub listDatasets {
      }
      $writer->endTag("ProteomeXchangeDataset");
      $writer->end();
-  }elsif($outputMode=~ /tsv/i){
+
+  #### Or if the output mode is 'tsv', the write results in tab-separated values
+  } elsif ($outputMode=~ /tsv/i) {
     print "Content-type:text/plain\r\n\r\n";
     foreach my $h (@headings){
-     print "$h\t";
+      print "$h\t";
     }
     print "\n";
     foreach my $values (@results){
-     print join("\t", @$values);
-     print "\n";
-   }
+      print join("\t", @$values);
+      print "\n";
+    }
+
+  #### Or if the output mode is 'json', the write results as JSON
+  } elsif ($outputMode=~ /json/i) {
+    print "Content-type: application/json\n\n";
+    my $json = new JSON;
+
+    my @datasets = ();
+    foreach my $row ( @results ) {
+      my %dataset = ();
+      my $index = 0;
+      foreach my $heading ( @headings ) {
+	$dataset{$heading} = $row->[$index];
+	$index++;
+      }
+      push(@datasets,\%dataset);
+    }
+    print $json->encode(\@datasets)."\n";
+
+  #### Or if the output mode is not recognized, write a simple error
+  } else {
+    print "Content-type: text/plain\r\n\r\n";
+    print "ERROR: Unrecognized outputMode '$outputMode'\n";
   }
 
   $self->log_em( "Finished" );
 }
 
+
+#####################################################################
+# log_em                                                            #
+#####################################################################
 sub log_em {
   my $self = shift;
   my $msg = shift;
@@ -229,10 +262,10 @@ sub log_em {
   $self->{prev_time} = $curr;
 }
 
+
 #####################################################################
 # printPageHeader                                                     #
 #####################################################################
-
 sub printTablePageHeader {
   my $self = shift;
   my %args = @_;
@@ -458,6 +491,7 @@ sub printPageFooter {
     if ($line =~ /END main content/) {
       $begin = 1;
       print '';
+      #print '<a href="http://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="50" height="15" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to receive all new ProteomeXchange announcements!</font></a>';
     }
     if ($begin) {
       print "$line";
@@ -625,22 +659,57 @@ sub showDataset {
   my $headerStr = $args{headerStr};
 
   my $table_name = 'dataset';
+  my $history_table_name = 'datasetHistory';
   my $path = '/local/wwwspecial/proteomecentral/var/submissions';
   my $teststr = '';
 
-  if ($test && ($test =~ /yes/i || $test =~ /true/i)){
-    $table_name = 'dataset_test';
+  #### If a PXT was provided, then we should be in test mode
+  if ( $datasetID =~ /PXT/i ) {
+    $test = "yes";
+  }
+
+  #### If test mode was specified, set everything to test mode and normalize $test
+  if ($test && ($test =~ /yes/i || $test =~ /true/i || $test =~ /t/i)){
+    $test = "true";
+    $table_name .= $TESTSUFFIX;
+    $history_table_name .= $TESTSUFFIX;
     $path .= "/testing";
     $teststr = "?test=$test";
   }
 
+  #### Parse the input identifier and extract the various components
   my $prefix = '';
-  if (($datasetID =~ /^(R?PXD)/i && $teststr eq '') ||
-      ($datasetID =~ /^(R?PXT)/i && $teststr ne '')) {
+  if ( $datasetID =~ /^(R?PX[DT])/i ) {
     $prefix = $1;
     $datasetID =~ s/$prefix//;
     $datasetID =~ s/^0+//;
   }
+
+  #### Parse out the reanalysis number if present
+  my $inputReanalysisNumber = '';
+  if ( $datasetID =~ /\.(\d+)/ ) {
+    $inputReanalysisNumber = $1;
+    $datasetID =~ s/\.\d+//;
+  }
+
+  #### Parse out the revision number if present
+  my $inputRevisionNumber = '';
+  if ( $datasetID =~ /-(\d+)/ ) {
+    $inputRevisionNumber = $1;
+    $datasetID =~ s/-\d+//;
+  }
+
+  #### Find the record for this identifier and get the official identifier
+  my $dbh = new ProteomeXchange::Database;
+  my $sql = qq~
+    SELECT datasetIdentifier
+      FROM $table_name
+     WHERE dataset_id = "$datasetID"
+  ~;
+  my @datasets = $dbh->selectOneColumn($sql);
+  my $baseIdentifier = $datasets[0];
+
+  #print STDERR "datasetID=$datasetID, inputReanalysisNumber=$inputReanalysisNumber, inputRevisionNumber=$inputRevisionNumber\n";
 
   my ($title,$status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetTitle);
   my ($datasetSubmitter,$datasetLabHead,$datasetSpeciesString);
@@ -652,7 +721,10 @@ sub showDataset {
   $response->{message} = "Request completed normally";
 
   my $str = '';
+  my $containerStr = $str;
+  my $nReanalyses = 0;
   $title  = $params->{ID};
+  my $fullDatasetIDstr = $title;
 
   #### If a valid identifier was not obtained
   if ( $datasetID !~ /^\d+$/) {
@@ -662,30 +734,43 @@ sub showDataset {
     $response->{message} = "Identifier '$title' is not valid and should be of the form PXDnnnnnn or numbers only";
   }
 
+  my $datasetIDstr = $datasetID;
   if ($response->{status} eq 'OK') {
     my $len = 9 - length($datasetID);
-    $title = substr ($prefix."000001",0, $len) . "$datasetID";
-    #### Fetch results from dataset table
-    my $dbh = new ProteomeXchange::Database;
-    my $sql = qq~
+    $datasetIDstr = $baseIdentifier;
+    $title = $datasetIDstr;
+    $fullDatasetIDstr = $datasetIDstr;
+    $fullDatasetIDstr .= ".$inputReanalysisNumber" if ( $inputReanalysisNumber );
+    $fullDatasetIDstr .= "-$inputRevisionNumber" if ( $inputRevisionNumber );
+
+    #### Fetch results from dataset table FIXME ! FIXME ! FIXME ! FIXME ! FIXME ! FIXME ! FIXME ! 
+    $sql = qq~
                select datasetIdentifier
                from $table_name
                where dataset_id in (
                select dataset_id
                from $table_name
-               where datasetOrigin like '%$title%')
+               where datasetOrigin like '%$datasetIDstr%')
               ~;
     my @derivedDatasets = $dbh->selectOneColumn($sql);
+
+    #### If this is a reanalysis identifier, and there is no reanalysis number selected (or it's 0), show the container (0)
+    my $entityType = "Dataset";
+    if ( $baseIdentifier =~ /^RP/ && ! $inputReanalysisNumber ) {
+      $inputReanalysisNumber = 0;
+      $entityType = "Reanalysis Container";
+    }
+
+    #### Get all the record for this dataset from the history table
     $sql = qq~
-                  SELECT STATUS,
-                        PXPARTNER,
-                        ANNOUNCEMENTXML,
-                       IDENTIFIERDATE,
-                       DATASETIDENTIFIER,
-                       DATASETORIGIN
-                  from $table_name
-                  where dataset_id=$datasetID
-              ~;
+        SELECT STATUS,PXPARTNER,ANNOUNCEMENTXML,IDENTIFIERDATE,DATASETIDENTIFIER,DATASETORIGIN,title,reanalysisNumber,revisionNumber
+          FROM $history_table_name
+         WHERE dataset_id=$datasetID
+    ~;
+    $sql .= "   AND revisionNumber = $inputRevisionNumber\n" if ( $inputRevisionNumber );
+    $sql .= "   AND reanalysisNumber = $inputReanalysisNumber\n" if ( defined($inputReanalysisNumber) && $inputReanalysisNumber ne '' );
+    $sql .= "   ORDER BY reanalysisNumber DESC, revisionNumber DESC\n";
+
     my @results = $dbh->selectSeveralColumns($sql);
 
     #### If no row was returned, then this identifer must not have been assigned yet
@@ -693,20 +778,30 @@ sub showDataset {
       $response->{httpStatus} = "404 Identifier not assigned";
       $response->{status} = "ERROR";
       $response->{code} = "1002";
-      $response->{message} = "Identifier '$title' has not yet been assigned to a repository";
+      $response->{message} = "Identifier '$datasetIDstr' has not yet been assigned to a repository";
     }
 
-    #### If more than one row is returned, this suggests database corruption or some other problem
-    if ( scalar(@results) > 1) {
-      $response->{httpStatus} = "404 Identifier not assigned";
-      $response->{status} = "ERROR";
-      $response->{code} = "1099";
-      $response->{message} = "Too many rows returned for '$title'. Please report error GDSsD0001 to administrator.";
-    }
-
+    my ($selectedReanalysisNumber, $selectedRevisionNumber);
     if ( $response->{status} eq 'OK' ) {
-      ($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier) = @{$results[0]};
+
+      #### Go through the result of the history table query to compute how many reanalyses there are
+      my %reanalyses = ();
+      my $datasetOrigin;
+      foreach my $row ( @results ) {
+	($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetOrigin,$title,$selectedReanalysisNumber,$selectedRevisionNumber) = @{$row};
+	$reanalyses{$selectedReanalysisNumber} = 1 if ( $selectedReanalysisNumber );
+      }
+      $nReanalyses = scalar(keys(%reanalyses));
+
+      #### If there were multiple reanalyses available and one was not specified, then simply list them all
+#      if ( $nReanalyses => 1 && ! $inputReanalysisNumber ) {
+#	$containerStr .= "This dataset identifier represents one more reanalyses of an original dataset. This identifier currently holds $nReanalyses reanalyses.<BR>Below is a listing of all reanalysis containers for this identifier.<BR>Select the desired one to view by selecting a reanalysis number.";
+#	$containerStr .= showDatasetHistory(dataset_id => $datasetID, test => $test, containersOnly => "true");
+#      }
+
+      ($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetOrigin,$title,$selectedReanalysisNumber,$selectedRevisionNumber) = @{$results[0]};
       $title = $datasetIdentifier;
+      #$str .= "==$datasetIdentifier,$selectedReanalysisNumber,$selectedRevisionNumber==\n";
 
       my $parser = new ProteomeXchange::DatasetParser;
       $parser->parse('announcementXML' => $announcementXML, 'response' => $response, filename=> "$path/$announcementXML" );
@@ -714,8 +809,23 @@ sub showDataset {
 
       my $header;
 
-      $str .= "<p> <b>DataSet Summary</b> </p>\n<ul>";
-      foreach my $key ( qw( PXPartner
+      #### Write out a little preamble based on what this is
+      if ( $datasetIdentifier =~ /^PX/ ) {
+	$str .= "$datasetIdentifier is an original dataset announced via ProteomeXchange.<BR><BR>";
+      } elsif ( $datasetIdentifier =~ /^RPX/ ) {
+	if ( $selectedReanalysisNumber == 0 ) {
+	  $str .= "$datasetIdentifier is container for one or more analyses. The general container metadata is provided below and the table under Dataset History provides links to the various reanalyses have been provided (if any) in this container.<BR><BR>";
+        } else {
+	  $str .= "$datasetIdentifier.$selectedReanalysisNumber is a reanalysis of an original dataset. Links to the overal container (Reanalysis=0) and other sibling reanalyses to this one (if any) are listed below in the Dataset History table. Other reanalyses (if any) may be accessed by clicking on the Reanalysis number in the first column. Note that there may also be multiple revisions of each reanalysis, generally to correct errors.<BR><BR>";
+        }
+      }
+
+
+      $str .= "<b>$entityType Summary</b> </p>\n<ul>";
+      foreach my $key ( qw( 
+           title
+           description
+           PXPartner
            announceDate
            announcementXML
            DigitalObjectIdentifier
@@ -723,9 +833,7 @@ sub showDataset {
            datasetOrigin
            derivedDataset
            RepositorySupport
-			     primarySubmitter
-           title
-           description
+	   primarySubmitter
            speciesList
            modificationList
            instrument
@@ -739,7 +847,7 @@ sub showDataset {
 
         if ($key eq 'announcementXML'){
           $str .= qq~
-                <li><b>$header</b>: <a href='GetDataset?ID=$datasetID&outputMode=XML&test=$test' target="_blank">$result->{$key}</a></li>
+                <li><b>$header</b>: <a href='GetDataset?ID=$baseIdentifier.$selectedReanalysisNumber-$selectedRevisionNumber&outputMode=XML&test=$test' target="_blank">$result->{$key}</a></li>
                 ~;
 
         } elsif ($key eq 'DigitalObjectIdentifier') {
@@ -754,7 +862,7 @@ sub showDataset {
              $str .='</li>';
            }
 
-        } elsif($key eq 'datasetOrigin'){
+        } elsif( $key eq 'datasetOrigin' && defined($result->{$key}) ){
            if($result->{$key} =~ /ProteomeXchange accession.*PXD\d+/i){
              $result->{$key} =~ s#(PXD\d+)#<a href="GetDataset?ID=$1&test=$test" target="_blank">$1<\/a>#;
            }
@@ -764,11 +872,13 @@ sub showDataset {
           $str .= qq~<li><b>$header</b>: $result->{$key}</li>~;
         }
       }
+
+
       $str .= "</ul>\n";
 
 
       #### Display the dataset history
-      $str .= showDatasetHistory(dataset_id => $datasetID, test => $test);
+      $str .= showDatasetHistory(dataset_id => $datasetID, test => $test, selectedReanalysisNumber => $selectedReanalysisNumber, selectedRevisionNumber => $selectedRevisionNumber);
 
 
       #### Provide information on several of the major data lists
@@ -847,41 +957,49 @@ sub showDataset {
 
 
   #### If the output mode is XML, render output as XML
-  if ( $outputmode =~ /XML/i ) {
+  if ( $outputmode =~ /XML/i || $outputmode =~ /JSON/i ) {
 
     #### If data was successfully accessed
     if ( $response->{status} eq 'OK' ) {
 
       #### If there's no filename available, error out
       if ( !defined($announcementXML) || $announcementXML eq '' ) {
-	$response->{httpStatus} = "404 Dataset submission file undefined";
-	$response->{status} = "ERROR";
-	$response->{code} = "1004";
-	$response->{message} = "Submission file for dataset '$title' is undefined";
-	sendResponse(response=>$response);
-	return;
+        $response->{httpStatus} = "404 Dataset submission file undefined";
+        $response->{status} = "ERROR";
+        $response->{code} = "1004";
+        $response->{message} = "Submission file for dataset '$title' is undefined";
+        sendResponse(response=>$response);
+        return;
 
       #### Else open and dump the file
       } else {
 
-	#### If the file exists
-	if ( -e "$path/$announcementXML" ) {
-	  open (INFILE, "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
-	  print "Content-type: text/plain\n\n";
-	  my $inline;
-	  while ($inline = <INFILE>) {
-	    print $inline;
-	  }
-	  close(INFILE);
+        #### If the file exists
+        if ( -e "$path/$announcementXML" ) {
+        
+          if ( $outputmode =~ /XML/i ) {
+            open (INFILE, "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
+            print "Content-type: text/plain\n\n";
+            while ( my $inline = <INFILE> ) {
+              print $inline;
+            }
+            close(INFILE);
+          } else {
+            my $proxiParser = new ProteomeXchange::DatasetParser; 
+            my $result = $proxiParser->proxiParse(filename =>"$path/$announcementXML");
+            print "Content-type: application/json\n\n";
+            my $json = new JSON;
+            print $json->encode($result->{proxiDataset})."\n";
+          }
 
-	#### Or if the file doesn't exist, error out
+        #### Or if the file doesn't exist, error out
         } else {
-	  $response->{httpStatus} = "404 Dataset submission file unavailable";
-	  $response->{status} = "ERROR";
-	  $response->{code} = "1005";
-	  $response->{message} = "Submission file for dataset '$title' is not available at $announcementXML";
-	  sendResponse(response=>$response);
-	  return;
+          $response->{httpStatus} = "404 Dataset submission file unavailable";
+          $response->{status} = "ERROR";
+          $response->{code} = "1005";
+          $response->{message} = "Submission file for dataset '$title' is not available at $announcementXML";
+          sendResponse(response=>$response);
+          return;
         }
       }
 
@@ -897,7 +1015,7 @@ sub showDataset {
     #### If the dataset information is not being provided, then return status 404 per ELIXIR request
     if ( $headerStr ) {
       if ( $response->{status} ne 'OK' ) {
-	$headerStr =~ s/200 OK/$response->{httpStatus}/;
+        $headerStr =~ s/200 OK/$response->{httpStatus}/;
       }
       print $headerStr;
     } else {
@@ -917,27 +1035,38 @@ sub showDataset {
        <div id="main">
        <div id="primary" class="site-content">
        <div><a href="$CGI_BASE_DIR/GetDataset$teststr"> << Full experiment listing </a></div>
-       <h1 class="entry-title"> $title </h1>
+       <h1 class="entry-title">$fullDatasetIDstr</h1>
     ~;
 
 
-			#### Show what the tweet message would be
-			use ProteomeXchange::Tweet;
-			my $tweet = new ProteomeXchange::Tweet;
-			$tweet->prepareTweetContent(
-							datasetTitle => $datasetTitle,
-							PXPartner => $PXPartner,
-							datasetIdentifier => $title,
-							datasetSubmitter  => $datasetSubmitter,
-							datasetLabHead => $datasetLabHead,
-							datasetSpeciesString => $datasetSpeciesString,
-							datasetStatus => 'new',
-			);
+    #### If there are multiple reanalyses and no one specified, list them all in special content
+    #### No longer relevant??
+#    if ( 0 && $nReanalyses => 1 && ! $inputReanalysisNumber ) {
+#      print qq~
+#	<div class="entry-content">
+#	$containerStr
+#      ~;
+#    #### Else show the card for this record
+#    } else {
+      print qq~
+	<div class="entry-content">
+	$str
+      ~;
+#    }
 
-		 print qq~
-				<div class="entry-content">
-				$str
-		 ~;
+    #### Show what the tweet message would be
+    use ProteomeXchange::Tweet;
+    my $tweet = new ProteomeXchange::Tweet;
+    $tweet->prepareTweetContent(
+      datasetTitle => $datasetTitle,
+      PXPartner => $PXPartner,
+      datasetIdentifier => $title,
+      datasetSubmitter  => $datasetSubmitter,
+      datasetLabHead => $datasetLabHead,
+      datasetSpeciesString => $datasetSpeciesString,
+      datasetStatus => 'new',
+      );
+
      #### Removed display of the tweet here. It wasn't working correctly anyway. Would be good to revive for testing.
 		 #print "<BR><BR>".$tweet->getTweetAsHTML()."<BR><BR>";
 
@@ -991,17 +1120,20 @@ sub showDatasetHistory {
   my $outputMode = $args{outputMode} || '';
   my $test = $args{test} || 'no';
   my $dataset_id = $args{dataset_id} || die("[$SUB_NAME] ERROR: dataset_id not passed");
+  my $selectedReanalysisNumber = $args{selectedReanalysisNumber};
+  my $selectedRevisionNumber = $args{selectedRevisionNumber};
+  my $containersOnly = $args{containersOnly};
   my $str = '';
 
   my $tableName = "datasetHistory";
-  $tableName .= "_test" if ($test =~ /yes|true/i);
+  $tableName .= $TESTSUFFIX if ($test =~ /yes|true/i);
 
   $str .= "<p><b>Dataset History</b></p>\n";
   #$str .= "test=$test  tableName=$tableName<BR>\n";
 
   $str .= "<table class=\"table\" cellpadding=\"2\">\n";
 
-  my $sql = "SELECT dataset_id,datasetIdentifier,identifierVersion,isLatestVersion,PXPartner,status,primarySubmitter,title,species,instrument,publication,keywordList,announcementXML,identifierDate,submissionDate,revisionDate,changeLogEntry FROM $tableName WHERE dataset_id = $dataset_id";
+  my $sql = "SELECT dataset_id,datasetIdentifier,revisionNumber,reanalysisNumber,isLatestRevision,PXPartner,status,primarySubmitter,title,species,instrument,publication,keywordList,announcementXML,identifierDate,submissionDate,revisionDate,changeLogEntry FROM $tableName WHERE dataset_id = $dataset_id ORDER BY reanalysisNumber,revisionNumber,revisionDate";
 
   my $db = new ProteomeXchange::Database;
 
@@ -1018,21 +1150,87 @@ sub showDatasetHistory {
     return $str;
   }
 
-  $str .= "<tr>";
-  foreach my $item ( 'Version','Datetime','Status','ChangeLog Entry' ) {
-    $str .= "<td class=\"tableTitle\">$item</td>";
-  }
-  $str .= "</tr>\n";
 
+  #### Print out the table of history information
+  my $iRow = 0;
   foreach my $row ( @rows ) {
-    my ( $dataset_id,$datasetIdentifier,$identifierVersion,$isLatestVersion,$PXPartner,$status,$primarySubmitter,$title,$species,$instrument,$publication,$keywordList,$announcementXML,$identifierDate,$submissionDate,$revisionDate,$changeLogEntry ) = @{$row};
+    my ( $dataset_id,$datasetIdentifier,$revisionNumber,$reanalysisNumber,$isLatestRevision,$PXPartner,$status,$primarySubmitter,$title,$species,$instrument,$publication,$keywordList,$announcementXML,$identifierDate,$submissionDate,$revisionDate,$changeLogEntry ) = @{$row};
 
+    #### If this is the first row, then first print out the header
+    if ( $iRow == 0 ) {
+      $str .= "<tr>";
+      my @columnTitles = ();
+      push(@columnTitles,'Reanalysis') if ( $datasetIdentifier =~ /^RPX/ );
+      push(@columnTitles,'Revision','Datetime','Status');
+      if ( $datasetIdentifier =~ /^RP/ ) {
+	push(@columnTitles,'Title / <I>ChangeLog Entry</I>');
+      } else {
+	push(@columnTitles,'ChangeLog Entry');
+      }
+
+      foreach my $item ( @columnTitles ) {
+	$str .= "<td class=\"tableTitle\">$item</td>";
+      }
+      $str .= "</tr>\n";
+    }
+
+    #### For containersOnly, skip non-containers
+    if ( $containersOnly && $containersOnly eq 'true' && 0 ) {
+      if ( $revisionNumber > 0 ) {
+	$iRow++;
+	next;
+      }
+    }
+
+    #### Print out the row
     $str .= "<tr>";
-    foreach my $item ( $identifierVersion,$revisionDate||$submissionDate||$identifierDate,$status,$changeLogEntry ) {
+    my $tdclass = "tableText";
+    my @columns = ();
+    push(@columns,$reanalysisNumber) if ( $datasetIdentifier =~ /^RPX/ );
+    push(@columns,$revisionNumber,$revisionDate||$submissionDate||$identifierDate,$status,$changeLogEntry);
+    my $iColumn = 0;
+    foreach my $item ( @columns ) {
       $item = '' unless (defined($item));
-      $str .= "<td class=\"tableText\">$item</td>";
+
+      #### If in RPXD mode, create hyperlinks for both reanalysis and revision
+      if ( $datasetIdentifier =~ /^RP/ ) {
+
+	#### Insert a hyperlink in the Reanalysis column
+	if ( $iColumn == 0 && $item gt '') {
+	  if ( $selectedReanalysisNumber gt '' && $reanalysisNumber == $selectedReanalysisNumber && $selectedRevisionNumber && $revisionNumber == $selectedRevisionNumber ) {
+	    $tdclass = "highlightedRow";
+          }
+	  $item = "<a href=\"GetDataset?ID=$datasetIdentifier.$reanalysisNumber&test=$test\">$item</a>";
+        } elsif ( $iColumn == 4 ) {
+	  if ( $item > '' ) {
+	    $item = "$title<BR><I>$item</I>";
+ 	  } else {
+	    $item = "$title";
+	  }
+        }
+
+	#### Insert a hyperlink in the Revision column
+	if ( $iColumn == 1 && $item ) {
+	  $item = "<a href=\"GetDataset?ID=$datasetIdentifier.$reanalysisNumber-$revisionNumber&test=$test\">$item</a>";
+        }
+
+      #### Otherwise, for just a PXD, create a hyperlink for revision only
+      } else {
+	#### Insert a hyperlink in the Revision column
+	if ( $iColumn == 0 && $item ) {
+	  if ( $selectedRevisionNumber && $revisionNumber == $selectedRevisionNumber ) {
+	    $tdclass = "highlightedRow";
+          }
+	  $item = "<a href=\"GetDataset?ID=$datasetIdentifier-$revisionNumber&test=$test\">$item</a>";
+        }
+      }
+
+      $item =~ s/\n/<BR>\n/g;
+      $str .= "<td class=\"$tdclass\">$item</td>";
+      $iColumn++;
     }
     $str .= "</tr>\n";
+    $iRow++;
 
   }
   $str .= "</table>\n";
