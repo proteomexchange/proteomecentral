@@ -843,9 +843,12 @@ sub showDataset {
 	  $result->{$key} = $PXPartner unless ($result->{$key});
         }
 
-        if ($key eq 'announcementXML'){
+        if ($key eq 'announcementXML') {
+          my $fullIdentifier = $baseIdentifier;
+	  if ( defined($selectedReanalysisNumber) && $selectedReanalysisNumber gt "" ) { $fullIdentifier .= ".$selectedReanalysisNumber"; }
+	  if ( defined($selectedRevisionNumber) && $selectedRevisionNumber gt "" ) { $fullIdentifier .= "-$selectedRevisionNumber"; }
           $str .= qq~
-                <li><b>$header</b>: <a href='GetDataset?ID=$baseIdentifier.$selectedReanalysisNumber-$selectedRevisionNumber&outputMode=XML&test=$test' target="_blank">$result->{$key}</a></li>
+                <li><b>$header</b>: <a href='GetDataset?ID=$fullIdentifier&outputMode=XML&test=$test' target="_blank">$result->{$key}</a></li>
                 ~;
 
         } elsif ($key eq 'DigitalObjectIdentifier') {
