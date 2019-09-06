@@ -768,7 +768,8 @@ sub showDataset {
          WHERE dataset_id=$datasetID
     ~;
     $sql .= "   AND revisionNumber = $inputRevisionNumber\n" if ( $inputRevisionNumber );
-    $sql .= "   AND reanalysisNumber = $inputReanalysisNumber\n" if ( defined($inputReanalysisNumber) && $inputReanalysisNumber ne '' );
+    #$sql .= "   AND reanalysisNumber = $inputReanalysisNumber\n" if ( defined($inputReanalysisNumber) && $inputReanalysisNumber ne '' );
+    $sql .= "   AND ( reanalysisNumber = $inputReanalysisNumber OR reanalysisNumber IS NULL )\n" if ( defined($inputReanalysisNumber) && $inputReanalysisNumber ne '' );
     $sql .= "   ORDER BY reanalysisNumber DESC, revisionNumber DESC\n";
 
     my @results = $dbh->selectSeveralColumns($sql);
@@ -812,11 +813,16 @@ sub showDataset {
       #### Write out a little preamble based on what this is
       if ( $datasetIdentifier =~ /^PX/ ) {
 	$str .= "$datasetIdentifier is an original dataset announced via ProteomeXchange.<BR><BR>";
+
       } elsif ( $datasetIdentifier =~ /^RPX/ ) {
-	if ( $selectedReanalysisNumber == 0 ) {
+	if ( ! defined($selectedReanalysisNumber) ) {
+	  $str .= "$datasetIdentifier is an old-style reanalysis announcement missing a container. This dataset should be updated with a proper container and revision following 2019 ProteomeXchange protocols.<BR><BR>";
+	  $entityType = "Outdated Reanalysis Missing a Container";
+
+	} elsif ( $selectedReanalysisNumber == 0 ) {
 	  $str .= "$datasetIdentifier is container for one or more analyses. The general container metadata is provided below and the table under Dataset History provides links to the various reanalyses have been provided (if any) in this container.<BR><BR>";
         } else {
-	  $str .= "$datasetIdentifier.$selectedReanalysisNumber is a reanalysis of an original dataset. Links to the overal container (Reanalysis=0) and other sibling reanalyses to this one (if any) are listed below in the Dataset History table. Other reanalyses (if any) may be accessed by clicking on the Reanalysis number in the first column. Note that there may also be multiple revisions of each reanalysis, generally to correct errors.<BR><BR>";
+	  $str .= "$datasetIdentifier.$selectedReanalysisNumber is a reanalysis of an original dataset. All reanalyses under this identifier are organized under a container with general attributes common to all reanalyses. Other reanalyses (if any) may be accessed by viewing the top-level container. Note that there may also be multiple revisions of each reanalysis, generally to correct errors.<BR><BR><H3>[<a href=\"GetDataset?ID=$datasetIdentifier&test=$test\">View Reanalysis Container $datasetIdentifier</a>]</H3><BR>";
         }
       }
 
@@ -830,7 +836,7 @@ sub showDataset {
            announcementXML
            DigitalObjectIdentifier
            ReviewLevel
-           datasetOrigin
+           DatasetOriginList
            derivedDataset
            RepositorySupport
 	   primarySubmitter
@@ -865,11 +871,23 @@ sub showDataset {
              $str .='</li>';
            }
 
-        } elsif( $key eq 'datasetOrigin' && defined($result->{$key}) ){
-           if($result->{$key} =~ /ProteomeXchange accession.*PXD\d+/i){
-             $result->{$key} =~ s#(PXD\d+)#<a href="GetDataset?ID=$1&test=$test" target="_blank">$1<\/a>#;
-           }
-           $str .= qq~<li><b>$header</b>: $result->{$key}</li>~;
+	#### Display the dataset Origin information
+        } elsif ( $key eq 'DatasetOriginList' && defined($result->{$key}) ) {
+	  foreach my $origin ( @{$result->{$key}} ) {
+	    if ( exists($origin->{derived}) ) {
+	      my $originalIdentifier = $origin->{identifier} || '??';
+	      if ( $originalIdentifier =~ /PXD/ ) {
+		$originalIdentifier = "<a href=\"GetDataset?ID=$originalIdentifier&test=$test\" target=\"_blank\">$originalIdentifier<\/a>";
+	      } elsif ( $originalIdentifier =~ /MSV/ ) {
+		$originalIdentifier = "<a href=\"https://www.omicsdi.org/dataset/massive/$originalIdentifier\" target=\"_blank\">$originalIdentifier<\/a>";
+	      }
+	      $str .= qq~<li><b>DatasetOrigin</b>: Reanalysis of $originalIdentifier</li>~;
+	    } elsif ( exists($origin->{original}) ) {
+	      $str .= qq~<li><b>DatasetOrigin</b>: Original dataset</li>~;
+  	    } else {
+	      $str .= qq~<li><b>DatasetOrigin</b>: Unknown</li>~;
+	    }
+	  }
 
         } else {
           $str .= qq~<li><b>$header</b>: $result->{$key}</li>~;
@@ -881,7 +899,11 @@ sub showDataset {
 
 
       #### Display the dataset history
-      $str .= showDatasetHistory(dataset_id => $datasetID, test => $test, selectedReanalysisNumber => $selectedReanalysisNumber, selectedRevisionNumber => $selectedRevisionNumber);
+      if ( $selectedReanalysisNumber == 0 ) {
+	$str .= showDatasetHistory(dataset_id => $datasetID, test => $test, selectedReanalysisNumber => $selectedReanalysisNumber, selectedRevisionNumber => $selectedRevisionNumber );
+      } else {
+	$str .= showDatasetHistory(dataset_id => $datasetID, test => $test, selectedReanalysisNumber => $selectedReanalysisNumber, selectedRevisionNumber => $selectedRevisionNumber, containersOnly=>"true" );
+      }
 
 
       #### Provide information on several of the major data lists
@@ -1178,8 +1200,8 @@ sub showDatasetHistory {
     }
 
     #### For containersOnly, skip non-containers
-    if ( $containersOnly && $containersOnly eq 'true' && 0 ) {
-      if ( $revisionNumber > 0 ) {
+    if ( $containersOnly && $containersOnly eq 'true' ) {
+      if ( $reanalysisNumber != $selectedReanalysisNumber ) {
 	$iRow++;
 	next;
       }
