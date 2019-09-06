@@ -94,15 +94,15 @@ sub proxiParse {
   $response->{errors} = [];
 
   #### Define a simplified mapping from PX XML to PROXI JSON
-  our $mapping = { DatasetIdentifier => { name=>"accession", type=>"OntologyTerm" },
+  our $mapping = { DatasetIdentifier => { name=>"identifiers", type=>"OntologyTerm" },
                    Species => { name=>"species", type=>"OntologyTermList" },
                    Instrument => { name=>"instruments", type=>"OntologyTerm" },
                    ModificationList => { name=>"modifications", type=>"OntologyTerm" },
                    Contact => { name=>"contacts", type=>"OntologyTermList" },
                    Publication => { name=>"publications", type=>"OntologyTermList" },
                    KeywordList => { name=>"keywords", type=>"OntologyTerm" },
-                   FullDatasetLink => { name=>"datasetLink", type=>"OntologyTerm" },
-                   DatasetFile => { name=>"dataFiles", type=>"OntologyTerm" },
+                   FullDatasetLink => { name=>"fullDatasetLinks", type=>"OntologyTerm" },
+                   DatasetFile => { name=>"datasetFiles", type=>"OntologyTerm" },
   };
 
   #### Open the file
@@ -249,7 +249,7 @@ sub proxiParse_char {
   #### Custom code to build the PROXI Dataset object
   my $parent = $object->{name};
   if ( $parent eq "Description" ) {
-    $response->{proxiDataset}->{summary} = $characterData;
+    $response->{proxiDataset}->{description} = $characterData;
   }
 
   return;
