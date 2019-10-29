@@ -886,7 +886,10 @@ sub showDataset {
 	    }
 	  }
 
-        } else {
+	} elsif ($key eq 'description') {
+          $str .= qq~<tr><td><b>$header</b></td><td class='breakwords'>$result->{$key}</td></tr>~;
+
+	} else {
           $str .= qq~<tr><td><b>$header</b></td><td>$result->{$key}</td></tr>~;
         }
       }

@@ -54,8 +54,15 @@
     font-weight: bold;
     color: #000;
 }
+.dataset-summary a:hover {
+    text-decoration: underline;
+}
 .dataset-currentrev {
     background: #fdc;
+}
+
+.breakwords {
+    overflow-wrap: anywhere;
 }
 
 .linkback {
