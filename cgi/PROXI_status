@@ -1,0 +1,205 @@
+#!/net/dblocal/src/python/python3/bin/python3
+
+#### Define eprint() to print to stderr
+from __future__ import print_function
+import sys
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+#### Import some standard libraries
+import os
+import argparse
+import os.path
+import re
+import json
+from urllib.request import urlopen
+import time
+from multiprocessing.pool import ThreadPool
+
+
+#### Function fetch_url
+def fetch_url(endpoint):
+    url = endpoint['url']
+    if 'delay' in endpoint:
+        if int(endpoint['delay']) > 0:
+            time.sleep(int(endpoint['delay']))
+    start = time.time()
+    try:
+        response = urlopen(url,timeout=15)
+        return endpoint, response.getcode(), response.read(), 'OK', "{:.3f}".format(time.time() - start)
+    except Exception as error:
+        error_code = -1
+        match = re.match('HTTP Error (\d+)',str(error))
+        if match:
+            error_code = match.group(1)
+        else:
+            match = re.search('timed out',str(error))
+            error_code = 598
+        return endpoint, error_code, None, error, "{:.3f}".format(time.time() - start)
+
+
+#### Main execution function
+def main():
+
+    #### Parse command-line arguments
+    argparser = argparse.ArgumentParser(description='Reads one spectrum from a file and prints to stdout')
+    argparser.add_argument('--endpoint', action='store', help="Name of the endpoint to test or 'all'")
+    argparser.add_argument('--delay', action='store', default=0, help="Delay to introduce for testing (default 0)")
+    argparser.add_argument('--output_format', action='store', default='text', help="Format use when writing the spectrum (one of 'text', 'json', 'msp')")
+    argparser.add_argument('--version', action='version', version='%(prog)s 0.5')
+    params = argparser.parse_args()
+    response = { 'state': 'OK', 'status': 200, 'title': 'OK', 'detail': 'Function completed normally' }
+    mode = 'CLI'
+
+    #### CGI debugging stuff
+    #print("Content-type: text/plain\n")
+    #print(os.environ)
+    #print(f"INFO: QUERY_STRING: {os.environ['QUERY_STRING']}")
+
+    #### If we got here through CGI
+    if "REQUEST_URI" in os.environ:
+        mode = 'HTTP'
+
+        #### Set the output_format to json if the HTTP_REQUEST_TYPE was set to json
+        if "HTTP_REQUEST_TYPE" in os.environ and os.environ["HTTP_REQUEST_TYPE"] == "application/json":
+            params.output_format = 'json'
+
+
+    #### If there is a query string
+    if "QUERY_STRING" in os.environ and os.environ["QUERY_STRING"] > "":
+
+        #### Parse out the CGI parameters and put in place of command-line arguments
+        keyvaluepairs = re.split("&", os.environ["QUERY_STRING"])
+        for keyvaluepair in keyvaluepairs:
+            key, value = re.split("=", keyvaluepair, 1)
+            if key == "usi":
+                params.usi = value
+            elif key == "output_format":
+                params.output_format = value
+            elif key == "delay":
+                params.delay = int(value)
+            else:
+                response = { 'state': 'ERROR', 'status': 460, 'title': 'Unrecognized Parameter', 'detail': f"Unrecognized parameter: {keyvaluepair}" }
+                send_response(response, output_format=params.output_format, mode=mode)
+                return()
+
+    endpoint = params.endpoint
+
+    #### Define the available PROXI servers
+    proxi_provider_names = [ 'ProteomeCentral','PeptideAtlas','PRIDE','MassIVE','jPOST' ]
+
+    #### Define the available endpoint base urls
+    proxi_provider_urls = {
+      'ProteomeCentral': 'http://proteomecentral.proteomexchange.org/api/proxi/v0.1',
+      'PeptideAtlas': 'http://www.peptideatlas.org/api/proxi/v0.1',
+      'PRIDE': 'http://wwwdev.ebi.ac.uk/pride/proxi/archive',
+      'MassIVE': 'http://ccms-internal.ucsd.edu/ProteoSAFe/proxi/v0.1',
+      'jPOST': 'https://repository.jpostdb.org/proxi',
+      #'Timeout': 'http://time.u.washington.edu/api/proxi/v0.1',
+      #'BadURL': 'http://www.peptideatlas.org/api/poodle/v0.1',
+    }
+
+    #### Define the defined PROXI endpoints
+    proxi_endpoints = [ 'datasets', 'spectra', 'psms', 'peptides', 'proteins' ]
+
+    #### Define example example suffixes
+    proxi_endpoint_suffixes = {
+        #'datasets': '?resultType=full&accession=PXD000561',
+        'datasets': '/PXD000561',
+        'jPOST-datasets': '?resultType=full&accession=PXD005159',
+        'spectra': '?usi=asdf&resultType=compact',
+        'psms': '?resultType=compact',
+        'peptides': '?resultType=compact',
+        'proteins': '?resultType=compact',
+    }
+
+    #### Loop over all the definitions building URLs
+    endpoint_list = []
+    table_list = []
+    for provider in proxi_provider_names:
+        table = { 'provider_name': provider, 'ui': f'{proxi_provider_urls[provider]}/ui/' }
+        row_list = []
+        if provider in proxi_provider_urls:
+            for endpoint in proxi_endpoints:
+                suffix = ''
+                if f"{provider}-{endpoint}" in proxi_endpoint_suffixes:
+                    suffix = proxi_endpoint_suffixes[f"{provider}-{endpoint}"]
+                elif endpoint in proxi_endpoint_suffixes:
+                    suffix = proxi_endpoint_suffixes[endpoint]
+                url = f'{proxi_provider_urls[provider]}/{endpoint}{suffix}'
+                endpoint_data = {
+                    'provider_name': provider,
+                    'endpoint': endpoint,
+                    'url': url,
+                    'delay': params.delay
+                }
+                endpoint_list.append(endpoint_data)
+                row_list.append(endpoint)
+                #eprint(url)
+        else:
+            response = { 'state': 'ERROR', 'status': 460, 'title': 'Internal Definitions Error', 'detail': f"Provider 'provider' not in proxi_provider_urls" }
+            send_response(response, output_format=params.output_format, mode=mode)
+            return()
+            
+        table['row_list'] = row_list
+        table_list.append(table)
+
+    send_response(response, output_format=params.output_format, mode=mode)
+
+    #### Send the table outline information
+    output = { 'table_list': table_list, 'delay': params.delay }
+
+    print(json.dumps(output,sort_keys=True), flush=True)
+
+    #### Loop over the endpoint_list, fetching data from each, using threaded pool
+    n_threads = 2
+    if int(params.delay) > 2: n_threads = 1
+
+    results = ThreadPool(n_threads).imap_unordered(fetch_url, endpoint_list)
+    for endpoint, code, html, error, elapsed in results:
+        endpoint['code'] = code
+        endpoint['message'] = str(error)
+        endpoint['elapsed'] = elapsed
+        print(json.dumps(endpoint,sort_keys=True), flush=True)
+
+    return()
+
+
+############################################################################
+#### Write out the current status in the correct format
+def send_response(response, output_format="text", mode='CLI', suppress_CLI_header=True):
+
+    if mode == 'HTTP':
+        if response['state'] == 'OK':
+            pass
+        else:
+            print("Status: " + str(response['status']))
+
+        #### Start the HTTP output
+        if output_format == 'json':
+           print("Content-type: application/json\n")
+        else:
+           print("Content-type: text/plain\n")
+
+        #### If this is an error, show the error information
+        if response['state'] != 'OK':
+            if output_format == 'json':
+                response['type'] = 'about:blank'
+                print(json.dumps(response,sort_keys=True,indent=2))
+            else:
+                for key in response:
+                    print(f"{key}: " + str(response[key]))
+
+    else:
+        if response['state'] == 'OK':
+            if suppress_CLI_header == False: print("(OK)")
+        else:
+            if output_format == 'json':
+                print(json.dumps(response,sort_keys=True,indent=2))
+            else:
+                for key in response:
+                    print(f"{key}: " + str(response[key]))
+
+
+#### When executed directly, run the main() function
+if __name__ == "__main__": main()
