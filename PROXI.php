@@ -10,6 +10,12 @@
 <script src="javascript/js/he-master/he.js"></script>
 <script src="javascript/js/proxistatus.js"></script>
 <style type="text/css">
+a {
+ text-decoration: none;
+}
+a:hover {
+ text-decoration: underline;
+}
 .prox {
  border-collapse: collapse;
 }
@@ -34,6 +40,11 @@
  background-color: #cdcdcd;
  font-size: 25px;
  font-weight:bold;
+}
+.rep a {
+ font-size: 17px;
+ float: right;
+ color: #777;
 }
 .code200 {
  background-color: #5f5;

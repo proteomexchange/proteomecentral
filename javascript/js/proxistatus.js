@@ -29,6 +29,7 @@ function get_proxi_stream() {
 		document.getElementById(rowid+"_msg").innerHTML = he.encode(rjson.message);
 		document.getElementById(rowid+"_msg").className = "code"+rjson.code;
 		document.getElementById(rowid+"_time").innerHTML = rjson.elapsed;
+		document.getElementById(rowid+"_turl").innerHTML = "<a target='proxtest' href='"+rjson.url+"'>"+rjson.display_url+"</a>";
 		//document.getElementById("debug").innerHTML += rowid + ", ";
 	    }
 	    catch(e) {
@@ -60,17 +61,18 @@ function render_tables(table_info) {
     var thtml = "<table class='prox'>";
     for (var i in proxi_rows.table_list) {
 	var pname = proxi_rows.table_list[i].provider_name;
-	thtml += "<tr><td colspan='4'><br/><br/></td></tr>";
+	thtml += "<tr><td colspan='5'><br/><br/></td></tr>";
 
-	thtml += "<tr><td class='rep' colspan='4'>&nbsp;&nbsp;"+pname+" (<a href='"+proxi_rows.table_list[i].ui+"'>"+proxi_rows.table_list[i].ui+"</a>)</td></tr>";
+	thtml += "<tr><td class='rep' colspan='5'>&nbsp;&nbsp;"+pname+"&nbsp;&nbsp;<a target='proxtest' href='"+proxi_rows.table_list[i].ui+"'>"+proxi_rows.table_list[i].ui+"</a></td></tr>";
 
-//	thtml += "<tr><td class='rep' colspan='4'>&nbsp;&nbsp;"+pname+"</td></tr>";
+//	thtml += "<tr><td class='rep' colspan='5'>&nbsp;&nbsp;"+pname+"</td></tr>";
 
 
-	thtml += "<tr><th>Endpoint</th><th>Response Code</th><th>Message</th><th>Elapsed Time</th></tr>";
+	thtml += "<tr><th>Endpoint</th><th>Response Code</th><th>Message</th><th>Elapsed Time</th><th>Tested URL</th></tr>";
 	for (var r in proxi_rows.table_list[i].row_list) {
 	    var rname = proxi_rows.table_list[i].row_list[r];
-	    thtml += "<tr><td>/"+rname+"</td><td id='"+pname+rname+"_code'>---</td><td id='"+pname+rname+"_msg'>---</td><td id='"+pname+rname+"_time'>---</td></tr>";
+	    thtml += "<tr><td>/"+rname+"</td><td id='"+pname+rname+"_code'>---</td><td id='"+pname+rname+"_msg'>---</td><td id='"+pname+rname+"_time'>---</td><td id='"+pname+rname+"_turl'>---</td></tr>";
+
 
 	}
     }
