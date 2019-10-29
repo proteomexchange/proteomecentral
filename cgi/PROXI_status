@@ -92,7 +92,7 @@ def main():
     proxi_provider_urls = {
       'ProteomeCentral': 'http://proteomecentral.proteomexchange.org/api/proxi/v0.1',
       'PeptideAtlas': 'http://www.peptideatlas.org/api/proxi/v0.1',
-      'PRIDE': 'http://wwwdev.ebi.ac.uk/pride/proxi/archive',
+      'PRIDE': 'http://wwwdev.ebi.ac.uk/pride/proxi/archive/v0.1',
       'MassIVE': 'http://ccms-internal.ucsd.edu/ProteoSAFe/proxi/v0.1',
       'jPOST': 'https://repository.jpostdb.org/proxi',
       #'Timeout': 'http://time.u.washington.edu/api/proxi/v0.1',
@@ -107,17 +107,24 @@ def main():
         #'datasets': '?resultType=full&accession=PXD000561',
         'datasets': '/PXD000561',
         'jPOST-datasets': '?resultType=full&accession=PXD005159',
-        'spectra': '?usi=asdf&resultType=compact',
+        'spectra': '?usi=mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2&resultType=compact',
         'psms': '?resultType=compact',
         'peptides': '?resultType=compact',
         'proteins': '?resultType=compact',
+        'PRIDE-ui': '/swagger-ui.html',
     }
 
     #### Loop over all the definitions building URLs
     endpoint_list = []
     table_list = []
     for provider in proxi_provider_names:
+
+        #### Create a stub for the table information and add some attributes
         table = { 'provider_name': provider, 'ui': f'{proxi_provider_urls[provider]}/ui/' }
+        if f"{provider}-ui" in proxi_endpoint_suffixes:
+            tag = f"{provider}-ui"
+            table['ui'] = f"{proxi_provider_urls[provider]}{proxi_endpoint_suffixes[tag]}"
+
         row_list = []
         if provider in proxi_provider_urls:
             for endpoint in proxi_endpoints:
@@ -127,10 +134,12 @@ def main():
                 elif endpoint in proxi_endpoint_suffixes:
                     suffix = proxi_endpoint_suffixes[endpoint]
                 url = f'{proxi_provider_urls[provider]}/{endpoint}{suffix}'
+                display_url = f'/{endpoint}{suffix}'
                 endpoint_data = {
                     'provider_name': provider,
                     'endpoint': endpoint,
                     'url': url,
+                    'display_url': display_url,
                     'delay': params.delay
                 }
                 endpoint_list.append(endpoint_data)
