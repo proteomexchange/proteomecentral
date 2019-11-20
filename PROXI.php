@@ -19,7 +19,7 @@ a:hover {
 .prox {
  border-collapse: collapse;
 }
-.prox tr:hover {
+.rowdata:hover {
  border: 3px solid black;
 }
 .prox td {

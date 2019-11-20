@@ -71,7 +71,7 @@ function render_tables(table_info) {
 	thtml += "<tr><th>Endpoint</th><th>Response Code</th><th>Message</th><th>Elapsed Time</th><th>Tested URL</th></tr>";
 	for (var r in proxi_rows.table_list[i].row_list) {
 	    var rname = proxi_rows.table_list[i].row_list[r];
-	    thtml += "<tr><td>/"+rname+"</td><td id='"+pname+rname+"_code'>---</td><td id='"+pname+rname+"_msg'>---</td><td id='"+pname+rname+"_time'>---</td><td id='"+pname+rname+"_turl'>---</td></tr>";
+	    thtml += "<tr class='rowdata'><td>/"+rname+"</td><td id='"+pname+rname+"_code'>---</td><td id='"+pname+rname+"_msg'>---</td><td id='"+pname+rname+"_time'>---</td><td id='"+pname+rname+"_turl'>---</td></tr>";
 
 
 	}
