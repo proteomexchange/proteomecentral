@@ -60,6 +60,9 @@
 .dataset-currentrev {
     background: #fdc;
 }
+.current {
+    color: #f26722;
+}
 
 .breakwords {
     overflow-wrap: anywhere;
@@ -78,9 +81,11 @@
     color: #fff;
 }
 
-
-
-
+#more:hover, #less:hover {
+    color: #44f;
+    cursor:pointer;
+    text-decoration: underline;
+}
 
 
 
@@ -103,7 +108,7 @@
     font-weight:bold}
 .TopNavlink:hover {color: #c9dd03;}
 .TopNavlinkstate {
-    cursor: hand;
+    cursor: pointer;
     font-family:verdana,arial,helvetica,sans serif;
     font-size:13px;
     letter-spacing:1px;
@@ -121,7 +126,7 @@
     font-weight:bold}
 .MainNavlink:hover {color: #c9dd03;}
 .MainNavlinkstate {
-    cursor: hand;
+    cursor: pointer;
     font-family:verdana,arial,helvetica,sans serif;
     font-size:15px;
     letter-spacing:1px;
@@ -499,8 +504,8 @@ sub {
 
 .footer {
   display:block;
-  padding-left:5;
-  padding-top:5;
+  padding-left:5px;
+  padding-top:5px;
   width:100%;
   color:#999;
   background-color:#fff;
