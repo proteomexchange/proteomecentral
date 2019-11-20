@@ -940,8 +940,8 @@ sub showDataset {
         $header =~  s/([A-Z][a-z]+)/$1 /g;
         $str .= qq~
 		 <div class='dataset-secthead'>$header</div>
-                 <div id="less" onclick='toggle("less","more","repositoryRecordList")' >[+]</div>
-		 <div id="more" onclick='toggle("more","less","repositoryRecordList")' style='display: none'>[-]</div>
+                 <div id="less" onclick='toggle("less","more","repositoryRecordList")' title='Expand Record List'>[ + ]</div>
+		 <div id="more" onclick='toggle("more","less","repositoryRecordList")' title='Hide Record List' style='display: none'>[ - ]</div>
 		 <ul id="repositoryRecordList" style='display: none'>
         ~;
 
@@ -1241,6 +1241,7 @@ sub showDatasetHistory {
 	if ( $iColumn == 0 && $item ) {
 	  if ( $selectedRevisionNumber && $revisionNumber == $selectedRevisionNumber ) {
 	    $tdclass = 'class="dataset-currentrev"';
+	    $item = "<span class='current'>&#9205;</span> $item";
           }
 	  $item = "<a href=\"GetDataset?ID=$datasetIdentifier-$revisionNumber&test=$test\">$item</a>";
         }
