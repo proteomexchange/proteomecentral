@@ -999,6 +999,8 @@ sub showDataset {
         if ( -e "$path/$announcementXML" ) {
         
           if ( $outputmode =~ /XML/i ) {
+            #### (switching to ISO-8859-1 seems to fix some special characters, but causes a complete Perl core dump in others. See emails of 2019-11-26)
+            #open (INFILE, '<:encoding(ISO-8859-1)', "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
             open (INFILE, "$path/$announcementXML" ) || die("ERROR: Unable to open $path/$announcementXML");
             print "Content-type: text/plain\n\n";
             while ( my $inline = <INFILE> ) {

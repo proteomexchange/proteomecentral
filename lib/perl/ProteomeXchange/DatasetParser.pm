@@ -293,6 +293,8 @@ sub parse {
 
 
   #### Open the file
+  #### (switching to ISO-8859-1 seems to fix some special characters, but causes a complete Perl core dump in others. See emails of 2019-11-26)
+  #unless (open(FH,'<:encoding(ISO-8859-1)',$filename)){
   unless (open(FH,$filename)){
     $response->{message} = "Unable to open the document '$filename'";
     return($response);
