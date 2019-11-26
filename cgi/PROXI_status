@@ -108,6 +108,8 @@ def main():
         'datasets': '/PXD000561',
         'jPOST-datasets': '?resultType=full&accession=PXD005159',
         'spectra': '?usi=mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2&resultType=compact',
+        'PRIDE-spectra': '?pageSize=100&pageNumber=1&resultType=compact',
+        'ProteomeCentral-spectra': '?resultType=compact&usi=mzspec:PXL000006:02-14-2019:index:1250',
         'psms': '?resultType=compact',
         'peptides': '?resultType=compact',
         'proteins': '?resultType=compact',
