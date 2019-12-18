@@ -852,7 +852,7 @@ sub showDataset {
 	  $result->{$key} = $PXPartner unless ($result->{$key});
         }
 
-	$result->{$key} ||= ';'  # to silence perl warning when this is undefined
+	$result->{$key} ||= '';  # to silence perl warning when this is undefined
 
         if ($key eq 'announcementXML') {
           my $fullIdentifier = $baseIdentifier;
