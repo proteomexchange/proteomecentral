@@ -49,7 +49,7 @@ sub listDatasets {
   my %args = @_;
   my $SUB_NAME = 'listDatasets';
 
-  $self->log_em( "List Datasets" );
+  #$self->log_em( "List Datasets" );
   #### Decode the argument list
   my $params = $args{'params'};
   my $response = $args{'response'} || die("[$SUB_NAME] ERROR: response not passed");
@@ -135,11 +135,14 @@ sub listDatasets {
     print "<thead>\n";
     pop @headings;
     print $cgi->Tr($cgi->th([@headings]));
-    $log->info($cgi->Tr($cgi->th([@headings])));
+    #$log->info($cgi->Tr($cgi->th([@headings])));
     print "\n</thead>\n<tbody>\n";
     my $cnt;
     if (@results){
       foreach my $row (@results){
+	for (my $i=0; $i <= $#$row; $i++) {
+	  $row->[$i] = '' unless $row->[$i];  # eliminate literally HUNDREDS of warning messages / page view
+	}
 	$cnt++;
 	print $cgi->Tr($cgi->td([@$row]));
 	print "\n";
@@ -148,7 +151,7 @@ sub listDatasets {
 	# the apparent load time much quicker. Once loaded, the page does
 	# an AJAX call to fetch more data and fill in the pager widget.
 	last if $cnt >= 10 && !$searchType;
-				  }
+      }
     } else {
       ## if no result enter a blank row
       print "<tr>";
@@ -244,7 +247,7 @@ sub listDatasets {
     print "ERROR: Unrecognized outputMode '$outputMode'\n";
   }
 
-  $self->log_em( "Finished" );
+  #$self->log_em( "Finished" );
 }
 
 
@@ -536,6 +539,7 @@ sub process_result{
 
   foreach my $row (@$result){
     ## fix old publication link. open link to new tab by default
+    $row->[5] ||= '';   # to silence perl warning when this is undefined
     if ($row->[5] =~ /href/ && $row->[5] !~ /blank/){
       $row->[5] =~ s/(href\s?=\s?"[^"]+")>/$1 target="_blank">/g;
     }
@@ -848,6 +852,8 @@ sub showDataset {
 	  $result->{$key} = $PXPartner unless ($result->{$key});
         }
 
+	$result->{$key} ||= ';'  # to silence perl warning when this is undefined
+
         if ($key eq 'announcementXML') {
           my $fullIdentifier = $baseIdentifier;
 	  if ( defined($selectedReanalysisNumber) && $selectedReanalysisNumber gt "" ) { $fullIdentifier .= ".$selectedReanalysisNumber"; }
@@ -898,6 +904,7 @@ sub showDataset {
 
 
       #### Display the dataset history
+      $selectedReanalysisNumber ||= 0;    # to silence perl warning when this is undefined
       if ( $selectedReanalysisNumber == 0 ) {
 	$str .= showDatasetHistory(dataset_id => $datasetID, test => $test, selectedReanalysisNumber => $selectedReanalysisNumber, selectedRevisionNumber => $selectedRevisionNumber );
       } else {
@@ -920,6 +927,7 @@ sub showDataset {
 	      }
 	      foreach my $name (keys %{$result->{contactList}{$id}}){
 		next if($name eq 'contact name');
+		$result->{contactList}{$id}{$name} ||= '';  # to silence perl warning when this is undefined
 		$str .= qq~<tr><td>$name</td><td>$result->{contactList}{$id}{$name}</td></tr>~;
 	      }
 	    }
@@ -1077,18 +1085,21 @@ sub showDataset {
       ~;
 #    }
 
+    #### Removed display of the tweet here. It wasn't working correctly anyway. Would be good to revive for testing.
+    #### LM: need to pass actual values for datasetTitle, datasetSubmitter, datasetLabHead, datasetSpeciesString, etc
+
     #### Show what the tweet message would be
-    use ProteomeXchange::Tweet;
-    my $tweet = new ProteomeXchange::Tweet;
-    $tweet->prepareTweetContent(
-      datasetTitle => $datasetTitle,
-      PXPartner => $PXPartner,
-      datasetIdentifier => $title,
-      datasetSubmitter  => $datasetSubmitter,
-      datasetLabHead => $datasetLabHead,
-      datasetSpeciesString => $datasetSpeciesString,
-      datasetStatus => 'new',
-	);
+    #use ProteomeXchange::Tweet;
+    #my $tweet = new ProteomeXchange::Tweet;
+    #$tweet->prepareTweetContent(
+    #  datasetTitle => $datasetTitle,
+    #  PXPartner => $PXPartner,
+    #  datasetIdentifier => $title,
+    #  datasetSubmitter  => $datasetSubmitter,
+    #  datasetLabHead => $datasetLabHead,
+    #  datasetSpeciesString => $datasetSpeciesString,
+    #  datasetStatus => 'new',
+    #  );
 
     #### Removed display of the tweet here. It wasn't working correctly anyway. Would be good to revive for testing.
     #print "<BR><BR>".$tweet->getTweetAsHTML()."<BR><BR>";
