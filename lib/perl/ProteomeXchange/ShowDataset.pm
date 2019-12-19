@@ -805,8 +805,9 @@ sub showDataset {
       $title = $datasetIdentifier;
       #$str .= "==$datasetIdentifier,$selectedReanalysisNumber,$selectedRevisionNumber==\n";
 
+      my $fullpath = $announcementXML ? "$path/$announcementXML" : "$path/";
       my $parser = new ProteomeXchange::DatasetParser;
-      $parser->parse('announcementXML' => $announcementXML, 'response' => $response, filename=> "$path/$announcementXML" );
+      $parser->parse('announcementXML' => $announcementXML, 'response' => $response, filename=> $fullpath );
       my $result = $response->{dataset};
 
       my $header;
@@ -875,7 +876,7 @@ sub showDataset {
            }
 
 	#### Display the dataset Origin information
-        } elsif ( $key eq 'DatasetOriginList' && defined($result->{$key}) ) {
+        } elsif ( $key eq 'DatasetOriginList' && defined($result->{$key}) && $result->{$key} ne '' ) {
 	  foreach my $origin ( @{$result->{$key}} ) {
 	    if ( exists($origin->{derived}) ) {
 	      my $originalIdentifier = $origin->{identifier} || '??';
