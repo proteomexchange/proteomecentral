@@ -503,7 +503,7 @@ sub printPageFooter {
 
 
 #####################################################################
-# processresult
+# process_result
 #####################################################################
 sub process_result{
   my %args = @_;
@@ -548,6 +548,7 @@ sub process_result{
       my $matches = 0;
       if ( $searchType !~ /^advsearch/ ){
         foreach my $q (@query_terms){
+	  no warnings qw(uninitialized);  # silence yet more warnings...
           my $match  = grep (/$q/i, @$row);
           ## search xml file also
           if ( $match eq ''){
