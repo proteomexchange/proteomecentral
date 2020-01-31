@@ -1,10 +1,8 @@
 #!/net/dblocal/src/python/python3/bin/python3
 
 #### Define eprint() to print to stderr
-from __future__ import print_function
 import sys
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 #### Import some standard libraries
 import os
@@ -13,6 +11,7 @@ import os.path
 import re
 import json
 import copy
+import requests
 
 
 #### Main execution function
@@ -22,6 +21,7 @@ def main():
     argparser = argparse.ArgumentParser(description='Reads one spectrum from a file and prints to stdout')
     argparser.add_argument('--output_format', action='store', default='json', help="Format use when writing the spectrum (one of 'tsv', 'json')")
     argparser.add_argument('--annotation_id', action='store', help="Integer id of the annotation document to overlay on latest definitions")
+    argparser.add_argument('--dataset_id', action='store', help="Identifier of a dataset to pre-load information from. e.g. PXD001207")
     params = argparser.parse_args()
     response = { 'state': 'OK', 'status': 200, 'title': 'OK', 'detail': 'Function completed normally' }
     mode = 'CLI'
@@ -50,6 +50,8 @@ def main():
             if key == "output_format":
                 params.output_format = value
             elif key == "annotation_id":
+                params.annotation_id = value
+            elif key == "dataset_id":
                 params.annotation_id = value
             else:
                 response = { 'state': 'ERROR', 'status': 460, 'title': 'Unrecognized Parameter', 'detail': f"Unrecognized parameter: {keyvaluepair}" }
@@ -248,12 +250,87 @@ def main():
                 else:
                     eprint(f"WARNING: Skipping section {section}")
 
+
+    #### If there is a dataset_id, then fetch information about it and insert into the data structure
+    if params.dataset_id is not None:
+        eprint(f"INFO: dataset_id={params.dataset_id}")
+        match = re.match("PXD\d\d\d\d\d\d$",params.dataset_id)
+        if not match:
+            response = { 'state': 'ERROR', 'status': 460, 'title': 'Malformed dataset identifier', 'detail': f"ERROR: Dataset identifier '{params.dataset_id}' is malformed. Must be PXDnnnnnn." }
+            send_response(response, output_format=params.output_format, mode=mode)
+            return
+
+        url_str = f"http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID={params.dataset_id}&outputMode=json"
+        response_content = requests.get(url_str, headers={'accept': 'application/json'})
+
+        #### Examine response
+        status_code = response_content.status_code
+        if status_code != 200:
+            response = { 'state': 'ERROR', 'status': 460, 'title': 'Unable to get dataset info', 'detail': f"ERROR: Unable to fetch information for dataset '{params.dataset_id}'. Not a publicly released dataset?" }
+            send_response(response, output_format=params.output_format, mode=mode)
+            return
+
+        #### Unpack the response content into a dict
+        pxd = response_content.json()
+        #print(json.dumps(pxd, indent=4, sort_keys=True))
+
+        #### Try to extract lab head information from the JSON
+        if 'contacts' in pxd:
+            contact_name = ''
+            contact_email = ''
+            is_correct_contact = False
+            for contact in pxd['contacts']:
+                if 'terms' in contact:
+                    for term in contact['terms']:
+                        if term['name'] == 'contact name':
+                            contact_name = term['value']
+                        if term['name'] == 'contact email':
+                            contact_email = term['value']
+                        if term['name'] == 'lab head':
+                            is_correct_contact = True
+                    if is_correct_contact:
+                        break
+            if is_correct_contact:
+                definitions['section_definitions']['study metadata']['row attributes']['lab head name']['value'] = contact_name
+                definitions['section_definitions']['study metadata']['row attributes']['lab head email address']['value'] = contact_email
+
+        #### Try to extract publication information from the JSON
+        if 'publications' in pxd:
+            for publication in pxd['publications']:
+                if 'terms' in contact:
+                    for term in publication['terms']:
+                        if term['name'] == 'PubMed identifier':
+                           definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = term['value']
+
+        #### Try to extract MS Runs information from the JSON
+        if 'datasetFiles' in pxd:
+            #### Loop over all the datasetFiles to find the MS Runs
+            definitions['msruns'] = []
+            for dataset_file in pxd['datasetFiles']:
+                if dataset_file['name'] == 'Associated raw file URI':
+                    uri = dataset_file['value']
+                    match = re.match("(.+)/(.+)?$",uri)
+                    if match:
+                        filename = match.group(2)
+                        #print(f"-{filename}")
+                        match = re.match("(.+)\.(.+)?$",filename)
+                        if match:
+                            fileroot = match.group(1)
+                            #print(f"--{fileroot}")
+                            definitions['msruns'].append( { 'name': fileroot } )
+            definitions['msruns'].sort(key=by_rootname)
+
+
     response = { 'state': 'OK' }
     send_response(response, output_format=params.output_format, mode=mode)
     print(json.dumps(definitions,sort_keys=True,indent=2))
 
 
 ############################################################################
+def by_rootname(val):
+    return val['name']
+
+
 #### Write out the current status in the correct format
 def send_response(response, output_format="text", mode='CLI'):
 
