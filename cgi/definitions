@@ -1,0 +1,293 @@
+#!/net/dblocal/src/python/python3/bin/python3
+
+#### Define eprint() to print to stderr
+from __future__ import print_function
+import sys
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+#### Import some standard libraries
+import os
+import argparse
+import os.path
+import re
+import json
+import copy
+
+
+#### Main execution function
+def main():
+
+    #### Parse command-line arguments
+    argparser = argparse.ArgumentParser(description='Reads one spectrum from a file and prints to stdout')
+    argparser.add_argument('--output_format', action='store', default='json', help="Format use when writing the spectrum (one of 'tsv', 'json')")
+    argparser.add_argument('--annotation_id', action='store', help="Integer id of the annotation document to overlay on latest definitions")
+    params = argparser.parse_args()
+    response = { 'state': 'OK', 'status': 200, 'title': 'OK', 'detail': 'Function completed normally' }
+    mode = 'CLI'
+
+    #### CGI debugging stuff
+    #print("Content-type: text/plain\n")
+    #print(os.environ)
+    #print(f"INFO: QUERY_STRING: {os.environ['QUERY_STRING']}")
+
+    #### If we got here through CGI
+    if "REQUEST_URI" in os.environ:
+        mode = 'HTTP'
+
+        #### Set the output_format to json if the HTTP_REQUEST_TYPE was set to json
+        if "HTTP_REQUEST_TYPE" in os.environ and os.environ["HTTP_REQUEST_TYPE"] == "application/json":
+            params.output_format = 'json'
+
+
+    #### If there is a query string
+    if "QUERY_STRING" in os.environ and os.environ["QUERY_STRING"] > "":
+
+        #### Parse out the CGI parameters and put in place of command-line arguments
+        keyvaluepairs = re.split("&", os.environ["QUERY_STRING"])
+        for keyvaluepair in keyvaluepairs:
+            key, value = re.split("=", keyvaluepair, 1)
+            if key == "output_format":
+                params.output_format = value
+            elif key == "annotation_id":
+                params.annotation_id = value
+            else:
+                response = { 'state': 'ERROR', 'status': 460, 'title': 'Unrecognized Parameter', 'detail': f"Unrecognized parameter: {keyvaluepair}" }
+                send_response(response, output_format=params.output_format, mode=mode)
+                return()
+
+    definitions = { "sections": [ "header", "study metadata", "condition metadata", "MS run metadata" ],
+        "section_definitions": {
+            "header": { "data rows": [ "annotator name", "annotator note" ], "is clonable": "false", "is required": "true",
+               "row attributes": {
+                   "annotator name": { "is required": "true", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                       "description": "Name of the annotator responsible for annotating this study" },
+                   "annotator note": { "is required": "false", "data type": "textarea", "n lines": 3, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+                                       "description": "Free text notes about the curation process of this paper. For example, what global problems where encountered, etc." } } },
+            "study metadata": { "data rows": [ "dataset id", "publication", "lab head name", "lab head email address", "acquisition type", "PTMs searched",
+                                               "artifacts searched", "labeling modifications", "n conditions", "n assays", "n proteins claimed", "protein-level FDR",
+                                               "study variables", "metadata completeness level" ], "is clonable": "false", "is required": "true",
+                   "row attributes": {
+                       "dataset id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+                                       "description": "Identifier of the datasets being annotated. A PXD identifier is preferred." },
+                       "publication": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+                                       "description": "Pubmed ID of paper describing the dataset. Typically, there is only one." },
+                       "lab head name": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                       "description": "Name of the lab head overseeing the production and publication of the dataset" },
+                       "lab head email address": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                       "description": "Email address of the lab head overseeing the production and publication of the dataset" },
+                       "acquisition type": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                             "description": "Mode of mass spectrometry acquisition such as DDA, DIA, SRM, PMF, PASEF, diaPASEF, etc." },
+                       "PTMs searched": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                          "description": "True biological post-translational modifications assessed by the submitters (e.g. phospho)" },
+                       "artifacts searched": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                               "description": "Sample artifactual mass modifications assessed by the submitters (e.g. C carbamidomethyl; M oxidation)" },
+                       "labeling modifications": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                                   "description": "Type(s) of labeling applied for the purposes of quantification (e.g., SILAC, TMT8, iTRAQ4plex, 13C, etc)" },
+                       "n conditions": { "is required": "true", "data type": "integer", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                         "description": "Number of biological conditions tested (ignoring replicates)" },
+                       "n assays": { "is required": "true", "data type": "integer", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                     "description": "Number of total assays performed as number of conditions times replicates" },
+                       "n proteins claimed": { "is required": "false", "data type": "integer", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                               "description": "Total number of proteins claimed detected unioned over all assays" },
+                       "protein-level FDR": { "is required": "false", "data type": "float", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                              "description": "Protein-level false discovery rate (as a decimal fraction such as 0.01 to mean 1%) claimed with the number of proteins detected" },
+                       "study variables": { "is required": "true", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                            "description": "Experiment variables distinguishing the conditions" },
+                       "metadata completeness level": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
+                                                        "description": "Five-tier classification of the quality of the annotation summary as judged by the annotator" },
+                    } },
+            "condition metadata": { "data rows": [ "condition id", "condition tag", "condition title", "subject id", "subject title", "species", "strain", "genotype", "age", "sex",
+                                                   "growth medium", "organism part", "tissue type", "cell type", "subcellular component", "disease", "drug name",
+                                                   "treatment", "treatment duration", "time since reference", "other condition factor", "other condition factor value"], "is clonable": "true", "is required": "true",
+	        "row attributes": {
+		    "condition id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Internal identifier for this annotation sheet of this condition" },
+		    "condition tag": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Terse tag for this condition for display where space is very limited. Each condition must have a distinctive tag" },
+		    "condition title": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Full title for this condition for display where space is not limited. Try to capture what is *different* about all the conditions here." },
+		    "subject id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Internal identifier for the subject that is the source of this condition" },
+		    "subject title": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Title for the subject that is the source of this condition" },
+		    "species": { "is required": "true", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Full species name of the subject. Use a comma separated list of multiple known species are present" },
+		    "strain": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Name or abbreviation of the strain, ecotype, cultivar, race of the subject (e.g., col-0)" },
+		    "genotype": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Genotype name or designation if known or important" },
+		    "age": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		        "description": "Age of the subject including time unit (e.g., 5 days, 10 weeks, 32 years)" },
+		    "developmental stage": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Developmental stage of the organism" },
+		    "sex": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Biological sex of the subject (e.g., male, female, etc.)" },
+		    "growth medium": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
+		        "description": "Medium in which the subject was grown (e.g. for plants either soil, agar plate with 1/2 MS, agar plate with 1/2 MS plus sucrose, liquid culture, etc.)" },
+		    "organism part": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "High level part of the organism (e.g., leaf, root, stem, flower, seed, cotyledon)" },
+		    "tissue type": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Lower level of tissue or fluid (e.g., epidermis, stomata, endodermis, xylem, xylem sap, phloem sap)" },
+		    "cell type": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Type of cells if specific (e.g. parenchyma cells, xylem cells, phloem cells)" },
+		    "subcellular component": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Subcellular compartment  or subcellular fraction (organelle – such as chloroplast, nucleus, ER; or cytoplasm, microsomal fraction)" },
+		    "disease": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Disease afflicting the subject" },
+		    "drug name": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Name of a drug used to treat the subject" },
+		    "treatment": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Free-text statement of the treatment applied to the subject" },
+		    "treatment duration": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "true",
+		        "description": "Duration of the listed treatment" },
+		    "time since reference": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "true",
+		        "description": "Time elapsed since a reference including time unit, mostly applicable to time course studies (e.g., 30 min, 8 hr)" },
+		    "other condition factor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Other important biological factor of the subjects in the experiment that is not captured above (e.g. height" },
+		    "other condition factor value": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Value associated with the other important biological factor of the subjects in the experiment that is not captured above (e.g. 23 cm" }
+                    } },
+
+            "MS run metadata": { "data rows": [ "MS run ordinal", "MS run name", "MS run type", "channel ids", "assay ids", "assay tags", "condition ids", "biological replicate counters",
+                                                   "technical replicate counters", "fractionation ordinal", "fractionation label" ], "is clonable": "true", "is required": "false",
+	        "row attributes": {
+		    "MS run ordinal": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Ordinal for the order of this MS run for batch effect analysis (e.g. for 24 fractions, number each file 1, 2, 3, etc.) Or this may be a datetime stamp extracted from the MS Run files" },
+		    "MS run name": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Base name of the MS run. This is typically the name before the .RAW, .wiff, .d/, .mzML, etc." },
+		    "MS run type": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
+		        "description": "Type of run (assay, blank, calibration, synthetic peptide reference)" },
+		    "channel ids": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of the channels if assays are multiplexed. Use NA for label-free data" },
+		    "assay ids": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of numerical assay ids corresponding to each channel" },
+		    "assay tags": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of terse tags for each assay corresponding to each channel. Just a single value for label-free" },
+		    "condition ids": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of condition ids (from the condition sections above) corresponding to each channel. Just a single id for label-free." },
+		    "biological replicate counters": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of ordinals of biological replicates within each condition. Just a single value for label-free. Use none if none." },
+		    "technical replicate counters": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of ordinals of technical replicates within each biological replicate. Just a single value for label-free. Use none if none." },
+		    "fractionation ordinal": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Ordinal for the order of the fractionation for the samples for batch effect analysis (e.g. for 24 fractions, number each file 1, 2, 3, etc.). Best to leave as 'unknown' if it is not known. Don't make it up." },
+		    "fractionation label": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Free-text label for each fraction for gel bands, or offgel fractionation, or SCX fractionation. Labels are not required, but may be generated by the data producer. Best to leave as 'unknown' if it is not known." }
+                    } }
+        }
+    }
+
+
+    #### If there is an annotations_id, then read that data and insert it
+    if params.annotation_id is not None:
+        eprint(f"INFO: annotation_id={params.annotation_id}")
+        filename = f"/net/dblocal/wwwspecial/proteomecentral/devED/lib/proxi/metadata_autocomplete/annotation_data/{params.annotation_id}.json"
+        if not os.path.exists(filename):
+            response = { 'state': 'ERROR', 'status': 460, 'title': 'Annotation not found', 'detail': f"ERROR: There is no stored content for id={id}" }
+            send_response(response, output_format=params.output_format, mode=mode)
+            return
+
+        #### Open and load the file
+        with open(filename) as infile:
+            data = json.load(infile)
+
+            #### Make a deep copy of the blank definitions as a template for extra sections
+            reference_definitions = copy.deepcopy(definitions)
+
+            #### Loop over each field in the loaded annotations file and insert it into the definitions
+            for field_key,field in data.items():
+                section = field["section"]
+                name = field["name"]
+
+                #### If the name section does not exist, it is like a copied section. Deal with that here: CS1
+                if section not in definitions['section_definitions']:
+                    #### The pattern is {referencesection___nnn}
+                    match = re.match("(.+?)___(.+)$",section)
+                    if match:
+                        reference_section_name = match.group(1)
+                        eprint(f"reference_section_name={reference_section_name}")
+                        #### Make a duplicate of the section type from the reference and add it
+                        new_section = copy.deepcopy(reference_definitions['section_definitions'][reference_section_name])
+                        definitions['section_definitions'][section] = new_section
+
+                        #### Now need to insert that new section name into the list
+                        #### This complex bit iterates through the to look for the last section that is like this one
+                        #### and then inser the new section after the last of its kind
+                        new_sections = []
+                        loop_state = 'before'
+                        for section_name in definitions['sections']:
+                            eprint(f"loop_state={loop_state}, section_name={section_name}")
+                            if loop_state == 'correct area':
+                                if section_name[0:(len(reference_section_name)-1)] != reference_section_name:
+                                    eprint(f"INFO: Inserting new section {section}")
+                                    new_sections.append(section)
+                                    loop_state = 'after'
+                            if loop_state == 'before':
+                                if section_name == reference_section_name:
+                                    loop_state = 'correct area'
+                            new_sections.append(section_name)
+                        definitions['sections'] = new_sections
+
+                    else:
+                        eprint(f"ERROR: Unable to parse section id {section}")
+
+                #### Now find the place in the definitions where to place this field
+                if section in definitions['section_definitions']:
+                    if name in definitions['section_definitions'][section]['row attributes']:
+                        row = definitions['section_definitions'][section]['row attributes'][name]
+                        row['value'] = field['value']
+                        row['comment'] = field['comment']
+                        row['cv'] = field['cv']
+
+                    #### This may happen if a row is duplicated. FIXME
+                    else:
+                        eprint(f"WARNING: Skipping section {section} with name {name}")
+
+                #### This should not happen unless we were not able to add a section in the above in CS1
+                else:
+                    eprint(f"WARNING: Skipping section {section}")
+
+    response = { 'state': 'OK' }
+    send_response(response, output_format=params.output_format, mode=mode)
+    print(json.dumps(definitions,sort_keys=True,indent=2))
+
+
+############################################################################
+#### Write out the current status in the correct format
+def send_response(response, output_format="text", mode='CLI'):
+
+    if mode == 'HTTP':
+        if response['state'] == 'OK':
+            pass
+        else:
+            print("Status: " + str(response['status']))
+
+        #### Start the HTTP output
+        if output_format == 'json':
+           print("Content-type: application/json\n")
+        else:
+           print("Content-type: text/plain\n")
+
+        #### If this is an error, show the error information
+        if response['state'] != 'OK':
+            if output_format == 'json':
+                response['type'] = 'about:blank'
+                print(json.dumps(response,sort_keys=True,indent=2))
+            else:
+                for key in response:
+                    print(f"{key}: " + str(response[key]))
+
+    else:
+        if response['state'] == 'OK':
+            print("OK")
+        else:
+            if output_format == 'json':
+                print(json.dumps(response,sort_keys=True,indent=2))
+            else:
+                for key in response:
+                    print(f"{key}: " + str(response[key]))
+
+
+#### When executed directly, run the main() function
+if __name__ == "__main__": main()
