@@ -12,6 +12,7 @@ import re
 import json
 import copy
 import requests
+import datetime
 
 
 #### Main execution function
@@ -23,7 +24,8 @@ def main():
     argparser.add_argument('--annotation_id', action='store', help="Integer id of the annotation document to overlay on latest definitions")
     argparser.add_argument('--dataset_id', action='store', help="Identifier of a dataset to pre-load information from. e.g. PXD001207")
     params = argparser.parse_args()
-    response = { 'state': 'OK', 'status': 200, 'title': 'OK', 'detail': 'Function completed normally' }
+
+    response = { 'state': 'OK', 'status': 200, 'title': 'OK', 'detail': 'Function completed normally', 'log': [] }
     mode = 'CLI'
 
     #### CGI debugging stuff
@@ -54,10 +56,11 @@ def main():
             elif key == "dataset_id":
                 params.dataset_id = value
             else:
-                response = { 'state': 'ERROR', 'status': 460, 'title': 'Unrecognized Parameter', 'detail': f"Unrecognized parameter: {keyvaluepair}" }
+                add_message(response, level='ERROR', status=460, code='UnrecognizedParameter', message=f"Unrecognized parameter: {keyvaluepair}")
                 send_response(response, output_format=params.output_format, mode=mode)
                 return()
 
+    add_message(response, level='INFO', message="Setting up blank form definitions")
     definitions = { "sections": [ "header", "study metadata", "condition metadata", "MS run metadata" ],
         "section_definitions": {
             "header": { "data rows": [ "annotator name", "annotator note" ], "is clonable": "false", "is required": "true",
@@ -181,139 +184,154 @@ def main():
     }
 
 
+    data = None
+    dataset_id = params.dataset_id
+
     #### If there is an annotations_id, then read that data and insert it
     if params.annotation_id is not None:
-        eprint(f"INFO: annotation_id={params.annotation_id}")
+        add_message(response, level='INFO', message=f"Finding annotations for annotation_id={params.annotation_id}")
         filename = f"/net/dblocal/wwwspecial/proteomecentral/devED/lib/proxi/metadata_autocomplete/annotation_data/{params.annotation_id}.json"
         if not os.path.exists(filename):
-            response = { 'state': 'ERROR', 'status': 460, 'title': 'Annotation not found', 'detail': f"ERROR: There is no stored content for id={id}" }
+            add_message(response, level='ERROR', status=460, code='AnnotationNotFound', message=f"There is no stored content for annotation_id={params.annotation_id}")
             send_response(response, output_format=params.output_format, mode=mode)
             return
 
         #### Open and load the file
         with open(filename) as infile:
             data = json.load(infile)
-            global_counter = 100
 
-            #### Make a deep copy of the blank definitions as a template for extra sections
-            reference_definitions = copy.deepcopy(definitions)
+        #### Determine what the dataset_id is from the loaded data
+        for field_key,field in data.items():
+            if field["name"] == 'dataset id':
+                dataset_id = value
+                add_message(response, level='INFO', message=f"Loaded annotations and inside found dataset_id={dataset_id}")
+                break
 
-            #### Loop over each field in the loaded annotations file and insert it into the definitions
-            for field_key,field in data.items():
-                section = field["section"]
-                name = field["name"]
 
-                #### If the name section does not exist, it is like a copied section. Deal with that here: CS1
-                if section not in definitions['section_definitions']:
-                    #### The pattern is {referencesection___nnn}
-                    match = re.match("(.+?)___(.+)$",section)
-                    if match:
-                        reference_section_name = match.group(1)
-                        eprint(f"reference_section_name={reference_section_name}")
-                        #### Make a duplicate of the section type from the reference and add it
-                        new_section = copy.deepcopy(reference_definitions['section_definitions'][reference_section_name])
-                        definitions['section_definitions'][section] = new_section
+    #### If data has content, then integrate it
+    if data is not None:
+        global_counter = 100
+        add_message(response, level='INFO', message=f"Merging loaded annotations into template definitions")
 
-                        #### Now need to insert that new section name into the list
-                        #### This complex bit iterates through the sections to look for the last section that is like this one
-                        #### and then insert the new section after the last of its kind
-                        new_sections = []
+        #### Make a deep copy of the blank definitions as a template for extra sections
+        reference_definitions = copy.deepcopy(definitions)
+
+        #### Loop over each field in the loaded annotations file and insert it into the definitions
+        for field_key,field in data.items():
+            section = field["section"]
+            name = field["name"]
+
+            #### If the name section does not exist, it is like a copied section. Deal with that here: CS1
+            if section not in definitions['section_definitions']:
+                #### The pattern is {referencesection___nnn}
+                match = re.match("(.+?)___(.+)$",section)
+                if match:
+                    reference_section_name = match.group(1)
+                    eprint(f"reference_section_name={reference_section_name}")
+                    #### Make a duplicate of the section type from the reference and add it
+                    new_section = copy.deepcopy(reference_definitions['section_definitions'][reference_section_name])
+                    definitions['section_definitions'][section] = new_section
+
+                    #### Now need to insert that new section name into the list
+                    #### This complex bit iterates through the sections to look for the last section that is like this one
+                    #### and then insert the new section after the last of its kind
+                    new_sections = []
+                    loop_state = 'before'
+                    for section_name in definitions['sections']:
+                        eprint(f"loop_state={loop_state}, section_name={section_name}")
+                        if loop_state == 'correct area':
+                            if section_name[0:(len(reference_section_name)-1)] != reference_section_name:
+                                eprint(f"INFO: Inserting new section {section}")
+                                new_sections.append(section)
+                                loop_state = 'after'
+                        if loop_state == 'before':
+                            if section_name == reference_section_name:
+                                loop_state = 'correct area'
+                        new_sections.append(section_name)
+                    #### If it hasn't been placed, place it here
+                    if loop_state != 'after':
+                        eprint(f"INFO: Appending new section {section} at end")
+                        new_sections.append(section)
+                        loop_state = 'after'
+                    definitions['sections'] = new_sections
+
+                else:
+                    add_message(response, level='ERROR', status=461, code='UnparsableSectionName', message=f"Unable to parse section name {section}")
+
+            #### Now find the place in the definitions where to place this field
+            if section in definitions['section_definitions']:
+
+                #### The the row attribute is (now) there, then add the information
+                if name in definitions['section_definitions'][section]['row attributes']:
+                    row = definitions['section_definitions'][section]['row attributes'][name]
+
+                    #### Check to see if there is already information in this row. If so, we need to create another
+                    if 'value' in row or 'comment' in row:
+                        new_row_name = f"{name}___{global_counter}"
+                        global_counter += 1
+                        #### Get a new copy of the row to fill in below
+                        row = copy.deepcopy(reference_definitions['section_definitions'][section]['row attributes'][name])
+
+                        #### Now need to insert that new row name into the list
+                        #### This complex bit iterates through the rows to look for the last row that is like this one
+                        #### and then insert the new row after the last of its kind
+                        new_rows = []
                         loop_state = 'before'
-                        for section_name in definitions['sections']:
-                            eprint(f"loop_state={loop_state}, section_name={section_name}")
+                        for row_name in definitions['section_definitions'][section]['data rows']:
+                            eprint(f"loop_state={loop_state}, row_name={row_name}")
                             if loop_state == 'correct area':
-                                if section_name[0:(len(reference_section_name)-1)] != reference_section_name:
-                                    eprint(f"INFO: Inserting new section {section}")
-                                    new_sections.append(section)
+                                if row_name[0:(len(name)-1)] != name:
+                                    eprint(f"INFO: Inserting new row {new_row_name}")
+                                    new_rows.append(new_row_name)
                                     loop_state = 'after'
                             if loop_state == 'before':
-                                if section_name == reference_section_name:
+                                if row_name == name:
                                     loop_state = 'correct area'
-                            new_sections.append(section_name)
+                            new_rows.append(row_name)
                         #### If it hasn't been placed, place it here
                         if loop_state != 'after':
                             eprint(f"INFO: Appending new section {section} at end")
                             new_sections.append(section)
                             loop_state = 'after'
-                        definitions['sections'] = new_sections
+                        definitions['section_definitions'][section]['data rows'] = new_rows
+                        definitions['section_definitions'][section]['row attributes'][new_row_name] = row
 
-                    else:
-                        eprint(f"ERROR: Unable to parse section id {section}")
+                    #### Add the data
+                    row['value'] = field['value']
+                    row['comment'] = field['comment']
+                    row['cv'] = field['cv']
 
-                #### Now find the place in the definitions where to place this field
-                if section in definitions['section_definitions']:
-
-                    #### The the row attribute is (now) there, then add the information
-                    if name in definitions['section_definitions'][section]['row attributes']:
-                        row = definitions['section_definitions'][section]['row attributes'][name]
-
-                        #### Check to see if there is already information in this row. If so, we need to create another
-                        if 'value' in row or 'comment' in row:
-                            new_row_name = f"{name}___{global_counter}"
-                            global_counter += 1
-                            #### Get a new copy of the row to fill in below
-                            row = copy.deepcopy(reference_definitions['section_definitions'][section]['row attributes'][name])
-
-                            #### Now need to insert that new row name into the list
-                            #### This complex bit iterates through the rows to look for the last row that is like this one
-                            #### and then insert the new row after the last of its kind
-                            new_rows = []
-                            loop_state = 'before'
-                            for row_name in definitions['section_definitions'][section]['data rows']:
-                                eprint(f"loop_state={loop_state}, row_name={row_name}")
-                                if loop_state == 'correct area':
-                                    if row_name[0:(len(name)-1)] != name:
-                                        eprint(f"INFO: Inserting new row {new_row_name}")
-                                        new_rows.append(new_row_name)
-                                        loop_state = 'after'
-                                if loop_state == 'before':
-                                    if row_name == name:
-                                        loop_state = 'correct area'
-                                new_rows.append(row_name)
-                            #### If it hasn't been placed, place it here
-                            if loop_state != 'after':
-                                eprint(f"INFO: Appending new section {section} at end")
-                                new_sections.append(section)
-                                loop_state = 'after'
-                            definitions['section_definitions'][section]['data rows'] = new_rows
-                            definitions['section_definitions'][section]['row attributes'][new_row_name] = row
-
-                        #### Add the data
-                        row['value'] = field['value']
-                        row['comment'] = field['comment']
-                        row['cv'] = field['cv']
-
-                    #### This should not happen
-                    else:
-                        eprint(f"WARNING: Skipping section {section} with name {name}")
-
-                #### This should not happen unless we were not able to add a section in the above in CS1
+                #### This should not happen
                 else:
-                    eprint(f"WARNING: Skipping section {section}")
+                    add_message(response, level='ERROR', status=462, code='UnparsableAttributeName', message=f"Unable to parse name '{name}' in section '{section}'")
+
+            #### This should not happen unless we were not able to add a section in the above in CS1
+            else:
+                add_message(response, level='ERROR', status=463, code='NonExistantSection', message=f"Unable to find section name {section} in the template definitions")
 
 
     #### If there is a dataset_id, then fetch information about it and insert into the data structure
-    if params.dataset_id is not None:
-        eprint(f"INFO: dataset_id={params.dataset_id}")
-        match = re.match("PXD\d\d\d\d\d\d$",params.dataset_id)
+    if dataset_id is not None:
+        add_message(response, level='INFO', message=f"Fetching data from ProteomeCentral for dataset_id={dataset_id}")
+        match = re.match("PXD\d\d\d\d\d\d$",dataset_id)
         if not match:
-            response = { 'state': 'ERROR', 'status': 460, 'title': 'Malformed dataset identifier', 'detail': f"ERROR: Dataset identifier '{params.dataset_id}' is malformed. Must be PXDnnnnnn." }
+            add_message(response, level='ERROR', status=464, code='UnsupportededDatasetIdentifier', message=f"Dataset identifier '{dataset_id}' is unsupported. Must be PXDnnnnnn.")
             send_response(response, output_format=params.output_format, mode=mode)
             return
 
-        url_str = f"http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID={params.dataset_id}&outputMode=json"
+        url_str = f"http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID={dataset_id}&outputMode=json"
         response_content = requests.get(url_str, headers={'accept': 'application/json'})
 
         #### Examine response
         status_code = response_content.status_code
         if status_code != 200:
-            response = { 'state': 'ERROR', 'status': 460, 'title': 'Unable to get dataset info', 'detail': f"ERROR: Unable to fetch information for dataset '{params.dataset_id}'. Not a publicly released dataset?" }
+            add_message(response, level='ERROR', status=465, code='UnableToFetchDatasetInfo', message=f"Unable to fetch information for dataset '{dataset_id}'. Not a publicly released dataset?")
             send_response(response, output_format=params.output_format, mode=mode)
             return
 
         #### Unpack the response content into a dict
         pxd = response_content.json()
-        #print(json.dumps(pxd, indent=4, sort_keys=True))
+        #eprint(json.dumps(pxd, indent=4, sort_keys=True))
 
         #### Try to extract lab head information from the JSON
         if 'contacts' in pxd:
@@ -334,6 +352,9 @@ def main():
             if is_correct_contact:
                 definitions['section_definitions']['study metadata']['row attributes']['lab head name']['value'] = contact_name
                 definitions['section_definitions']['study metadata']['row attributes']['lab head email address']['value'] = contact_email
+                add_message(response, level='INFO', message=f"Updated lab head name to '{contact_name}'")
+                add_message(response, level='INFO', message=f"Updated lab head email address to '{contact_email}'")
+
 
         #### Try to extract publication information from the JSON
         if 'publications' in pxd:
@@ -341,7 +362,17 @@ def main():
                 if 'terms' in contact:
                     for term in publication['terms']:
                         if term['name'] == 'PubMed identifier':
-                           definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = term['value']
+                            if 'value' not in definitions['section_definitions']['study metadata']['row attributes']['publication']:
+                                definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = None
+                            if definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] is None:
+                                definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = term['value']
+                                add_message(response, level='INFO', message=f"Setting publication to '{term['value']}' from ProteomeCentral")
+                            else:
+                                if definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] == term['value']:
+                                    add_message(response, level='INFO', message=f"Previous value '{term['value']}' matches value pulled from ProteomeCentral")
+                                else:
+                                    add_message(response, level='INFO', message=f"Updated publication to from previous value '{definitions['section_definitions']['study metadata']['row attributes']['publication']['value']}' to ProteomeCentral value '{term['value']}'")
+                                    definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = term['value']
 
         #### Try to extract MS Runs information from the JSON
         if 'datasetFiles' in pxd:
@@ -360,10 +391,14 @@ def main():
                             #print(f"--{fileroot}")
                             definitions['msruns'].append( { 'name': fileroot } )
             definitions['msruns'].sort(key=by_rootname)
+            add_message(response, level='INFO', message=f"Added {len(definitions['msruns'])} MS run names for annotation")
 
 
-    response = { 'state': 'OK' }
+    add_message(response, level='INFO', message=f"Processing complete")
     send_response(response, output_format=params.output_format, mode=mode)
+
+    for key in [ 'state', 'status', 'title', 'detail', 'log' ]:
+        definitions[key] = response[key]
     print(json.dumps(definitions,sort_keys=True,indent=2))
 
 
@@ -372,7 +407,56 @@ def by_rootname(val):
     return val['name']
 
 
-#### Write out the current status in the correct format
+#### Add a message to the response
+def add_message(response, level=None, state=None, status=None, code=None, message=''):
+
+    state = None
+    timestamp = datetime.datetime.now()
+    #time.strftime('%Y-%m-%d %H:%M:%S', time.now())
+
+    if level == None:
+        level = 'ERROR'
+        state = 'ERROR'
+        status = 469
+        error_code = 'AddMessageMissingLevel'
+        message = 'Internal error: during error handling, level was None'
+
+    if level == 'DEBUG':
+        message_dict = { 'level': level, 'message': message, 'prefix': f"{timestamp} [{level}]: " }
+        response['log'].append(message_dict)
+
+    elif level == 'INFO':
+        message_dict = { 'level': level, 'message': message, 'prefix': f"{timestamp} [{level}]: " }
+        response['log'].append(message_dict)
+
+    elif level == 'WARNING':
+        if code is None: code = 'WARNING'
+        message_dict = { 'level': level, 'code': code, 'message': message, 'prefix': f"{timestamp} [{level}]: " }
+        response['log'].append(message_dict)
+
+    elif level == 'ERROR':
+        pass
+
+    else:
+        level = 'ERROR'
+        state = 'ERROR'
+        status = 469
+        error_code = 'AddMessageUnrecognizedLevel'
+        message = f"Internal error: during error handling, level '{level}' was not recognized"
+
+    if level == 'ERROR':
+        if code is None: code = 'ERROR'
+        if status is None: status = 469
+        message_dict = { 'level': level, 'code': code, 'message': message, 'prefix': f"{timestamp} [{level}]: " }
+        response['log'].append(message_dict)
+        response['state'] = level
+        response['status'] = status
+        response['title'] = code
+        response['detail'] = message
+
+
+
+#### Write our the current status in the correct format
 def send_response(response, output_format="text", mode='CLI'):
 
     if mode == 'HTTP':
