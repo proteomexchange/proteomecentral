@@ -203,7 +203,7 @@ def main():
         #### Determine what the dataset_id is from the loaded data
         for field_key,field in data.items():
             if field["name"] == 'dataset id':
-                dataset_id = value
+                dataset_id = field['value']
                 add_message(response, level='INFO', message=f"Loaded annotations and inside found dataset_id={dataset_id}")
                 break
 
@@ -227,7 +227,7 @@ def main():
                 match = re.match("(.+?)___(.+)$",section)
                 if match:
                     reference_section_name = match.group(1)
-                    eprint(f"reference_section_name={reference_section_name}")
+                    #eprint(f"reference_section_name={reference_section_name}")
                     #### Make a duplicate of the section type from the reference and add it
                     new_section = copy.deepcopy(reference_definitions['section_definitions'][reference_section_name])
                     definitions['section_definitions'][section] = new_section
@@ -238,10 +238,10 @@ def main():
                     new_sections = []
                     loop_state = 'before'
                     for section_name in definitions['sections']:
-                        eprint(f"loop_state={loop_state}, section_name={section_name}")
+                        #eprint(f"loop_state={loop_state}, section_name={section_name}")
                         if loop_state == 'correct area':
                             if section_name[0:(len(reference_section_name)-1)] != reference_section_name:
-                                eprint(f"INFO: Inserting new section {section}")
+                                #eprint(f"INFO: Inserting new section {section}")
                                 new_sections.append(section)
                                 loop_state = 'after'
                         if loop_state == 'before':
@@ -250,7 +250,7 @@ def main():
                         new_sections.append(section_name)
                     #### If it hasn't been placed, place it here
                     if loop_state != 'after':
-                        eprint(f"INFO: Appending new section {section} at end")
+                        #eprint(f"INFO: Appending new section {section} at end")
                         new_sections.append(section)
                         loop_state = 'after'
                     definitions['sections'] = new_sections
@@ -278,10 +278,10 @@ def main():
                         new_rows = []
                         loop_state = 'before'
                         for row_name in definitions['section_definitions'][section]['data rows']:
-                            eprint(f"loop_state={loop_state}, row_name={row_name}")
+                            #eprint(f"loop_state={loop_state}, row_name={row_name}")
                             if loop_state == 'correct area':
                                 if row_name[0:(len(name)-1)] != name:
-                                    eprint(f"INFO: Inserting new row {new_row_name}")
+                                    #eprint(f"INFO: Inserting new row {new_row_name}")
                                     new_rows.append(new_row_name)
                                     loop_state = 'after'
                             if loop_state == 'before':
@@ -290,7 +290,7 @@ def main():
                             new_rows.append(row_name)
                         #### If it hasn't been placed, place it here
                         if loop_state != 'after':
-                            eprint(f"INFO: Appending new section {section} at end")
+                            #eprint(f"INFO: Appending new section {section} at end")
                             new_sections.append(section)
                             loop_state = 'after'
                         definitions['section_definitions'][section]['data rows'] = new_rows
@@ -369,7 +369,7 @@ def main():
                                 add_message(response, level='INFO', message=f"Setting publication to '{term['value']}' from ProteomeCentral")
                             else:
                                 if definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] == term['value']:
-                                    add_message(response, level='INFO', message=f"Previous value '{term['value']}' matches value pulled from ProteomeCentral")
+                                    add_message(response, level='INFO', message=f"Previous publication value '{term['value']}' matches value pulled from ProteomeCentral")
                                 else:
                                     add_message(response, level='INFO', message=f"Updated publication to from previous value '{definitions['section_definitions']['study metadata']['row attributes']['publication']['value']}' to ProteomeCentral value '{term['value']}'")
                                     definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = term['value']
