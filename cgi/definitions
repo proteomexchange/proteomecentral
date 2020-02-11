@@ -262,6 +262,9 @@ def main():
             if section in definitions['section_definitions']:
 
                 #### The the row attribute is (now) there, then add the information
+                match = re.match("(.+?)___(.+)$",name)
+                if match:
+                    name = match.group(1)
                 if name in definitions['section_definitions'][section]['row attributes']:
                     row = definitions['section_definitions'][section]['row attributes'][name]
 
@@ -325,13 +328,17 @@ def main():
         #### Examine response
         status_code = response_content.status_code
         if status_code != 200:
-            add_message(response, level='ERROR', status=465, code='UnableToFetchDatasetInfo', message=f"Unable to fetch information for dataset '{dataset_id}'. Not a publicly released dataset?")
-            send_response(response, output_format=params.output_format, mode=mode)
-            return
+            add_message(response, level='WARNING', message=f"Unable to fetch information for dataset '{dataset_id}'. Not a publicly released dataset?")
+            #send_response(response, output_format=params.output_format, mode=mode)
+            #return
+            pxd = {}
+            #response['state'] = 'OK'
+
 
         #### Unpack the response content into a dict
-        pxd = response_content.json()
-        #eprint(json.dumps(pxd, indent=4, sort_keys=True))
+        else:
+            pxd = response_content.json()
+            #eprint(json.dumps(pxd, indent=4, sort_keys=True))
 
         #### Try to extract lab head information from the JSON
         if 'contacts' in pxd:
