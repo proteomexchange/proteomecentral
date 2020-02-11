@@ -69,18 +69,28 @@ def main():
                                        "description": "Name of the annotator responsible for annotating this study" },
                    "annotator note": { "is required": "false", "data type": "textarea", "n lines": 3, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
                                        "description": "Free text notes about the curation process of this paper. For example, what global problems where encountered, etc." } } },
-            "study metadata": { "data rows": [ "dataset id", "publication", "lab head name", "lab head email address", "acquisition type", "PTMs searched",
+
+            "study metadata": { "data rows": [ "dataset id", "dataset title", "publication", "lab head name", "lab head email address", "lab head affiliation", 
+                                               "lab head country", "contributor", "acquisition type", "PTMs searched",
                                                "artifacts searched", "labeling modifications", "n conditions", "n assays", "n proteins claimed", "protein-level FDR",
-                                               "study variables", "metadata completeness level" ], "is clonable": "false", "is required": "true",
+                                               "study variables", "dataset description", "metadata completeness level" ], "is clonable": "false", "is required": "true",
                    "row attributes": {
                        "dataset id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
                                        "description": "Identifier of the datasets being annotated. A PXD identifier is preferred." },
+                       "dataset title": { "is required": "true", "data type": "textarea", "n lines": 3, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                       "description": "Title that describes the dataset succintly. Can be the journal article title if appropriate as a dataset title, too" },
                        "publication": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
                                        "description": "Pubmed ID of paper describing the dataset. Typically, there is only one." },
                        "lab head name": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
                                        "description": "Name of the lab head overseeing the production and publication of the dataset" },
                        "lab head email address": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
                                        "description": "Email address of the lab head overseeing the production and publication of the dataset" },
+                       "lab head affiliation": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                       "description": "Name of the organization/institution of the lab head (e.g. Institute for Systems Biology)" },
+                       "lab head country": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                       "description": "Name of the country for the lab head (used for ProteomeXchange statistics)" },
+                       "contributor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+                                       "description": "Name of a contributor to the dataset, often a coauthor on the journal article" },
                        "acquisition type": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
                                              "description": "Mode of mass spectrometry acquisition such as DDA, DIA, SRM, PMF, PASEF, diaPASEF, etc." },
                        "PTMs searched": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
@@ -99,12 +109,16 @@ def main():
                                               "description": "Protein-level false discovery rate (as a decimal fraction such as 0.01 to mean 1%) claimed with the number of proteins detected" },
                        "study variables": { "is required": "true", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
                                             "description": "Experiment variables distinguishing the conditions" },
+                       "dataset description": { "is required": "false", "data type": "textarea", "n lines": 3, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                            "description": "Abstract style summary of the dataset. Can be the journal article abstract if appropriate for the dataset." },
                        "metadata completeness level": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
                                                         "description": "Five-tier classification of the quality of the annotation summary as judged by the annotator" },
                     } },
-            "condition metadata": { "data rows": [ "condition id", "condition tag", "condition title", "subject id", "subject title", "species", "strain", "genotype", "age", "sex",
+            "condition metadata": { "data rows": [ "condition id", "condition tag", "condition title", "subject id", "subject title", "species", "strain", "genotype", "age", "developmental stage", "sex",
                                                    "growth medium", "organism part", "tissue type", "cell type", "subcellular component", "disease", "drug name",
-                                                   "treatment", "treatment duration", "time since reference", "other condition factor", "other condition factor value"], "is clonable": "true", "is required": "true",
+                                                   "treatment", "treatment duration", "time since reference", "other condition factor", "other condition factor value", 
+                                                   "tissue prep protocol", "cleanup protocol", "enrichment", "depletion", "alkylation agent", "cleavage agent", "quantitative label", 
+                                                   "fractionation", "instrument", "other sample prep factor", "other sample prep factor value" ], "is clonable": "true", "is required": "true",
 	        "row attributes": {
 		    "condition id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
 		        "description": "Internal identifier for this annotation sheet of this condition" },
@@ -151,7 +165,30 @@ def main():
 		    "other condition factor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
 		        "description": "Other important biological factor of the subjects in the experiment that is not captured above (e.g. height" },
 		    "other condition factor value": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
-		        "description": "Value associated with the other important biological factor of the subjects in the experiment that is not captured above (e.g. 23 cm" }
+		        "description": "Value associated with the other important biological factor of the subjects in the experiment that is not captured above (e.g. 23 cm" },
+
+		    "tissue prep protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Preparation protocol of tissue material (buffer, pH, salts, detergents, protease inhibitors, reductants, etc); time; temperature" },
+		    "cleanup protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Description of removal of debris, e.g. by filtering (microcloth, spin filters, etc.) or centrifugation" },
+		    "enrichment": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Enrichment (e.g., TAILS, COFRADIC, FLAG-tag, none)" },
+		    "depletion": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Protein depletion protocol/product name (e.g., MARS14, RuBisCo, etc.)" },
+		    "alkylation agent": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Name of the alkylation agent (e.g., iodoacetamide)" },
+		    "cleavage agent": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Protease or other cleavage agent used for digestion (e.g., trypsin, chymotrypsin, GluC)" },
+		    "quantitative label": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
+		        "description": "Type of quantitative label used (e.g., TMT6, TMT10, iTRAQ4plex, iTRAQ8plex, SILAC 13C, label-free, none)" },
+		    "fractionation": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Type of fractionation used (e.g., SCX, gel bands, OffGel, 2DLC, DiGE, FAIMS, none, unknown)" },
+		    "instrument": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
+		        "description": "Mass spectrometer used for analysis (e.g., Q Exactive, TripleTOF 6600)" },
+		    "other sample prep factor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Other important sample prep factor of the condition that is not listed above" },
+		    "other sample prep factor value": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Value associated with the other important sample prep factor of the condition that is not listed above" },
                     } },
 
             "MS run metadata": { "data rows": [ "MS run ordinal", "MS run name", "MS run type", "channel ids", "assay ids", "assay tags", "condition ids", "biological replicate counters",
@@ -312,6 +349,31 @@ def main():
             else:
                 add_message(response, level='ERROR', status=463, code='NonExistantSection', message=f"Unable to find section name {section} in the template definitions")
 
+        #### Reorder the MS runs by the ordinal if possible
+        new_section_names = []
+        msrun_sections = []
+        for section_name in definitions['sections']:
+            if 'MS run metadata' in section_name:
+                ordinal_str = '0'
+                if 'value' in definitions['section_definitions'][section_name]['row attributes']['MS run ordinal']:
+                    ordinal_str = definitions['section_definitions'][section_name]['row attributes']['MS run ordinal']['value']
+                #print(f"ordinal_str={ordinal_str}")
+                match = re.match(r'(.*?)(\d+)(.*?)$',ordinal_str)
+                if match:
+                    prefix = match.group(1)
+                    numeral = int(match.group(2))
+                    suffix = match.group(3)
+                    #print(prefix,numeral,suffix)
+                    msrun_sections.append( { 'name': section_name, 'prefix': prefix, 'numeral': numeral, 'suffix': suffix } )
+                else:
+                    msrun_sections.append( { 'name': section_name, 'prefix': '', 'numeral': 0, 'suffix': '' } )
+            else:
+                new_section_names.append(section_name)
+        msrun_sections = sorted(msrun_sections, key = lambda x: (x['prefix'],x['numeral'],x['suffix']) )
+        for msrun_section in msrun_sections:
+            new_section_names.append(msrun_section['name'])
+        definitions['sections'] = new_section_names
+
 
     #### If there is a dataset_id, then fetch information about it and insert into the data structure
     if dataset_id is not None:
@@ -340,10 +402,21 @@ def main():
             pxd = response_content.json()
             #eprint(json.dumps(pxd, indent=4, sort_keys=True))
 
+        #### Try to extract the title from the JSON
+        if 'title' in pxd:
+            definitions['section_definitions']['study metadata']['row attributes']['dataset title']['value'] = pxd['title']
+            add_message(response, level='INFO', message=f"Set the title to '{pxd['title']}'")
+
+        #### Try to extract the title from the JSON
+        if 'description' in pxd:
+            definitions['section_definitions']['study metadata']['row attributes']['dataset description']['value'] = pxd['description']
+            add_message(response, level='INFO', message=f"Set the description to the description from ProteomeCentral")
+
         #### Try to extract lab head information from the JSON
         if 'contacts' in pxd:
             contact_name = ''
             contact_email = ''
+            contact_affiliation = ''
             is_correct_contact = False
             for contact in pxd['contacts']:
                 if 'terms' in contact:
@@ -352,6 +425,8 @@ def main():
                             contact_name = term['value']
                         if term['name'] == 'contact email':
                             contact_email = term['value']
+                        if term['name'] == 'contact affiliation':
+                            contact_affiliation = term['value']
                         if term['name'] == 'lab head':
                             is_correct_contact = True
                     if is_correct_contact:
@@ -359,8 +434,10 @@ def main():
             if is_correct_contact:
                 definitions['section_definitions']['study metadata']['row attributes']['lab head name']['value'] = contact_name
                 definitions['section_definitions']['study metadata']['row attributes']['lab head email address']['value'] = contact_email
+                definitions['section_definitions']['study metadata']['row attributes']['lab head affiliation']['value'] = contact_affiliation
                 add_message(response, level='INFO', message=f"Updated lab head name to '{contact_name}'")
                 add_message(response, level='INFO', message=f"Updated lab head email address to '{contact_email}'")
+                add_message(response, level='INFO', message=f"Updated lab head affiliation to '{contact_affiliation}'")
 
 
         #### Try to extract publication information from the JSON
