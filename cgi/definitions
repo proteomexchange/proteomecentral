@@ -461,7 +461,9 @@ def main():
         #### Try to extract MS Runs information from the JSON
         if 'datasetFiles' in pxd:
             #### Loop over all the datasetFiles to find the MS Runs
-            definitions['msruns'] = []
+            if 'dataset_info' not in definitions:
+                definitions['dataset_info'] = {}
+            definitions['dataset_info']['MS run name'] = []
             for dataset_file in pxd['datasetFiles']:
                 if dataset_file['name'] == 'Associated raw file URI':
                     uri = dataset_file['value']
@@ -473,9 +475,9 @@ def main():
                         if match:
                             fileroot = match.group(1)
                             #print(f"--{fileroot}")
-                            definitions['msruns'].append( { 'name': fileroot } )
-            definitions['msruns'].sort(key=by_rootname)
-            add_message(response, level='INFO', message=f"Added {len(definitions['msruns'])} MS run names for annotation")
+                            definitions['dataset_info']['MS run name'].append( { 'name': fileroot } )
+            definitions['dataset_info']['MS run name'].sort(key=by_rootname)
+            add_message(response, level='INFO', message=f"Added {len(definitions['dataset_info']['MS run name'])} MS run names for annotation")
 
 
     add_message(response, level='INFO', message=f"Processing complete")
