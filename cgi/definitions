@@ -402,6 +402,10 @@ def main():
             pxd = response_content.json()
             #eprint(json.dumps(pxd, indent=4, sort_keys=True))
 
+        #### Always force the PXD into the dataset id
+        definitions['section_definitions']['study metadata']['row attributes']['dataset id']['value'] = dataset_id
+        add_message(response, level='INFO', message=f"Set the dataset id to '{dataset_id}'")
+
         #### Try to extract the title from the JSON
         if 'title' in pxd:
             definitions['section_definitions']['study metadata']['row attributes']['dataset title']['value'] = pxd['title']
