@@ -555,15 +555,14 @@ function add_annotation_form(fid) {
     var sub = document.createElement("input");
     sub.id = "save_button";
     sub.className = "linkback";
-    sub.style.marginLeft = "10px";
+    sub.style.marginLeft  = "10px";
     sub.style.marginRight = "10px";
     sub.title  = "Save changes!";
-    sub.type  = "submit";
-    sub.value = " S A V E ";
+    sub.type   = "submit";
+    sub.value  = " S A V E ";
 
-    sub.setAttribute('onclick', 'submit();');
-
-//    sub.addEventListener('click', document.getElementById(form_id).submit() );
+//    sub.setAttribute('onclick', 'submit();');
+    sub.addEventListener('click', submitAnnotation);
 
     clear_element("status");
     document.getElementById("status").appendChild(sub);
@@ -784,6 +783,8 @@ function add_field(section,field,fieldobj,rownum,rem) {
 	}
 
     }
+    if (req) { i.className += " req"; }
+
     i.addEventListener('change', valueChanged);
     td.appendChild(i);
 
@@ -814,6 +815,7 @@ function add_field(section,field,fieldobj,rownum,rem) {
 	i.title = "CV Identifier";
 	i.size  = 13;
 	i.required = req;
+	if (req) { i.className = "req"; }
 	if (fieldobj.cv) { i.value = fieldobj.cv; }
 	i.addEventListener('change', valueChanged);
 	td.appendChild(i);
@@ -865,6 +867,10 @@ function add_field(section,field,fieldobj,rownum,rem) {
     };
 
     return field_id;
+}
+
+function submitAnnotation(e) {
+    document.getElementById(form_id).submit();
 }
 
 
