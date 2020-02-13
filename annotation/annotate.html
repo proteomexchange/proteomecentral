@@ -14,19 +14,20 @@ html {
  scroll-behavior: smooth;
 }
 .header {
-    position:fixed;
-    width:100%;
-    height:90px;
-    z-index:999;
-    box-shadow: 0 6px 8px 0 rgba(0,0,0,0.3);
-    border-bottom: 1px solid #333;
-    font-size:20px;
-    color:#eee;
-    background-color: rgba(64,64,64,0.9);
+  position:fixed;
+  width:100%;
+  height:90px;
+  white-space: nowrap;
+  z-index:999;
+  box-shadow: 0 6px 8px 0 rgba(0,0,0,0.3);
+  border-bottom: 1px solid #333;
+  font-size:20px;
+  color:#eee;
+  background-color: rgba(64,64,64,0.9);
 }
 .header h1 {
   display: inline-block;
-    margin-right: 50px;
+  margin-right: 50px;
 }
 .header span {
   display: inline-block;
@@ -37,71 +38,271 @@ html {
   padding-top: 100px;
 }
 a {
- text-decoration: none;
+  text-decoration: none;
 }
 a:hover {
- text-decoration: underline;
+  text-decoration: underline;
 }
+
+textarea {
+  height: 1em;
+  padding: 3px;
+  transition: all 0.25s ease;
+}
+textarea:focus {
+  height: 4em;
+}
+
 .sect {
- background: #eee;
- font-weight: bold;
- text-transform: capitalize;
- color: #f26722;
- border-left: 12px solid #f26722;
+  background: #eee;
+  font-weight: bold;
+  text-transform: capitalize;
+  color: #f26722;
+  border-left: 12px solid #f26722;
 }
+.sect_id {
+  color: #2c99ce;
+  margin-left: 10px;
+}
+span.summary {
+  display: inline-block;
+  padding: 2px;
+  margin-left: 10px;
+  text-align: right;
+  width:100px;
+  white-space: nowrap;
+  overflow: hidden;
+  font-family: Consolas;
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
 .field {
- font-weight: bold;
- text-transform: capitalize;
+  font-weight: bold;
+  text-transform: capitalize;
 }
+.badfield {
+  font-weight: bold;
+  background: #fcc;
+  color: #f00;
+}
+
 .nodeInput {
- position:relative;
+  position:relative;
 }
 .right {
- padding-left:30px;
- float: right;
+  padding-left:30px;
+  float: right;
 }
 .right_btn {
- background: #f3f3f3;
- padding:5px 30px;
- float: right;
- border-left: 1px solid #cdcdcd;
- border-bottom: 1px solid #cdcdcd;
+  background: #f3f3f3;
+  padding:5px 30px;
+  float: right;
+  border-left: 1px solid #cdcdcd;
+  border-bottom: 1px solid #cdcdcd;
 }
 .tdplus:hover {
- font-weight: bold;
- background: #3a3;
- color: #fff;
- cursor: copy;
+  font-weight: bold;
+  background: #3a3;
+  color: #fff;
+  cursor: copy;
 }
 .tdminus {
- color: #a33;
+  color: #a33;
 }
 .tdminus:hover {
- font-weight: bold;
- background: #a33;
- color: #fff;
- cursor: alias;
+  font-weight: bold;
+  background: #a33;
+  color: #fff;
+  cursor: alias;
+}
+
+
+.datasetinput {
+  visibility: hidden;
+  box-shadow: 0 6px 8px 0 rgba(0,0,0,0.3);
+  position: fixed;
+  top: 90px;
+  left: 550px;
+  z-index: 20;
+  min-width: 200px;
+  text-align: center;
+  color: #fff;
+  background-color: rgba(64,64,64,0.9);
+  border: 2px solid #000;
+}
+.datasetinput .title {
+  text-align: center;
+  padding: 10px 50px;
+  margin-bottom: 15px;
+  display: block;
+  font-size:20px;
+  font-weight: bold;
+  border-bottom: 1px solid #fff;
+  color:#eee;
+}
+.datasetinput .enter {
+  text-align: center;
+  width:50%;
+  display: inline-block;
+  background: #444;
+  color: #eee;
+  font-size: 15px;
+  padding: 10px 0px;
+  margin-top: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.datasetinput .enter:hover {
+  background: #888;
 }
 
 .minimenu {
-    display: inline-flex;
-    padding: 0;
-    margin: 0;
-    color: #666;
-    width: 25px;
-    border: 0;
-    box-shadow: none;
-    overflow: hidden;
-    background-color: #fff;
-    background-color: transparent;
-    background-image: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
+  display: inline-flex;
+  padding: 0;
+  margin: 0;
+  color: #666;
+  width: 25px;
+  border: 0;
+  box-shadow: none;
+  overflow: hidden;
+  background-color: #fff;
+  background-color: transparent;
+  background-image: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 .minimenu:hover {
-    border: 1px solid #666;
-    background-color: #ffc;
+  border: 1px solid #666;
+  background-color: #ffc;
+}
+
+.messages {
+  height: 100%;
+  width: 500px;
+  position: fixed;
+  z-index: 1;
+  top: 100px;
+  left: -500px;
+  color: #eee;
+  background-color: #766;
+  transition: 0.5s;
+  border-top: 2px solid #000;
+  border-right: 2px solid #000;
+}
+.messages .toggle {
+  background-color: rgba(64,64,64,0.9);
+  color: #eee;
+  z-index: -2;
+  position: absolute;
+  top: -2px;
+  right: -33px;
+  font-size: 18px;
+  margin-left: 50px;
+  writing-mode: vertical-rl; 
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+  border-right: 2px solid #000;
+  padding: 20px 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.messages .toggle:hover {
+  background: #f26722;
+}
+.messages .title {
+  text-align: center;
+  padding: 10px 0px;
+  display: inline-block;
+  width:100%;
+  font-size:20px;
+  background-color: rgba(64,64,64,0.9);
+  color:#eee;
+}
+.msg {
+  display: block;
+  border-bottom: 1px solid #444;
+  padding: 10px;
+}
+.msg:hover {
+  background-color: rgba(64,64,64,0.9);
+}
+.msg::before {
+  content: " ";
+  border-radius: 20px;
+  display: inline-block;
+  margin-right: 10px;
+  width:10px;
+  height:10px;
+}
+
+.INFO {
+  color: #ccc;
+}
+.INFO::before {
+  border: 1px solid #ccc;
+  background: #ccc;
+}
+.WARNING {
+  color: #ffc;
+}
+.WARNING::before {
+  border: 1px solid #ffc;
+  background: #ffc;
+}
+.ERROR {
+  color: #fff;
+}
+.ERROR::before {
+  border: 1px solid #f00;
+  background: #f00;
+}
+
+.alert {
+  visibility: hidden;
+  box-shadow: 0 6px 8px 0 rgba(0,0,0,0.3);
+  position: fixed;
+  top: 120px;
+  left: 150px;
+  z-index: 10;
+  min-width: 200px;
+  color: #fff;
+  background-color: #e22;
+  border: 2px solid #000;
+  overflow: hidden;
+}
+.alert .title {
+  text-align: center;
+  padding: 10px;
+  margin-bottom: 15px;
+  display: inline-block;
+  width:100%;
+  font-size:20px;
+  font-weight: bold;
+  border-bottom: 1px solid #fff;
+  color:#eee;
+}
+
+.alert .dismiss {
+  text-align: center;
+  width:100%;
+  display: inline-block;
+  background: #c22;
+  color: #eee;
+  font-size: 15px;
+  padding: 10px;
+  margin-top: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.alert .dismiss:hover {
+  background: #f22;
+}
+#alertList {
+  display: inline-block;
+  padding: 10px;
 }
 </style>
 </head>
@@ -111,25 +312,31 @@ a:hover {
 <div class="header">
 <h1>&nbsp;Study Annotation</h1>
 
-<span id="status">Choose Action:</span><span>
-<input class="linkback" type="submit" title="Annotate a new dataset" value="New Annotation" onclick="get_form_definitions(null);">
-</span><span>
-<select id="dataset_menu" class="linkback" title="Choose dataset to view/edit" onchange="load_dataset(this.value);"><option value="">-- Loading datasets... --</option></select>
+<span id="status">Load/Create:</span><span>
+<select id="dataset_menu" class="linkback" title="Choose dataset to view/edit" onchange="load_dataset_annotations(this.value);"><option value="">-- Loading datasets... --</option></select>
 <select id="dataset_menu2" class="linkback" style="margin-left: 10px;" title="Choose annotation to view/edit" onchange="get_form_definitions(this.value);"><option value="">-- No annotations available --</option></select>
 </span>
 
 </div>
 
+<div id="newDataset" class="datasetinput"><span class="title">Enter dataset (PXDnnnnnn) identifier</span>
+<input id="newDatasetId" class="linkback" type="text" title="Create a new dataset annotation" value=""><br/>
+<span title="Cancel" class="enter" onclick="dismissBox('newDataset');">Cancel</span><span title="Enter Dataset Name" class="enter" onclick="enter_dataset();">Create New</span></div>
+
+
+<div id="mySidenav" class="messages"><span title="show/hide messages" class="toggle" onclick="toggleMsgs();">&varr; Messages (<span id="num_msgs">0</span>)</span>
+<span class="title">Messages and Debug Info</span><br/>
+  <span id="myMessages">No messages...</span>
+</div>
+
+<div id="alertBox" class="alert"><span class="title">Error!</span><br/>
+<span id="alertList"></span>
+<span title="dismiss" class="dismiss" onclick="dismissBox('alertBox');">Dismiss</span>
+</div>
 
 <div id="main"></div>
 
 <br clear="all">
-
-<hr size="1">
-Debug Info::<br/>
-<div id="debug"></div>
-<hr size="1">
-
 
 </body>
 </html>

@@ -1,11 +1,13 @@
-var form_defs_url = "../cgi/definitions";
-var data_defs_url = form_defs_url + "?annotation_id=";
+var form_defs_url = "/cgi/definitions"; // "/devED/cgi/definitions";
 var field_def_url = "/api/autocomplete/v0.1/autocomplete?word=*&field_name=";
 var form_post_url = "/api/autocomplete/v0.1/annotations";
 var datasets_url  = "/api/autocomplete/v0.1/datasets";
 var datasetdef_url= "/api/autocomplete/v0.1/annotations?dataset_id=";
+
 var response_json = {};
 var field_values  = {};
+var special_vars  = {};
+var messages   = [];
 var field_cnt  = 0;
 var change_cnt = 0;
 var form_id = "main_form";
@@ -26,7 +28,12 @@ function get_datasets() {
 	    opt.text  = "-- Choose dataset --";
 	    sel.appendChild(opt);
 
-	    for (dataset of data) {
+	    opt = document.createElement("option");
+	    opt.value = '--NEW--';
+	    opt.text  = "-- Annotate a NEW dataset --";
+	    sel.appendChild(opt);
+
+	    for (var dataset of data) {
 		opt = document.createElement("option");
 		opt.value = dataset;
 		opt.text  = dataset;
@@ -39,6 +46,7 @@ function get_datasets() {
 
 // unused...
 function get_datasets_old() {
+// unused...
     var xhr = new XMLHttpRequest();
     xhr.open("get", datasets_url, true);
     xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
@@ -50,7 +58,8 @@ function get_datasets_old() {
 	    //add_typeahead();
 	}
 	else {
-	    document.getElementById("main").innerHTML = "<h2>There was an error retrieving available datasets. Please report or try again later.</h2>";
+	    //document.getElementById("main").innerHTML = "<h2>There was an error retrieving available datasets. Please report or try again later.</h2>";
+	    showAlerts("There was an error retrieving available datasets. Please report or try again later.");
 	}
 
     };
@@ -59,6 +68,7 @@ function get_datasets_old() {
 
 // unused...
 function add_top_form(datasets_json) {
+// unused...
     var div = document.createElement("div");
     div.id        = "dataset-primary";
     div.className = "site-content";
@@ -114,14 +124,14 @@ function add_top_form(datasets_json) {
     sel.className = "linkback";
     sel.style.marginLeft = "150px";
     sel.title = "Choose dataset to view/edit";
-    sel.setAttribute('onchange', 'load_dataset(this.value);');
+    sel.setAttribute('onchange', 'load_dataset_annotations(this.value);');
 
     var opt = document.createElement("option");
     opt.value = '';
     opt.text  = "-- Choose dataset --";
     sel.appendChild(opt);
 
-    for (dataset of datasets_json) {
+    for (var dataset of datasets_json) {
 	opt = document.createElement("option");
 	opt.value = dataset;
 	opt.text  = dataset;
@@ -157,13 +167,33 @@ function add_top_form(datasets_json) {
 }
 
 
-function load_dataset(dset) {
-    fetch(datasetdef_url+dset)
-	.then(response => response.json())
-	.then(data => {
-	    add_datasets_menu(data);
-	})
-	.catch(error => console.error(error));
+function enter_dataset() {
+    if (document.getElementById("newDatasetId").value.length > 1) {
+	get_form_definitions("--DIRECT INPUT--");
+    }
+    else {
+	get_form_definitions(null);
+    }
+}
+
+
+function load_dataset_annotations(dset) {
+    dismissBox("newDataset");
+    if (dset == "") {
+	return;  // ignore
+    }
+    else if (dset == "--NEW--") {
+	document.getElementById("dataset_menu").selectedIndex = 0;
+	showPXDInput();
+    }
+    else {
+	fetch(datasetdef_url+dset)
+	    .then(response => response.json())
+	    .then(data => {
+		add_datasets_menu(data);
+	    })
+	    .catch(error => console.error(error));
+    }
 }
 
 
@@ -172,11 +202,16 @@ function add_datasets_menu(dsets) {
     clear_element("dataset_menu2");
 
     var opt = document.createElement("option");
-    opt.value = '';
+    opt.value = '--';
     opt.text  = "-- Choose annotation --";
     sel.appendChild(opt);
 
-    for (annot of dsets) {
+    opt = document.createElement("option");
+    opt.value = '--NEW--';
+    opt.text  = "-- Create a NEW annotation --";
+    sel.appendChild(opt);
+
+    for (var annot of dsets) {
 	opt = document.createElement("option");
 	opt.value = annot.id;
 	opt.text  = annot.name;
@@ -187,12 +222,30 @@ function add_datasets_menu(dsets) {
 function get_form_definitions(annot_id) {
     var xurl = form_defs_url;
     if (annot_id != null) {
-	xurl = data_defs_url + annot_id;
+	if (annot_id == "--") {
+	    return;  // ignore
+	}
+	else if (annot_id == "--NEW--") {
+	    xurl += "?dataset_id=" + document.getElementById("dataset_menu").value;
+	    document.getElementById("dataset_menu2").selectedIndex = 0;
+	}
+	else if (annot_id == "--DIRECT INPUT--") {
+	    xurl += "?dataset_id=" + document.getElementById("newDatasetId").value;
+	    document.getElementById("dataset_menu2").selectedIndex = 0;
+	}
+	else {
+	    xurl += "?annotation_id=" + annot_id;
+	}
     }
     else {
 	document.getElementById("dataset_menu").selectedIndex = 0;
 	document.getElementById("dataset_menu2").selectedIndex = 0;
     }
+    dismissBox("newDataset");
+    dismissBox("alertBox");
+    clear_element("main");
+    clear_element("status");
+    document.getElementById("status").appendChild(document.createTextNode("Load/Create:"));
 
     var xhr = new XMLHttpRequest();
     xhr.open("get", xurl, true);
@@ -200,26 +253,69 @@ function get_form_definitions(annot_id) {
     xhr.send(null);
 
     xhr.onloadend = function() {
-	if ( xhr.status == 200 ) {
-	    process_response(JSON.parse(xhr.responseText));
-	    //add_typeahead();
+	messages   = [];
+	if (xhr.responseText) {
+	    var rjson = JSON.parse(xhr.responseText);
+	    capture_messages(rjson);
+
+	    if (xhr.status == 200) {
+		process_response(rjson);
+	    }
+	    else if (rjson.detail) {
+		showAlerts(rjson.detail);
+	    }
+	    else {
+		showAlerts("There was an unspecified error. Please try again later.  (Code:"+xhr.status+")");
+	    }
 	}
 	else {
-	    document.getElementById("main").innerHTML = "<h2>There was an error processing your request. Please try again later.</h2>";
+	    showAlerts("There was an error processing your request. Please try again later.  (Code:"+xhr.status+")");
 	}
 
     };
     return;
 }
 
+function capture_messages(json_resp) {
+    for (var m of json_resp.log) {
+	messages.push(m);
+    }
+    show_messages();
+}
+
+function show_messages() {
+    clear_element("myMessages");
+    for (var msg of messages) {
+	var span = document.createElement("span");
+	span.className = "msg " + msg.level;
+
+	var txt = document.createTextNode(msg.prefix);
+	span.appendChild(txt);
+
+	span.appendChild(document.createElement("br"));
+
+	txt = document.createTextNode(msg.message);
+	span.appendChild(txt);
+
+	document.getElementById("myMessages").appendChild(span);
+	document.getElementById("num_msgs").innerHTML = messages.length;
+    }
+}
+
+
 function process_response(defs_json) {
     add_annotation_form(form_id);
 
-    for (sect of defs_json.sections) {
-	//console.log("here: "+sect+" clone?"+defs_json.section_definitions[sect]["is clonable"]);
+    if (defs_json.dataset_info) {
+	for (var fname of Object.keys(defs_json.dataset_info)) {
+	    field_values[fname] = defs_json.dataset_info[fname];
+	}
+    }
+
+    for (var sect of defs_json.sections) {
 	add_section(sect, defs_json.section_definitions[sect]["is clonable"], false);
 
-	for (field of defs_json.section_definitions[sect]["data rows"]) {
+	for (var field of defs_json.section_definitions[sect]["data rows"]) {
 	    //console.log("field: "+field);
 	    var field_atts = defs_json.section_definitions[sect]["row attributes"][field];
 	    //console.log("atts : "+JSON.stringify(field_atts));
@@ -231,15 +327,25 @@ function process_response(defs_json) {
 
 function delete_section(sect) {
     var rows_now = Array.from(document.getElementById(form_id+"_table").rows); // copy by value
-    for (tr of rows_now) {
+    for (var tr of rows_now) {
+	var remove = false;
 	if (tr.dataset.sect == sect) {
 	    delete(response_json[tr.dataset.id]);
-	    document.getElementById(form_id+"_table").deleteRow(tr.rowIndex);
+	    remove = true;
 	}
 	else if (tr.dataset.sect == sect+"_header") {
+	    remove = true;
+	}
+	else if (tr.id == sect+"_summarytr") {
+	    special_vars["numms"]--;
+	    remove = true;
+	}
+
+	if (remove) {
 	    document.getElementById(form_id+"_table").deleteRow(tr.rowIndex);
 	}
     }
+    valueChanged(null);
 }
 
 function clone_section(sect) {
@@ -247,7 +353,7 @@ function clone_section(sect) {
     add_section(newsect, true, true);
 
     var rows_now = Array.from(document.getElementById(form_id+"_table").rows); // copy by value
-    for (tr of rows_now) {
+    for (var tr of rows_now) {
 	if (tr.dataset.sect == sect) {
 	    var source = document.getElementById(tr.dataset.id);
 	    var fobj = {
@@ -255,12 +361,16 @@ function clone_section(sect) {
 		"has curie"   : tr.dataset.cv,
 		"autocomplete": tr.dataset.auto,
 		"list box"    : tr.dataset.list,
+		"data type"   : tr.dataset.type,
 		"duplication" : tr.dataset.dup,
 		"description" : source.title
 	    }
 	    var new_id = add_field(newsect,source.name,fobj,null,tr.dataset.rem);
 
 	    document.getElementById(new_id).value = source.value;
+	    if (document.getElementById(new_id + "_summary_entry")) {
+		document.getElementById(new_id + "_summary_entry").innerHTML = source.value ? source.value : "&nbsp;";
+	    }
 	    if (tr.dataset.cv == 'true') {
 		document.getElementById(new_id+"_CV").value = document.getElementById(tr.dataset.id+"_CV").value;
 	    }
@@ -268,26 +378,71 @@ function clone_section(sect) {
 	}
     }
     window.scrollBy(0,10000);
+    valueChanged(null);
 }
 
 function add_section(sect_name, clonable, deletable) {
-    if (clonable == "false") {
-	clonable = false;
-    }
-    if (deletable == "false") {
-	deletable = false;
-    }
+    if (clonable  == "false") { clonable  = false; }
+    if (deletable == "false") { deletable = false; }
 
     var num_cols = 6;
+    var tr;
+    var td;
+    var txt;
 
-    var tr = document.createElement("tr");
+    // summary for MS Run Data
+    if (sect_name.startsWith("MS run metadata")) {
+
+	if (!document.getElementById("msruns_summarytable")) {
+	    special_vars["numms"] = 0;
+
+	    // spacer
+	    tr = document.createElement("tr");
+	    td = document.createElement("td");
+	    td.style.padding = "15px";
+	    td.colSpan = num_cols;
+	    tr.appendChild(td);
+	    document.getElementById(form_id+"_table").appendChild(tr);
+
+	    tr = document.createElement("tr");
+	    tr.id = "msruns_summarytable";
+	    tr.className = "sect sect_id";
+
+	    td = document.createElement("td");
+	    td.colSpan = num_cols;
+	    //td.style.borderBottom = "0px";
+	    td.style.fontSize = "20px";
+
+	    txt = document.createTextNode("MS Runs Summary");
+	    td.appendChild(txt);
+	    tr.appendChild(td);
+
+	    document.getElementById(form_id+"_table").appendChild(tr);
+	}
+
+	special_vars["numms"]++;
+
+	tr = document.getElementById(form_id+"_table").insertRow(document.getElementById("msruns_summarytable").rowIndex+special_vars["numms"]);
+
+	tr.id = sect_name + "_summarytr";
+	//tr.className = "sect";
+
+	td = document.createElement("td");
+	td.id = sect_name + "_summarytd";
+	td.colSpan = num_cols;
+
+	tr.appendChild(td);
+    }
+
+    // spacer
+    tr = document.createElement("tr");
     tr.dataset.sect = sect_name + "_header";
-    var td = document.createElement("td");
+    td = document.createElement("td");
     td.style.padding = "15px";
     td.colSpan = num_cols;
-
     tr.appendChild(td);
     document.getElementById(form_id+"_table").appendChild(tr);
+
 
     tr = document.createElement("tr");
     tr.dataset.sect = sect_name + "_header";
@@ -298,16 +453,21 @@ function add_section(sect_name, clonable, deletable) {
     td.style.fontSize = "20px";
 
     var sect_text = sect_name.split("___");
-
     txt = document.createTextNode(sect_text[0]);
     td.appendChild(txt);
+
+    var span = document.createElement("span");
+    span.id = sect_name + "_id";
+    span.className = "sect_id";
+    td.appendChild(span);
+
     tr.appendChild(td);
 
     td = document.createElement("td");
     td.style.borderBottom = "0px";
     td.style.padding = "0px";
 
-    var span = document.createElement("span");
+    span = document.createElement("span");
     if (clonable) {
 	span.className = "tdplus right_btn";
 	span.title = "Clone this section";
@@ -329,15 +489,15 @@ function add_section(sect_name, clonable, deletable) {
     }
     td.appendChild(span);
 
-
     tr.appendChild(td);
     document.getElementById(form_id+"_table").appendChild(tr);
+
 
     tr = document.createElement("tr");
     tr.dataset.sect = sect_name + "_header";
     tr.className = "sect";
 
-    for (x of ['','','Value','CV id','Comments','Definition']) {
+    for (var x of ['','','Value','CV id','Comments','Definition']) {
 	td = document.createElement("th");
 	txt = document.createTextNode(x);
 	td.appendChild(txt);
@@ -351,7 +511,13 @@ function add_section(sect_name, clonable, deletable) {
 
 function add_annotation_form(fid) {
     clear_element("main");
+
+    // clear/reset settings and vars
+    response_json = {};
+    field_values  = {};
+    field_cnt  = 0;
     change_cnt = 0;
+    document.getElementById("status").style.backgroundColor = '';
 
     var f = document.createElement("form");
     f.id     = fid;
@@ -367,6 +533,7 @@ function add_annotation_form(fid) {
     var h1  = document.createElement("h1");
     var txt = document.createTextNode("Study Annotation");
     h1.className    = "dataset-title";
+    h1.id           = "annotation-title";
     h1.style.margin = "0px";
     h1.appendChild(txt);
     div.appendChild(h1);
@@ -400,18 +567,17 @@ function add_annotation_form(fid) {
 
     clear_element("status");
     document.getElementById("status").appendChild(sub);
-    document.getElementById("status").style.backgroundColor = "#709525";
 }
 
 function submit() {
     for (var fv of Object.keys(response_json)) {
 	response_json[fv].value   = document.getElementById(fv).value;
 	response_json[fv].cv      = document.getElementById(fv+"_CV") ?
-	    document.getElementById(fv+"_CV").value : '';
+	                            document.getElementById(fv+"_CV").value : '';
 	response_json[fv].comment = document.getElementById(fv+"_COMMENTS").value;
     }
 
-    console.log("atts : "+JSON.stringify(response_json, undefined, 2));
+    // console.log("atts : "+JSON.stringify(response_json, undefined, 2));
 
     var xhr = new XMLHttpRequest();
     xhr.open("post", form_post_url, true);
@@ -419,14 +585,48 @@ function submit() {
     xhr.send(JSON.stringify(response_json));  // send the collected data as JSON
 
     xhr.onloadend = function() {
-        if ( xhr.status == 200 ) {
-	    alert("SUBMITTED....");
-	    change_cnt = 0;
-	    document.getElementById("save_button").value = "Save";
+	if (xhr.responseText) {
+	    var rjson = JSON.parse(xhr.responseText);
+	    capture_messages(rjson);
+
+            if (xhr.status == 200) {
+		alert(rjson.detail);
+		change_cnt = 0;
+		document.getElementById("save_button").value = "Save";
+		document.getElementById("status").style.backgroundColor = "#709525";
+		get_datasets();
+		document.getElementById("dataset_menu2").selectedIndex = 0;
+	    }
+	    else {
+		clear_element("alertList");
+		var alerts = document.getElementById("alertList");
+		var txt = document.createTextNode("There are errors with this annotation.");
+		alerts.appendChild(txt);
+		alerts.appendChild(document.createElement("br"));
+		txt = document.createTextNode("Please review the following (highlighted) fields and resubmit.");
+		alerts.appendChild(txt);
+		alerts.appendChild(document.createElement("br"));
+
+		var ul = document.createElement("ul");
+		for (var badfield of rjson.invalid_fields) {
+		    var li = document.createElement("li");
+		    txt = document.createTextNode(badfield.name + ": " + badfield.code);
+		    li.appendChild(txt);
+		    ul.appendChild(li);
+
+		    document.getElementById(badfield.field_key).closest("tr").className = "badfield";
+		}
+		alerts.appendChild(ul);
+
+		showAlerts(null);
+	    }
 	}
+	else {
+	    showAlerts("There was an error saving this annotation! Please report or try again later.");
+	}
+
     }
 }
-
 
 
 function remove_field(field_id,tdobj) {
@@ -434,12 +634,13 @@ function remove_field(field_id,tdobj) {
     document.getElementById(form_id+"_table").deleteRow(tdobj.parentNode.rowIndex);
 }
 
-function append_field(section,field,has_curie,auto_comp,list_box,tdobj) {
+function append_field(section,field,has_curie,auto_comp,list_box,data_type,tdobj) {
     var fobj = {
 	"is required" : false,
 	"has curie"   : has_curie,
 	"autocomplete": auto_comp,
 	"list box"    : list_box,
+	"data type"   : data_type,
 	"duplication" : false,
 	"description" : '"'
     }
@@ -451,37 +652,31 @@ function add_field(section,field,fieldobj,rownum,rem) {
     field_cnt++;
     field_id = "_field_"+field_cnt;
 
+    field = field.split("___")[0];
+
     var req  = false;
     var cv   = false;
     var auto = false;
     var list = false;
     var dup  = false;
-    if (fieldobj["is required"] == "true") {
-	req  = true;
-    }
-    if (fieldobj["has curie"] == "true") {
-	cv   = true;
-    }
-    if (fieldobj["autocomplete"] == "true") {
-	auto = true;
-    }
-    if (fieldobj["list box"] == "true") {
-	list = true;
-    }
-    if (fieldobj["duplication"] == "true") {
-	dup  = true;
-    }
-    if (rem == "true") {
-	rem  = true;
-    }
-    else if (rem == "false") {
-	rem = false;
-    }
+    var rows = 1;
+    if (fieldobj["is required"]   == "true") { req  = true; }
+    if (fieldobj["has curie"]     == "true") { cv   = true; }
+    if (fieldobj["autocomplete"]  == "true") { auto = true; }
+    if (fieldobj["list box"]      == "true") { list = true; }
+    if (fieldobj["duplication"]   == "true") { dup  = true; }
+
+    if      (rem == "true")  { rem = true;  }
+    else if (rem == "false") { rem = false; }
+
+    // catch dataset_info values
+    if (field_values[field]) { list = true; }
+
+    var type = fieldobj["data type"];
 
     if (rownum == null) {
 	rownum = document.getElementById(form_id+"_table").rows.length;
     }
-//    var tr = document.createElement("tr");
     var tr = document.getElementById(form_id+"_table").insertRow(rownum);
     tr.dataset.id   = field_id;
     tr.dataset.sect = section;
@@ -489,17 +684,18 @@ function add_field(section,field,fieldobj,rownum,rem) {
     tr.dataset.cv   = cv;
     tr.dataset.auto = auto;
     tr.dataset.list = list;
+    tr.dataset.type = type;
     tr.dataset.dup  = dup;
     tr.dataset.rem  = rem;
 
-    // duplicate?
+    // duplicate/remove?
     var td = document.createElement("td");
     var txt = document.createTextNode(" ");
     if (dup) {
 	txt = document.createTextNode('+');
 	td.className = "tdplus";
 	td.title = "Add another row";
-	td.setAttribute('onclick', 'append_field(\"'+section+'\",\"'+field+'\",\"'+cv+'\",\"'+auto+'\",\"'+list+'\",this);');
+	td.setAttribute('onclick', 'append_field(\"'+section+'\",\"'+field+'\",\"'+cv+'\",\"'+auto+'\",\"'+list+'\",\"'+type+'\",this);');
     }
     else if (rem) {
 	txt = document.createTextNode('\u2a2f');
@@ -517,12 +713,47 @@ function add_field(section,field,fieldobj,rownum,rem) {
     td.appendChild(txt);
     tr.appendChild(td);
 
+    var cols = 2;
+    var size = 55;
+    if (cv) {
+	cols = 1;
+	size = 30;
+    }
+    else if (list) {
+	size = 50;
+    }
+
+    // for single line summary
+    if (section.startsWith("MS run metadata")) {
+	var span = document.createElement("span");
+	span.id = field_id + "_summary_entry";
+	span.className = "summary";
+	span.title = field;
+	span.innerHTML = "&nbsp;";
+	document.getElementById(section + "_summarytd").appendChild(span);
+    }
+
+
     // user input :: value
     td = document.createElement("td");
     td.style.whiteSpace = "nowrap";
+    td.colSpan = cols;
 
-    var i = document.createElement("input");
-    i.type  = "text";
+    if (type == "textarea") { rows = 4; }
+//    if (fieldobj["data type"] == "textarea") { rows = fieldobj["n lines"]; }
+
+    var i;
+    if (rows > 1) {
+	i = document.createElement("textarea");
+	i.rows = rows;
+	i.cols = 41;
+    }
+    else {
+	i = document.createElement("input");
+	i.type = "text";
+	i.size = size;
+    }
+
     i.id    = field_id;
     i.name  = field;
     i.title = fieldobj.description;
@@ -535,11 +766,27 @@ function add_field(section,field,fieldobj,rownum,rem) {
 	i.dataset.provide = "typeahead";
 	i.className = "nodeInput";
     }
-    if (fieldobj.value) { i.value = fieldobj.value; }
+    if (fieldobj.value) {
+	i.value = fieldobj.value;
+	if (field == "dataset id") {
+	    update_title("annotation-title",fieldobj.value);
+	    i.readOnly = true;
+	    i.title = "id cannot be changed!";
+	    i.className = "field";
+	    i.size  = 40;
+	}
+	else if (field == "MS run ordinal" || field == "condition id") {
+	    update_title(section + "_id",fieldobj.value);
+	}
+
+	if (document.getElementById(field_id + "_summary_entry")) {
+	    document.getElementById(field_id + "_summary_entry").innerHTML = fieldobj.value;
+	}
+
+    }
     i.addEventListener('change', valueChanged);
     td.appendChild(i);
 
-    //if (field == 'acquisition type') {
     if (list) {
 	var sel = document.createElement("select");
 	sel.id  = field_id+"_menu";
@@ -565,25 +812,29 @@ function add_field(section,field,fieldobj,rownum,rem) {
 	i.type  = "text";
 	i.name  = field+"_CV";
 	i.title = "CV Identifier";
+	i.size  = 13;
 	i.required = req;
 	if (fieldobj.cv) { i.value = fieldobj.cv; }
 	i.addEventListener('change', valueChanged);
 	td.appendChild(i);
+
+	tr.appendChild(td);
     }
-    else {
+    else { // meh...
 	txt = document.createTextNode("n/a");
 	td.className = "infotext";
 	td.appendChild(txt);
     }
-    tr.appendChild(td);
+
 
     // user input :: comments
     td = document.createElement("td");
-    i = document.createElement("input");
+    i = document.createElement("textarea");
     i.id    = field_id+"_COMMENTS";
-    i.type  = "text";
+    //i.type  = "text";
     i.name  = field+"_COMMENTS";
     i.title = "Curator comments";
+    i.cols  = 25;
     if (fieldobj.comment) { i.value = fieldobj.comment; }
     i.addEventListener('change', valueChanged);
     td.appendChild(i);
@@ -620,8 +871,26 @@ function add_field(section,field,fieldobj,rownum,rem) {
 function valueChanged(e) {
     change_cnt++;
     document.getElementById("save_button").value = "Save "+change_cnt+" changes";
-}
 
+    var col = (change_cnt > 5) ? "#db4314" : "#bfb62f";
+    document.getElementById("status").style.backgroundColor = col;
+
+    if (e) {
+	if (e.target.name == "dataset id") {
+	    update_title("annotation-title",e.target.value);
+	}
+
+	if (e.target.name == "condition id"  ||
+	    e.target.name == "MS run ordinal" ) {
+	    var tr = e.target.closest("tr");
+	    update_title(tr.dataset.sect+"_id",e.target.value);
+	}
+
+	if (document.getElementById(e.target.id + "_summary_entry")) {
+	    document.getElementById(e.target.id + "_summary_entry").innerHTML = e.target.value;
+	}
+    }
+}
 
 function retrieve_field_values(field,htmlid) {
     if (!field_values[field]) {
@@ -636,9 +905,14 @@ function add_vals_menu(field,htmlid) {
     //console.log("found values: "+field_values[field]);
     var i = document.getElementById(htmlid+"_menu");
 
-    for (item of field_values[field]) {
+    for (var item of field_values[field]) {
 	var opt = document.createElement("option");
-	opt.value = item.name+"--"+item.curie;
+	if (item.curie) {
+	    opt.value = item.name+"--"+item.curie;
+	}
+	else {
+	    opt.value = item.name+"--";
+	}
 	opt.text  = item.name;
 	i.appendChild(opt);
     }
@@ -664,14 +938,47 @@ function get_field_values(field,htmlid) {
 function adjust_value(selobj, elemid) {
     var vals = selobj.value.split("--");
     document.getElementById(elemid).value = vals[0];
-    document.getElementById(elemid+"_CV").value = vals[1];
+    if (document.getElementById(elemid+"_CV")) {
+	document.getElementById(elemid+"_CV").value = vals[1];
+    }
     document.getElementById(elemid+"_menu").value = '';
+
+    if (document.getElementById(elemid + "_summary_entry")) {
+	document.getElementById(elemid + "_summary_entry").innerHTML = vals[0];
+    }
+    valueChanged(null);
 }
 
+function update_title(elem, text) {
+    document.getElementById(elem).innerHTML = text;
+}
 
 function clear_element(ele) {
     const node = document.getElementById(ele);
     while (node.firstChild) {
 	node.removeChild(node.firstChild);
     }
+}
+
+function toggleMsgs() {
+    var lp = "0px";
+    if (  document.getElementById("mySidenav").style.left == lp) {
+	lp = "-500px";
+    }
+    document.getElementById("mySidenav").style.left = lp;
+}
+
+function dismissBox(box_id) {
+    document.getElementById(box_id).style.visibility = "hidden";
+}
+
+function showAlerts(msg) {
+    document.getElementById("alertBox").style.visibility = "visible";
+    if (msg != null) {
+	document.getElementById("alertList").innerHTML = msg;
+    }
+}
+
+function showPXDInput() {
+    document.getElementById("newDataset").style.visibility = "visible";
 }
