@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 -u
+#!/usr/bin/env python3
 import sys
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 import os
@@ -238,8 +238,14 @@ class PROXIPsms(object):
                 #### Print progress every 1%
                 percent_done = int(bytes_processed / filesize * 100)
                 if percent_done > previous_percent_done:
-                    eprint(f"{percent_done}%.. ", end='')
+                    eprint(f"{percent_done}%.. ", end='', flush=True)
                     previous_percent_done = percent_done
+
+                #### End early for testing
+                if iprocessed > 2000000:
+                    eprint(f"End early after 2 million rows for testing")
+                    break
+
 
         #### Write out last batch
         eprint("done.")
@@ -251,7 +257,7 @@ class PROXIPsms(object):
         #### Create some indexes
         column_names = [ 'dataset_identifier', 'msrun_name', 'scan_number', 'peptide_sequence', 'peptidoform', 'charge', 'protein_identifier', 'usi', 'probability' ]
         for column_name in column_names:
-            eprint(f"INFO: Creating INDEX on {column_name}")
+            eprint(f"INFO: Creating INDEX on {column_name}", flush=True)
             self.connection.execute(f"CREATE INDEX idx_psm_{column_name} ON psm({column_name})")
 
         #### Print summary
