@@ -111,7 +111,7 @@ def main():
         'PeptideAtlas-spectra': '?usi=mzspec:PXD000561:Adult_Urinarybladder_bRP_Elite_71_f14:scan:1872:FSGSSSGADR/2&resultType=compact',
         'PRIDE-spectra': '?pageSize=100&pageNumber=1&resultType=compact',
         'ProteomeCentral-spectra': '?resultType=compact&usi=mzspec:PXL000006:02-14-2019:index:1250',
-        'psms': '?resultType=compact',
+        'psms': '?resultType=compact&accession=PXD005942',
         'peptides': '?resultType=compact',
         'proteins': '?resultType=compact',
         'PRIDE-ui': '/swagger-ui.html',
