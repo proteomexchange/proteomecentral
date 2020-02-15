@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="../css/isb.css"/>
+<style type="text/css">
+.header {
+  position:fixed;
+  width:100%;
+  height:90px;
+  white-space: nowrap;
+  z-index:999;
+  box-shadow: 0 6px 8px 0 rgba(0,0,0,0.3);
+  border-bottom: 1px solid #333;
+  font-size:20px;
+  color:#eee;
+  background-color: rgba(64,64,64,0.9);
+}
+.header h1 {
+  display: inline-block;
+  margin-right: 50px;
+}
+.header span {
+  display: inline-block;
+  border-left: 1px solid #ddd;
+  padding: 15px;
+}
+#main {
+  padding-top: 100px;
+  font-size:16px;
+}
+a {
+  text-decoration: none;
+  color: initial;
+}
+a:hover {
+  text-decoration: underline;
+}
+h1 a {
+  margin-left: 50px;
+}
+ul {
+  margin-top: 1em;
+}
+li {
+  margin-bottom: 1em;
+}
+dl {
+  margin-bottom: 2em;
+}
+dt {
+  font-weight: bold;
+}
+
+.sect_head {
+  background: #eee;
+  font-weight: bold;
+  text-transform: capitalize;
+  color: #f26722;
+  border-left: 12px solid #f26722;
+  border-bottom: 1px solid #000;
+  padding: 10px 20px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+.sect_content {
+  margin-left: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<h1>&nbsp;Study Annotation :: Intro</h1>
+</div>
+
+
+<div id="main">
+
+<br/>
+<h1><a href="annotate.html" class="linkback" title="Go to experiment annotation tool">Go to experiment annotation tool</a></h1>
+
+<br/>
+
+<div class="sect_head">Important considerations</div>
+<ul>
+<li>Use the <b>value</b> column for the searchable and displayed datum for each item.</li>
+
+<li>Use the <b>annotator comment</b> column for additional comments and ideas relevant to the CV term and/or value in that row.</li>
+
+<li>If an attribute value is not known, use one of the following:</li>
+<dl>
+<dt>unknown to annotator</dt>
+<dd>Although surely someone knows, the annotator of this sheet was not able to determine the appropriate value. Perhaps some other clever person can provide the value.</dd>
+<dt>unknown</dt>
+<dd>Probably no one knows at this point</dd>
+<dt>NA</dt>
+<dd>Not applicable to this study</dd>
+<dt>none</dt>
+<dd>It is known that there is none of the attribute</dd>
+<dt>(blank)</dt>
+<dd>is vague. Usually means that the information is knowable but the curator has not expended sufficient effort to determine the value</dd>
+</dl>
+
+</ul>
+
+
+
+<div class="sect_head">Metadata completeness levels</div>
+<div class="sect_content">
+<p>Note that the level is not necessarily a reflection on the annotator; sometimes information is simply not available no matter how hard the annotator tries. If the files cannot be linked to conditions, the level cannot be more than Bronze):</p>
+<dl>
+<dt>5-Platinum</dt>
+<dd>Extensive and complete metadata for all conditions, assays, MS runs, and channels.</dd>
+<dt>4-Gold</dt>
+<dd>Adequate metadata for all conditions and all assays (MS runs and channels).</dd>
+<dt>3-Silver</dt>
+<dd>Partial metadata in the form of all assays (MS runs and channels) so the study design is clear, but limited condition metadata.</dd>
+<dt>2-Bronze</dt>
+<dd>Partial metadata in the form of all conditions but no assays (MS runs and channels). Condition information cannot be associated fully with the files and channels.</dd>
+<dt>1-Tin</dt>
+<dd>Partial metadata in the form of several but not all conditions.</dd>
+<dt>0-Pig Iron</dt>
+<dd>Partial metadata for the study in the form of one representative condition.</dd>
+</dl>
+</div>
+
+
+<div class="sect_head">Definitions</div>
+<div class="sect_content">
+<dl>
+<dt>Assay</dt>
+<dd>One of one or more replicates testing experimental factors of the study. An assay may consist of one MS run, one labeling channel within one MS run, or potentially be spread of several MS runs for the primary motive of reducing complexity in each MS run for the instrument.</dd>
+<dt>Condition</dt>
+<dd>Each unique test of experimental factors of the study either in biological factors or sample handling of protein/peptides factors. There might be several replicates of each condition</dd>
+<dt>MS Run</dt>
+<dd>A single liquid chromatography mass spectrometry (LC-MS) run. Usually a single .RAW, .mzML, etc. file. WIFF files may have several MS Runs. For label-free and no fractionation, an MS-Run is an Assay. But for labeled samples, there are several Assays in one MS Run.</dd>
+<dt>Subject</dt>
+<dd>An individual organism or a colony of micro-organisms</dd>
+<dt>Channel</dt>
+<dd>One of several multiplexed assays in an MS Run, e.g. with TMT, iTRAQ, SILAC, etc.</dd>
+</dl>
+
+<p>The term <b>study variable</b> or <b>experimental factor</b> or <b>factor</b> is some attribute of the study that <u>changes</u> between conditions and is thus something that is part of the comparison in the study.<br/>
+An important attribute that does not change between conditions is not a 'study variable'.</p>
+
+</div>
+
+
+</div>
+<br clear="all">
+
+</body>
+</html>
