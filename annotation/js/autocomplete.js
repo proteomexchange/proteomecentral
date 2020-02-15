@@ -75,8 +75,10 @@ function add_typeahead(element_id) {
 	    var hit = false;
 	    var fname = $('#'+element_id).attr("name");
 
+	    var URIquery = encodeURIComponent(query);
+
 	    $.ajax({
-		url: "/api/autocomplete/v0.1/autocomplete?word="+query+"&limit=15&field_name="+fname,
+		url: "/api/autocomplete/v0.1/autocomplete?word="+URIquery+"&limit=15&field_name="+fname,
 		cache: false,
 		dataType:"jsonp",
 		success: function (response) {
