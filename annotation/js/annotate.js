@@ -41,129 +41,7 @@ function get_datasets() {
 	    }
 
 	})
-	.catch(error => console.error(error));
-}
-
-// unused...
-function get_datasets_old() {
-// unused...
-    var xhr = new XMLHttpRequest();
-    xhr.open("get", datasets_url, true);
-    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-    xhr.send(null);
-
-    xhr.onloadend = function() {
-	if ( xhr.status == 200 ) {
-	    add_top_form(JSON.parse(xhr.responseText));
-	    //add_typeahead();
-	}
-	else {
-	    //document.getElementById("main").innerHTML = "<h2>There was an error retrieving available datasets. Please report or try again later.</h2>";
-	    showAlerts("There was an error retrieving available datasets. Please report or try again later.");
-	}
-
-    };
-    return;
-}
-
-// unused...
-function add_top_form(datasets_json) {
-// unused...
-    var div = document.createElement("div");
-    div.id        = "dataset-primary";
-    div.className = "site-content";
-    div.style.marginLeft = "50px";
-    div.style.maxWidth   = "1500px";
-
-    var h1  = document.createElement("h1");
-    var txt = document.createTextNode("Choose Action");
-    h1.className    = "dataset-title";
-    h1.style.margin = "0px";
-    h1.appendChild(txt);
-    div.appendChild(h1);
-
-    var div2 = document.createElement("div");
-    div2.className = "dataset-content";
-
-    var tab = document.createElement("table");
-    tab.id        = "top_table";
-    tab.className = "dataset-summary";
-
-    var tr = document.createElement("tr");
-
-    var td = document.createElement("td");
-    txt = document.createTextNode('Annotate a new dataset');
-    td.appendChild(txt);
-    tr.appendChild(td);
-
-    td = document.createElement("td");
-
-    var sub = document.createElement("input");
-    sub.className = "linkback";
-    sub.style.marginLeft = "150px";
-    sub.type  = "submit";
-    sub.value = "New Annotation";
-    sub.setAttribute('onclick', 'get_form_definitions(null);');
-    td.appendChild(sub);
-    tr.appendChild(td);
-
-    tab.appendChild(tr);
-
-
-    tr = document.createElement("tr");
-
-    td = document.createElement("td");
-    txt = document.createTextNode('Load/Edit existing dataset');
-    td.appendChild(txt);
-    tr.appendChild(td);
-
-    td = document.createElement("td");
-
-    var sel = document.createElement("select");
-    sel.id  = "dataset_menu";
-    sel.className = "linkback";
-    sel.style.marginLeft = "150px";
-    sel.title = "Choose dataset to view/edit";
-    sel.setAttribute('onchange', 'load_dataset_annotations(this.value);');
-
-    var opt = document.createElement("option");
-    opt.value = '';
-    opt.text  = "-- Choose dataset --";
-    sel.appendChild(opt);
-
-    for (var dataset of datasets_json) {
-	opt = document.createElement("option");
-	opt.value = dataset;
-	opt.text  = dataset;
-	sel.appendChild(opt);
-    }
-
-    td.appendChild(sel);
-
-    sel = document.createElement("select");
-    sel.id  = "dataset_menu2";
-    sel.className = "linkback";
-    sel.style.marginLeft = "30px";
-    sel.title = "Choose annotation to view/edit";
-    sel.setAttribute('onchange', 'get_form_definitions(this.value);');
-
-    opt = document.createElement("option");
-    opt.value = '';
-    opt.text  = "-- No annotations selected --";
-    sel.appendChild(opt);
-
-    td.appendChild(sel);
-
-
-    tr.appendChild(td);
-
-    tab.appendChild(tr);
-
-
-    div2.appendChild(tab);
-    div.appendChild(div2);
-
-    document.getElementById("main").appendChild(div);
+	.catch(error => showAlerts(error));
 }
 
 
@@ -313,7 +191,7 @@ function process_response(defs_json) {
     }
 
     for (var sect of defs_json.sections) {
-	add_section(sect, defs_json.section_definitions[sect]["is clonable"], false);
+	add_section(sect, defs_json.section_definitions[sect]["is clonable"]);
 
 	for (var field of defs_json.section_definitions[sect]["data rows"]) {
 	    //console.log("field: "+field);
@@ -350,7 +228,7 @@ function delete_section(sect) {
 
 function clone_section(sect) {
     var newsect = sect + "___" + field_cnt;
-    add_section(newsect, true, true);
+    var newsect_id = add_section(newsect, true);
 
     var rows_now = Array.from(document.getElementById(form_id+"_table").rows); // copy by value
     for (var tr of rows_now) {
@@ -365,7 +243,12 @@ function clone_section(sect) {
 		"duplication" : tr.dataset.dup,
 		"description" : source.title
 	    }
-	    var new_id = add_field(newsect,source.name,fobj,null,tr.dataset.rem);
+
+	    var rownum = -1;
+	    if (sect.startsWith("condition metadata")) {
+		rownum = document.getElementById("msruns_summarytable").rowIndex - 1;
+	    }
+	    var new_id = add_field(newsect,source.name,fobj,rownum,tr.dataset.rem);
 
 	    document.getElementById(new_id).value = source.value;
 	    if (document.getElementById(new_id + "_summary_entry")) {
@@ -377,13 +260,21 @@ function clone_section(sect) {
 	    document.getElementById(new_id+"_COMMENTS").value = document.getElementById(tr.dataset.id+"_COMMENTS").value;
 	}
     }
-    window.scrollBy(0,10000);
+
+    if (sect.startsWith("condition metadata")) {
+	document.getElementById(newsect_id).scrollIntoView();
+	window.scrollBy( { behavior: 'smooth', top: -150 } ); // move past page header
+    }
+    else {
+	document.getElementById(newsect_id).scrollIntoView( { behavior: 'smooth'} );
+    }
     valueChanged(null);
 }
 
-function add_section(sect_name, clonable, deletable) {
+function add_section(sect_name, clonable) {
     if (clonable  == "false") { clonable  = false; }
-    if (deletable == "false") { deletable = false; }
+
+    var deletable = clonable;
 
     var num_cols = 6;
     var tr;
@@ -434,17 +325,23 @@ function add_section(sect_name, clonable, deletable) {
 	tr.appendChild(td);
     }
 
+    var rownum = -1;
+    if (sect_name.startsWith("condition metadata") &&
+	document.getElementById("msruns_summarytable")) {
+	rownum = document.getElementById("msruns_summarytable").rowIndex - 1;
+    }
+
     // spacer
-    tr = document.createElement("tr");
+    tr = document.getElementById(form_id+"_table").insertRow(rownum);
     tr.dataset.sect = sect_name + "_header";
     td = document.createElement("td");
     td.style.padding = "15px";
     td.colSpan = num_cols;
     tr.appendChild(td);
-    document.getElementById(form_id+"_table").appendChild(tr);
 
-
-    tr = document.createElement("tr");
+    // text heading
+    rownum = tr.rowIndex+1;
+    tr = document.getElementById(form_id+"_table").insertRow(rownum);
     tr.dataset.sect = sect_name + "_header";
     tr.className = "sect";
     td = document.createElement("td");
@@ -490,10 +387,11 @@ function add_section(sect_name, clonable, deletable) {
     td.appendChild(span);
 
     tr.appendChild(td);
-    document.getElementById(form_id+"_table").appendChild(tr);
 
 
-    tr = document.createElement("tr");
+    // column headings
+    rownum = tr.rowIndex+1;
+    tr = document.getElementById(form_id+"_table").insertRow(rownum);
     tr.dataset.sect = sect_name + "_header";
     tr.className = "sect";
 
@@ -504,7 +402,7 @@ function add_section(sect_name, clonable, deletable) {
 	tr.appendChild(td);
     }
 
-    document.getElementById(form_id+"_table").appendChild(tr);
+    return sect_name + "_id";
 }
 
 
@@ -674,7 +572,7 @@ function add_field(section,field,fieldobj,rownum,rem) {
     var type = fieldobj["data type"];
 
     if (rownum == null) {
-	rownum = document.getElementById(form_id+"_table").rows.length;
+	rownum = -1;
     }
     var tr = document.getElementById(form_id+"_table").insertRow(rownum);
     tr.dataset.id   = field_id;
@@ -833,7 +731,6 @@ function add_field(section,field,fieldobj,rownum,rem) {
     td = document.createElement("td");
     i = document.createElement("textarea");
     i.id    = field_id+"_COMMENTS";
-    //i.type  = "text";
     i.name  = field+"_COMMENTS";
     i.title = "Curator comments";
     i.cols  = 25;
@@ -847,8 +744,6 @@ function add_field(section,field,fieldobj,rownum,rem) {
     txt = document.createTextNode(fieldobj.description);
     td.appendChild(txt);
     tr.appendChild(td);
-
-    //document.getElementById(form_id+"_table").appendChild(tr);
 
     // must do both of these after the td is added to the DOM
     if (auto) {
@@ -938,7 +833,8 @@ function get_field_values(field,htmlid) {
 	    field_values[field] = data;
 	    add_vals_menu(field,htmlid);
 	})
-	.catch(error => console.error(error));
+//	.catch(error => console.error(error));
+	.catch(error => capture_messages( { log: [ { level: 'ERROR', prefix: 'Unable to retrieve values for: '+ field, message: error } ] } ));
 }
 
 function adjust_value(selobj, elemid) {
@@ -968,10 +864,10 @@ function clear_element(ele) {
 
 function toggleMsgs() {
     var lp = "0px";
-    if (  document.getElementById("mySidenav").style.left == lp) {
+    if (  document.getElementById("sidenav").style.left == lp) {
 	lp = "-500px";
     }
-    document.getElementById("mySidenav").style.left = lp;
+    document.getElementById("sidenav").style.left = lp;
 }
 
 function dismissBox(box_id) {
