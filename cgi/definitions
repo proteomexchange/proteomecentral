@@ -71,8 +71,8 @@ def main():
                                        "description": "Free text notes about the curation process of this paper. For example, what global problems where encountered, etc." } } },
 
             "study metadata": { "data rows": [ "dataset id", "dataset title", "publication", "lab head name", "lab head email address", "lab head affiliation", 
-                                               "lab head country", "contributor", "acquisition type", "PTMs searched",
-                                               "artifacts searched", "labeling modifications", "n conditions", "n assays", "n proteins claimed", "protein-level FDR",
+                                               "lab head country", "contributor", "acquisition type", "artifacts searched", "PTMs searched",
+                                               "labeling modifications", "n conditions", "n assays", "n proteins claimed", "protein-level FDR",
                                                "study variables", "dataset description", "metadata completeness level" ], "is clonable": "false", "is required": "true",
                    "row attributes": {
                        "dataset id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
