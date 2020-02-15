@@ -309,8 +309,10 @@ def main():
                     if 'value' in row or 'comment' in row:
                         new_row_name = f"{name}___{global_counter}"
                         global_counter += 1
+
                         #### Get a new copy of the row to fill in below
-                        row = copy.deepcopy(reference_definitions['section_definitions'][section]['row attributes'][name])
+                        reference_section = re.sub(r'___.+$','',section)
+                        row = copy.deepcopy(reference_definitions['section_definitions'][reference_section]['row attributes'][name])
 
                         #### Now need to insert that new row name into the list
                         #### This complex bit iterates through the rows to look for the last row that is like this one
