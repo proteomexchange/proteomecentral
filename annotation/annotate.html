@@ -10,9 +10,6 @@
 <link rel="stylesheet" type="text/css" href="../css/isb.css"/>
 <link rel="stylesheet" type="text/css" href="css/dd.css"/>
 <style type="text/css">
-html {
- scroll-behavior: smooth;
-}
 .header {
   position:fixed;
   width:100%;
@@ -50,7 +47,7 @@ textarea {
   transition: all 0.25s ease;
 }
 textarea:focus {
-  height: 4em;
+  height: 6em;
 }
 
 .sect {
@@ -327,7 +324,7 @@ span.summary {
 <span title="Cancel" class="enter" onclick="dismissBox('newDataset');">Cancel</span><span title="Enter Dataset Name" class="enter" onclick="enter_dataset();">Create New</span></div>
 
 
-<div id="mySidenav" class="messages"><span title="show/hide messages" class="toggle" onclick="toggleMsgs();">&varr; Messages (<span id="num_msgs">0</span>)</span>
+<div id="sidenav" class="messages"><span title="show/hide messages" class="toggle" onclick="toggleMsgs();">&varr; Messages (<span id="num_msgs">0</span>)</span>
 <span class="title">Messages and Debug Info</span><br/>
   <span id="myMessages">No messages...</span>
 </div>
