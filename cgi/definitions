@@ -156,6 +156,16 @@ def main():
 		        "description": "Disease afflicting the subject" },
 		    "drug name": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
 		        "description": "Name of a drug used to treat the subject" },
+
+		    "light intensity": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		        "description": "Intensity of the light during light time" },
+		    "light pattern": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		        "description": "Pattern of the light time/dark time (e.g. 8h light/16h dark or 10h light/14h dark)" },
+		    "temperature pattern": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		        "description": "Pattern of the temperature in light time/dark time (e.g. 35C light/25C dark)" },
+		    "humidity pattern": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		        "description": "Pattern of the relative humidity in light time/dark time (e.g. 50% light/75% dark)" },
+
 		    "treatment": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
 		        "description": "Free-text statement of the treatment applied to the subject" },
 		    "treatment duration": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "true",
