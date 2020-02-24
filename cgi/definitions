@@ -116,6 +116,7 @@ def main():
                     } },
             "condition metadata": { "data rows": [ "condition id", "condition tag", "condition title", "subject id", "subject title", "species", "strain", "genotype", "age", "developmental stage", "sex",
                                                    "growth medium", "organism part", "tissue type", "cell type", "subcellular component", "disease", "drug name",
+                                                   "light intensity", "light pattern", "temperature pattern", "humidity pattern",
                                                    "treatment", "treatment duration", "time since reference", "other condition factor", "other condition factor value", 
                                                    "tissue prep protocol", "cleanup protocol", "enrichment", "depletion", "alkylation agent", "cleavage agent", "quantitative label", 
                                                    "fractionation", "instrument", "other sample prep factor", "other sample prep factor value" ], "is clonable": "true", "is required": "true",
