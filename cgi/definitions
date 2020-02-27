@@ -116,7 +116,7 @@ def main():
                     } },
             "condition metadata": { "data rows": [ "condition id", "condition tag", "condition title", "subject id", "subject title", "species", "strain", "genotype", "age", "developmental stage", "sex",
                                                    "growth medium", "organism part", "tissue type", "cell type", "subcellular component", "disease", "drug name",
-                                                   "light intensity", "light pattern", "temperature pattern", "humidity pattern",
+                                                   "light intensity", "light conditions", "temperature conditions", "humidity conditions",
                                                    "treatment", "treatment duration", "time since reference", "other condition factor", "other condition factor value", 
                                                    "tissue prep protocol", "cleanup protocol", "enrichment", "depletion", "alkylation agent", "cleavage agent", "quantitative label", 
                                                    "fractionation", "instrument", "other sample prep factor", "other sample prep factor value" ], "is clonable": "true", "is required": "true",
@@ -160,11 +160,11 @@ def main():
 
 		    "light intensity": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
 		        "description": "Intensity of the light during light time" },
-		    "light pattern": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		    "light conditions": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
 		        "description": "Pattern of the light time/dark time (e.g. 8h light/16h dark or 10h light/14h dark)" },
-		    "temperature pattern": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		    "temperature conditions": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
 		        "description": "Pattern of the temperature in light time/dark time (e.g. 35C light/25C dark)" },
-		    "humidity pattern": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		    "humidity conditions": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
 		        "description": "Pattern of the relative humidity in light time/dark time (e.g. 50% light/75% dark)" },
 
 		    "treatment": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
@@ -235,6 +235,9 @@ def main():
     data = None
     dataset_id = params.dataset_id
 
+    #### Make a deep copy of the blank definitions as a template for extra sections
+    reference_definitions = copy.deepcopy(definitions)
+
     #### If there is an annotations_id, then read that data and insert it
     if params.annotation_id is not None:
         add_message(response, level='INFO', message=f"Finding annotations for annotation_id={params.annotation_id}")
@@ -261,13 +264,15 @@ def main():
         global_counter = 100
         add_message(response, level='INFO', message=f"Merging loaded annotations into template definitions")
 
-        #### Make a deep copy of the blank definitions as a template for extra sections
-        reference_definitions = copy.deepcopy(definitions)
-
         #### Loop over each field in the loaded annotations file and insert it into the definitions
         for field_key,field in data.items():
             section = field["section"]
             name = field["name"]
+
+            #### Temporary renaming patch
+            match = re.search(r'pattern',name)
+            if match:
+                name = re.sub(r'pattern','conditions',name)
 
             #### If the name section does not exist, it is like a copied section. Deal with that here: CS1
             if section not in definitions['section_definitions']:
@@ -496,6 +501,9 @@ def main():
             definitions['dataset_info']['MS run name'].sort(key=by_rootname)
             add_message(response, level='INFO', message=f"Added {len(definitions['dataset_info']['MS run name'])} MS run names for annotation")
 
+    #### See if there is an MS Run Metadata table to import
+    if dataset_id is not None:
+        merge_msrun_metadata(dataset_id, definitions, reference_definitions, response)
 
     add_message(response, level='INFO', message=f"Processing complete")
     send_response(response, output_format=params.output_format, mode=mode)
@@ -503,6 +511,140 @@ def main():
     for key in [ 'state', 'status', 'title', 'detail', 'log' ]:
         definitions[key] = response[key]
     print(json.dumps(definitions,sort_keys=True,indent=2))
+
+
+############################################################################
+def merge_msrun_metadata(dataset_id, definitions, reference_definitions, response):
+    msrun_metadata_file = f"/net/dblocal/wwwspecial/proteomecentral/devED/lib/proxi/metadata_autocomplete/annotation_MSRunMetadata/{dataset_id}_MSRunMetadata.txt"
+    if not os.path.exists(msrun_metadata_file):
+        add_message(response, level='INFO', message=f"No MS run metadata TSV found for {dataset_id}, so nothing to integrate")
+        return
+
+    expected_column_titles = definitions['section_definitions']['MS run metadata']['data rows']
+
+    # #### Determine how many MS run metadata sections we have already
+    n_existing_msruns = 0
+    new_sections = []
+    sections_to_delete = []
+    for section_name in definitions['sections']:
+        if "MS run metadata" in section_name:
+            n_existing_msruns += 1
+            sections_to_delete.append(section_name)
+        else:
+            new_sections.append(section_name)
+
+    # #### If there are fewer than 2, then go ahead and delete them all in anticipation of loading from the file
+    if n_existing_msruns < 2:
+        definitions['sections'] = new_sections
+        add_message(response, level='INFO', message=f"Purging existing MS run metadata section in order to load from a file")
+        for section_name in sections_to_delete:
+            del definitions['section_definitions'][section_name]
+
+    # #### Else, write a detailed message on why we opted not to load from the file and return
+    else:
+        add_message(response, level='WARNING', message="There are already more than one MS run metadata sections in this saved annotation. " +
+            "Although there is a metadata file available for loading, it is assumed that it has already loaded. The file can be reloaded " +
+            "only when an annotation with 0 or 1 MS run metadata sections are present. So, if you want to reload from the file, delete all " +
+            "(or all but one) of the MS run metadata sections, save the annotation, and then reload it. This will trigger a fresh read of " +
+            "the MS run metadata file for this PXD.")
+        return
+
+    # #### Get a list of the expected MS run names
+    expected_msrun_names = {}
+    expected_msrun_names_underscored = {}
+    unexpected_msrun_names = {}
+    if 'dataset_info' in definitions and 'MS run name' in definitions['dataset_info']:
+        for msrun_name in definitions['dataset_info']['MS run name']:
+            name = msrun_name['name']
+            expected_msrun_names[name] = 1
+            fixed_name = re.sub("-","_",name)
+            fixed_name = re.sub(" ","_",fixed_name).lower().strip()
+            expected_msrun_names_underscored[fixed_name] = name
+
+
+    # #### Read the file
+    with open(msrun_metadata_file) as infile:
+        iline = 0
+        msrun_index = 1000
+        expected_header_columns = [ "MS run ordinal", "MS run name", "MS run type", "channel ids", "assay ids", "assay tags", "condition ids", "biological replicate counters",
+            "technical replicate counters", "fractionation ordinal", "fractionation label" ]
+        for line in infile:
+            line = line.strip()
+
+            # #### Skip lines beginning with a # as a comment
+            match = re.match(r'#',line)
+            if match:
+                continue
+
+            # #### Skip empty lines
+            match = re.match(r'\s*$',line)
+            if match:
+                continue
+
+            columns = line.split("\t")
+
+            # #### The first non-empty non-comment line must be the header with the prescribed column titles
+            if iline == 0:
+                if len(columns) < len(expected_header_columns):
+                    add_message(response, level='ERROR', status=464, code='MSRunMetadataTooFewColumns', message=f"Expected {len(expected_header_columns)} columns in input file {msrun_metadata_file} but found {len(columns)}.")
+                icolumn = 0
+                for column in columns:
+                    if column.lower() != expected_header_columns[icolumn].lower():
+                        add_message(response, level='ERROR', status=464, code='MSRunMetadataWrongColumnHeader',
+                            message=f"In header of MS run metadata file {msrun_metadata_file}, expected column {icolumn} (beginning with 0) to be '{expected_header_columns[icolumn]}' but instead found '{column}'.")
+                    icolumn += 1
+
+                add_message(response, level='INFO', message=f"response status is {response['state']}")
+                if response['state'] != 'OK':
+                    response['state'] = 'OK'
+                    response['status'] = 200
+                    return
+                add_message(response, level='INFO', message=f"Column names are as expected")
+                iline += 1
+                continue
+
+            # #### Create a new section to hold the contents of this line
+            new_msrun = copy.deepcopy(reference_definitions['section_definitions']['MS run metadata'])
+            new_section_label = f"MS run metadata___{msrun_index}"
+            msrun_index += 1
+            definitions['section_definitions'][new_section_label] = new_msrun
+            definitions['sections'].append(new_section_label)
+
+            icolumn = 0
+            for column in columns:
+                match = re.match(r'\s*\"(.*)\"\s*$',column)
+                if match:
+                    column = match.group(1)
+                definitions['section_definitions'][new_section_label]['row attributes'][expected_header_columns[icolumn]]['value'] = column
+
+                # #### Keep track of the MS run names
+                if icolumn == 1:
+                    if column in expected_msrun_names:
+                        del expected_msrun_names[column]
+                    else:
+                        fixed_name = re.sub("-","_",column)
+                        fixed_name = re.sub(" ","_",fixed_name).lower().strip()
+                        if fixed_name in expected_msrun_names_underscored:
+                            real_name = expected_msrun_names_underscored[fixed_name]
+                            del expected_msrun_names[real_name]
+                            del expected_msrun_names_underscored[fixed_name]
+                        else:
+                            add_message(response, level='ERROR', status=464, code='UnexpectedMSRunName', message=f"Row {iline} has an MS run name '{column}' which is not among the expected MS run names from ProteomeXchange")
+                            if column in unexpected_msrun_names:
+                                add_message(response, level='ERROR', status=464, code='DuplicatedMSRunName', message=f"Row {iline} has an MS run name {column} that has already occurred earlier and is thus duplicated")
+                            else:
+                                unexpected_msrun_names[column] = 1
+
+                icolumn += 1
+
+            iline += 1
+
+        # #### Check to see if an expected MS runs were not mentioned
+        for msrun in expected_msrun_names:
+            add_message(response, level='ERROR', status=464, code='MissingMSRunName', message=f"The ProteomeXchange record has an MS run name '{msrun}' that is not listed in the imported data table")
+
+        response['state'] = 'OK'
+        response['status'] = 200
 
 
 ############################################################################
