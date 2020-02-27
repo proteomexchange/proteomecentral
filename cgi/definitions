@@ -568,6 +568,7 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
         msrun_index = 1000
         expected_header_columns = [ "MS run ordinal", "MS run name", "MS run type", "channel ids", "assay ids", "assay tags", "condition ids", "biological replicate counters",
             "technical replicate counters", "fractionation ordinal", "fractionation label" ]
+        warned_about_extra_columns = True
         for line in infile:
             line = line.strip()
 
@@ -593,6 +594,8 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
                         add_message(response, level='ERROR', status=464, code='MSRunMetadataWrongColumnHeader',
                             message=f"In header of MS run metadata file {msrun_metadata_file}, expected column {icolumn} (beginning with 0) to be '{expected_header_columns[icolumn]}' but instead found '{column}'.")
                     icolumn += 1
+                    if icolumn >= len(expected_header_columns):
+                        break
 
                 add_message(response, level='INFO', message=f"response status is {response['state']}")
                 if response['state'] != 'OK':
@@ -612,6 +615,15 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
 
             icolumn = 0
             for column in columns:
+
+                #### Skip any columns out past where we were expecting as a courtesy
+                if icolumn >= len(expected_header_columns):
+                    if not warned_about_extra_columns:
+                        add_message(response, level='WARNING', message=f"There are additional data in columns out past where we expect. This could be indicative of a data problem. Or maybe there is just some additional auxiliary information out there past the last column, which is permitted, but ignored.")
+                        warned_about_extra_columns = True
+                    break
+
+                #### Strip surrounding quotes
                 match = re.match(r'\s*\"(.*)\"\s*$',column)
                 if match:
                     column = match.group(1)
