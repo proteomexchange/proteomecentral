@@ -115,11 +115,13 @@ def main():
                                                         "description": "Five-tier classification of the quality of the annotation summary as judged by the annotator" },
                     } },
             "condition metadata": { "data rows": [ "condition id", "condition tag", "condition title", "subject id", "subject title", "species", "strain", "genotype", "age", "developmental stage", "sex",
-                                                   "growth medium", "organism part", "tissue type", "cell type", "subcellular component", "disease", "drug name",
+                                                   "growth medium", "organism part", "tissue type", "cell type", "cell line", "subcellular component", "disease", "drug name",
                                                    "light intensity", "light conditions", "temperature conditions", "humidity conditions",
-                                                   "treatment", "treatment duration", "time since reference", "other condition factor", "other condition factor value", 
-                                                   "tissue prep protocol", "cleanup protocol", "enrichment", "depletion", "alkylation agent", "cleavage agent", "quantitative label", 
-                                                   "fractionation", "instrument", "other sample prep factor", "other sample prep factor value" ], "is clonable": "true", "is required": "true",
+                                                   "growth protocol", "treatment", "treatment duration", "time since reference", "treatment protocol", 
+                                                   "other condition factor", "other condition factor value", 
+                                                   "tissue prep protocol", "cleanup protocol", "enrichment", "depletion", "fractionation", "separation protocol", 
+                                                   "alkylation agent", "cleavage agent", "digestion protocol", "quantitative label", "instrument", "acquisition protocol", "informatics protocol", 
+                                                   "other sample prep factor", "other sample prep factor value" ], "is clonable": "true", "is required": "true",
 	        "row attributes": {
 		    "condition id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
 		        "description": "Internal identifier for this annotation sheet of this condition" },
@@ -151,6 +153,8 @@ def main():
 		        "description": "Lower level of tissue or fluid (e.g., epidermis, stomata, endodermis, xylem, xylem sap, phloem sap)" },
 		    "cell type": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
 		        "description": "Type of cells if specific (e.g. parenchyma cells, xylem cells, phloem cells)" },
+		    "cell line": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+                        "description": "Name of the cell line (e.g. HeLa cells, HEK293T cells)" },
 		    "subcellular component": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
 		        "description": "Subcellular compartment  or subcellular fraction (organelle – such as chloroplast, nucleus, ER; or cytoplasm, microsomal fraction)" },
 		    "disease": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
@@ -167,35 +171,52 @@ def main():
 		    "humidity conditions": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
 		        "description": "Pattern of the relative humidity in light time/dark time (e.g. 50% light/75% dark)" },
 
+		    "growth protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing the growth conditions of the subject (extended free text with sentences)" },
 		    "treatment": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
-		        "description": "Free-text statement of the treatment applied to the subject" },
+		        "description": "Terse free-text statement providing the essence of the treatment applied to the subject" },
 		    "treatment duration": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "true",
 		        "description": "Duration of the listed treatment" },
 		    "time since reference": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "true",
 		        "description": "Time elapsed since a reference including time unit, mostly applicable to time course studies (e.g., 30 min, 8 hr)" },
-		    "other condition factor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
-		        "description": "Other important biological factor of the subjects in the experiment that is not captured above (e.g. height" },
-		    "other condition factor value": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
-		        "description": "Value associated with the other important biological factor of the subjects in the experiment that is not captured above (e.g. 23 cm" },
+		    "treatment protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		                            "description": "Protocol describing the treatment of the subject beyond the initial growth conditions (extended free text with sentences that may elaborate considerably over the terse treatment field)" },
 
-		    "tissue prep protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		    "other condition factor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Other important biological factor of the subjects in the experiment that is not captured above (e.g. height)" },
+		    "other condition factor value": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Value associated with the other important biological factor of the subjects in the experiment that is not captured above (e.g. 23 cm)" },
+
+		    "tissue prep protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
 		        "description": "Preparation protocol of tissue material (buffer, pH, salts, detergents, protease inhibitors, reductants, etc); time; temperature" },
-		    "cleanup protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
-		        "description": "Description of removal of debris, e.g. by filtering (microcloth, spin filters, etc.) or centrifugation" },
+		    "cleanup protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing removal of debris, e.g. by filtering (microcloth, spin filters, etc.) or centrifugation" },
+
 		    "enrichment": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
 		        "description": "Enrichment (e.g., TAILS, COFRADIC, FLAG-tag, none)" },
 		    "depletion": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
 		        "description": "Protein depletion protocol/product name (e.g., MARS14, RuBisCo, etc.)" },
+		    "fractionation": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Type of fractionation used (e.g., SCX, gel bands, OffGel, 2DLC, DiGE, FAIMS, none, unknown)" },
+		    "separation protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing the off-line separation or fractionation of proteins or peptides prior to LC-MS (extended free text with sentences)" },
+
 		    "alkylation agent": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
 		        "description": "Name of the alkylation agent (e.g., iodoacetamide)" },
 		    "cleavage agent": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
 		        "description": "Protease or other cleavage agent used for digestion (e.g., trypsin, chymotrypsin, GluC)" },
+		    "digestion protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing the digestion of proteins into peptides (extended free text with sentences)" },
+
 		    "quantitative label": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
 		        "description": "Type of quantitative label used (e.g., TMT6, TMT10, iTRAQ4plex, iTRAQ8plex, SILAC 13C, label-free, none)" },
-		    "fractionation": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
-		        "description": "Type of fractionation used (e.g., SCX, gel bands, OffGel, 2DLC, DiGE, FAIMS, none, unknown)" },
 		    "instrument": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
 		        "description": "Mass spectrometer used for analysis (e.g., Q Exactive, TripleTOF 6600)" },
+		    "acquisition protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing the acquisition of data including all LC-MS components where applicable (extended free text with sentences)" },
+		    "informatics protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing the downstream analysis of data produced by the instrument (extended free text with sentences)" },
+
 		    "other sample prep factor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
 		        "description": "Other important sample prep factor of the condition that is not listed above" },
 		    "other sample prep factor value": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
@@ -515,9 +536,20 @@ def main():
 
 ############################################################################
 def merge_msrun_metadata(dataset_id, definitions, reference_definitions, response):
-    msrun_metadata_file = f"/net/dblocal/wwwspecial/proteomecentral/devED/lib/proxi/metadata_autocomplete/annotation_MSRunMetadata/{dataset_id}_MSRunMetadata.txt"
-    if not os.path.exists(msrun_metadata_file):
-        add_message(response, level='INFO', message=f"No MS run metadata TSV found for {dataset_id}, so nothing to integrate")
+
+    #### Find the most recent version
+    version = 1
+    filename = 'nothing'
+    while 1:
+        test_filename = f"/net/dblocal/wwwspecial/proteomecentral/devED/lib/proxi/metadata_autocomplete/annotation_MSRunMetadata/{dataset_id}_{version}.txt"
+        if os.path.exists(test_filename):
+            filename = test_filename
+        else:
+            break
+        version += 1
+
+    if not os.path.exists(filename):
+        add_message(response, level='INFO', message=f"No MS run metadata TSV file found for {dataset_id}, so nothing to integrate")
         return
 
     expected_column_titles = definitions['section_definitions']['MS run metadata']['data rows']
@@ -553,6 +585,7 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
     expected_msrun_names = {}
     expected_msrun_names_underscored = {}
     unexpected_msrun_names = {}
+    previous_msrun_names = {}
     if 'dataset_info' in definitions and 'MS run name' in definitions['dataset_info']:
         for msrun_name in definitions['dataset_info']['MS run name']:
             name = msrun_name['name']
@@ -563,7 +596,7 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
 
 
     # #### Read the file
-    with open(msrun_metadata_file) as infile:
+    with open(filename) as infile:
         iline = 0
         msrun_index = 1000
         expected_header_columns = [ "MS run ordinal", "MS run name", "MS run type", "channel ids", "assay ids", "assay tags", "condition ids", "biological replicate counters",
@@ -631,9 +664,15 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
 
                 # #### Keep track of the MS run names
                 if icolumn == 1:
-                    if column in expected_msrun_names:
+                    if column in previous_msrun_names:
+                        add_message(response, level='ERROR', status=464, code='DuplicatedMSRunName', message=f"Row {iline} has an MS run name {column} that has already occurred earlier and is thus duplicated")
+                        definitions['section_definitions'][new_section_label]['row attributes'][expected_header_columns[icolumn]]['is_invalid'] = f"Row {iline} has an MS run name {column} that has already occurred earlier and is thus duplicated"
+                        
+                    elif column in expected_msrun_names:
                         del expected_msrun_names[column]
+                        previous_msrun_names[column] = 1
                     else:
+                        previous_msrun_names[column] = 1
                         fixed_name = re.sub("-","_",column)
                         fixed_name = re.sub(" ","_",fixed_name).lower().strip()
                         if fixed_name in expected_msrun_names_underscored:
@@ -642,10 +681,8 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
                             del expected_msrun_names_underscored[fixed_name]
                         else:
                             add_message(response, level='ERROR', status=464, code='UnexpectedMSRunName', message=f"Row {iline} has an MS run name '{column}' which is not among the expected MS run names from ProteomeXchange")
-                            if column in unexpected_msrun_names:
-                                add_message(response, level='ERROR', status=464, code='DuplicatedMSRunName', message=f"Row {iline} has an MS run name {column} that has already occurred earlier and is thus duplicated")
-                            else:
-                                unexpected_msrun_names[column] = 1
+                            definitions['section_definitions'][new_section_label]['row attributes'][expected_header_columns[icolumn]]['is_invalid'] = f"Input file row {iline} has an MS run name '{column}' which is not among the expected MS run names from ProteomeXchange"
+                            unexpected_msrun_names[column] = 1
 
                 icolumn += 1
 
