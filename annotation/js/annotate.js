@@ -1,8 +1,10 @@
-var form_defs_url = "/cgi/definitions"; // "/devED/cgi/definitions";
-var field_def_url = "/api/autocomplete/v0.1/autocomplete?word=*&field_name=";
-var form_post_url = "/api/autocomplete/v0.1/annotations";
-var datasets_url  = "/api/autocomplete/v0.1/datasets";
-var datasetdef_url= "/api/autocomplete/v0.1/annotations?dataset_id=";
+var form_defs_url   = "/cgi/definitions"; // "/devED/cgi/definitions";
+var base_api        = "/api/autocomplete/v0.1/";
+var field_def_url   = base_api+"autocomplete?word=*&field_name=";
+var form_post_url   = base_api+"annotations";
+var msruns_post_url = base_api+"msrundata";
+var datasets_url    = base_api+"datasets";
+var datasetdef_url  = base_api+"annotations?dataset_id=";
 
 var response_json = {};
 var field_values  = {};
@@ -40,6 +42,7 @@ function get_datasets() {
 		sel.appendChild(opt);
 	    }
 
+	    process_querystring(window.location);
 	})
 	.catch(error => showAlerts(error));
 }
@@ -70,7 +73,7 @@ function load_dataset_annotations(dset) {
 	    .then(data => {
 		add_datasets_menu(data);
 	    })
-	    .catch(error => console.error(error));
+	    .catch(error => showAlerts(error));
     }
 }
 
@@ -89,13 +92,93 @@ function add_datasets_menu(dsets) {
     opt.text  = "-- Create a NEW annotation --";
     sel.appendChild(opt);
 
+    opt = document.createElement("option");
+    opt.value = '--UPLOAD--';
+    opt.text  = "-- Upload MS Runs Definitions Table --";
+    sel.appendChild(opt);
+
     for (var annot of dsets) {
 	opt = document.createElement("option");
 	opt.value = annot.id;
 	opt.text  = annot.name;
 	sel.appendChild(opt);
     }
+
+    if (special_vars["autoload"]) {
+	var latest = sel.options[sel.options.length - 1].value;
+	sel.value = latest;
+	get_form_definitions(latest);
+    }
+    special_vars["autoload"] = false;
 }
+
+
+function show_upload_form() {
+    clear_element("main");
+
+    var pxd = document.getElementById("dataset_menu").value;
+
+    var f = document.createElement("form");
+    f.id     = form_id;
+    f.method = "post";
+    f.action = "javascript:uploadTable();";
+
+    var div = document.createElement("div");
+    div.id        = "dataset-primary";
+    div.className = "site-content";
+    div.style.marginLeft = "50px";
+    div.style.maxWidth   = "1500px";
+
+    var h1  = document.createElement("h1");
+    var txt = document.createTextNode(pxd);
+    h1.className    = "dataset-title";
+    h1.id           = "annotation-title";
+    h1.style.margin = "0px";
+    h1.appendChild(txt);
+    div.appendChild(h1);
+
+    var div2 = document.createElement("div");
+    div2.className = "dataset-content";
+
+    var h3  = document.createElement("h3");
+    txt = document.createTextNode("Please enter/paste tab-delimited values into text area below:");
+    h3.appendChild(txt);
+    div2.appendChild(h3);
+
+    var i = document.createElement("textarea");
+    i.className = "tabinput";
+    i.rows = 200;
+    i.cols = 150;
+    i.id   = "msrun_tabinfo";
+    div2.appendChild(i);
+
+    i = document.createElement("input");
+    i.id    = "msrun_dataset_id";
+    i.type  = "hidden";
+    i.value = pxd;
+    div2.appendChild(i);
+
+    div.appendChild(div2);
+
+    f.appendChild(div);
+    document.getElementById("main").appendChild(f);
+
+
+    var sub = document.createElement("input");
+    sub.id = "upload_button";
+    sub.className = "linkback";
+    sub.style.marginLeft  = "10px";
+    sub.style.marginRight = "10px";
+    sub.title  = "Upload!";
+    sub.type   = "submit";
+    sub.value  = " U P L O A D ";
+
+    sub.addEventListener('click', uploadTable);
+
+    clear_element("status");
+    document.getElementById("status").appendChild(sub);
+}
+
 
 function get_form_definitions(annot_id) {
     var xurl = form_defs_url;
@@ -111,6 +194,10 @@ function get_form_definitions(annot_id) {
 	    xurl += "?dataset_id=" + document.getElementById("newDatasetId").value;
 	    document.getElementById("dataset_menu2").selectedIndex = 0;
 	}
+	else if (annot_id == "--UPLOAD--") {
+	    show_upload_form();
+	    return;
+	}
 	else {
 	    xurl += "?annotation_id=" + annot_id;
 	}
@@ -121,7 +208,15 @@ function get_form_definitions(annot_id) {
     }
     dismissBox("newDataset");
     dismissBox("alertBox");
+
     clear_element("main");
+    var h1  = document.createElement("h1");
+    h1.style.marginLeft = "100px";
+    h1.className = "current";
+    var txt = document.createTextNode("Loading...");
+    h1.appendChild(txt);
+    document.getElementById("main").appendChild(h1);
+
     clear_element("status");
     document.getElementById("status").appendChild(document.createTextNode("Load/Create:"));
 
@@ -163,7 +258,10 @@ function capture_messages(json_resp) {
 
 function show_messages() {
     clear_element("myMessages");
+    var errors = 0;
     for (var msg of messages) {
+	if (msg.level == "ERROR") { errors++; }
+
 	var span = document.createElement("span");
 	span.className = "msg " + msg.level;
 
@@ -177,6 +275,9 @@ function show_messages() {
 
 	document.getElementById("myMessages").appendChild(span);
 	document.getElementById("num_msgs").innerHTML = messages.length;
+    }
+    if (errors > 0) {
+	showAlerts("There are " + errors + " errors with the data in this annotation record. Please review and correct before submitting.");
     }
 }
 
@@ -299,8 +400,18 @@ function add_section(sect_name, clonable) {
 	    tr.id = "msruns_summarytable";
 	    tr.className = "sect sect_id";
 
+	    // open/close widget
 	    td = document.createElement("td");
-	    td.colSpan = num_cols;
+	    td.className = "sect_clop";
+	    td.title = "Show/Hide section values";
+	    td.id = "msms_summary_clop";
+	    td.setAttribute('onclick', 'clop_sect(\"msms_summary\");');
+	    txt = document.createTextNode('\u2013');
+	    td.appendChild(txt);
+	    tr.appendChild(td);
+
+	    td = document.createElement("td");
+	    td.colSpan = num_cols-1;
 	    //td.style.borderBottom = "0px";
 	    td.style.fontSize = "20px";
 
@@ -316,6 +427,7 @@ function add_section(sect_name, clonable) {
 	tr = document.getElementById(form_id+"_table").insertRow(document.getElementById("msruns_summarytable").rowIndex+special_vars["numms"]);
 
 	tr.id = sect_name + "_summarytr";
+	tr.dataset.sect = "msms_summary";
 	//tr.className = "sect";
 
 	td = document.createElement("td");
@@ -344,10 +456,23 @@ function add_section(sect_name, clonable) {
     tr = document.getElementById(form_id+"_table").insertRow(rownum);
     tr.dataset.sect = sect_name + "_header";
     tr.className = "sect";
+
+    // open/close widget
     td = document.createElement("td");
-    td.colSpan = num_cols-1;
+    td.rowSpan = 2;
+    td.className = "sect_clop";
+    td.title = "Show/Hide section values";
+    td.id = sect_name + "_clop";
+    td.setAttribute('onclick', 'clop_sect(\"'+sect_name+'\");');
+    txt = document.createTextNode('\u2013');
+    td.appendChild(txt);
+    tr.appendChild(td);
+
+    td = document.createElement("td");
+    td.colSpan = num_cols-2;
     td.style.borderBottom = "0px";
     td.style.fontSize = "20px";
+
 
     var sect_text = sect_name.split("___");
     txt = document.createTextNode(sect_text[0]);
@@ -395,7 +520,7 @@ function add_section(sect_name, clonable) {
     tr.dataset.sect = sect_name + "_header";
     tr.className = "sect";
 
-    for (var x of ['','','Value','CV id','Comments','Definition']) {
+    for (var x of ['','Value','CV id','Comments','Definition']) {
 	td = document.createElement("th");
 	txt = document.createTextNode(x);
 	td.appendChild(txt);
@@ -566,7 +691,7 @@ function add_field(section,field,fieldobj,rownum,rem) {
     if      (rem == "true")  { rem = true;  }
     else if (rem == "false") { rem = false; }
 
-    // catch dataset_info values
+    // capture dataset_info values
     if (field_values[field]) { list = true; }
 
     var type = fieldobj["data type"];
@@ -644,7 +769,8 @@ function add_field(section,field,fieldobj,rownum,rem) {
 	i = document.createElement("textarea");
 	i.rows = rows;
 	i.cols = 41;
-    }
+ 	i.className = "expand";
+   }
     else {
 	i = document.createElement("input");
 	i.type = "text";
@@ -768,6 +894,46 @@ function submitAnnotation(e) {
     document.getElementById(form_id).submit();
 }
 
+function uploadTable(e) {
+    response_json = {};
+    response_json.dataset_id = document.getElementById("msrun_dataset_id").value;
+    response_json.table_content = document.getElementById("msrun_tabinfo").value;
+
+    //alert("atts : "+JSON.stringify(response_json, undefined, 2));
+
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("post", msruns_post_url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+    xhr.send(JSON.stringify(response_json));  // send the collected data as JSON
+
+    xhr.onloadend = function() {
+	if (xhr.responseText) {
+	    var rjson = JSON.parse(xhr.responseText);
+	    capture_messages(rjson);
+
+            if (xhr.status == 200) {
+		alert(rjson.detail);
+		document.getElementById("dataset_menu2").selectedIndex = 0;
+	    }
+	    else {
+		clear_element("alertList");
+		var alerts = document.getElementById("alertList");
+		var txt = document.createTextNode("There are errors with this upload.");
+		alerts.appendChild(txt);
+		alerts.appendChild(document.createElement("br"));
+		txt = document.createTextNode(rjson.detail);
+		alerts.appendChild(txt);
+		showAlerts(null);
+	    }
+	}
+	else {
+	    showAlerts("There was an error with the upload! Please report or try again later.");
+	}
+    }
+
+}
+
 
 function valueChanged(e) {
     change_cnt++;
@@ -855,6 +1021,29 @@ function update_title(elem, text) {
     document.getElementById(elem).innerHTML = text;
 }
 
+
+
+function process_querystring(url) {
+    var params = new URLSearchParams(url.search);
+
+    if (!params.has('dataset_id')) {
+	return;
+    }
+
+    var dataid = params.get('dataset_id');
+    if (document.getElementById("dataset_menu").contains(dataid)) {
+	document.getElementById("dataset_menu").value = dataid;
+	special_vars["autoload"] = true;
+	load_dataset_annotations(dataid);
+    }
+    else {
+	document.getElementById("newDatasetId").value = dataid;
+	enter_dataset();
+    }
+
+}
+
+
 function clear_element(ele) {
     const node = document.getElementById(ele);
     while (node.firstChild) {
@@ -862,16 +1051,42 @@ function clear_element(ele) {
     }
 }
 
+function clop_sect(sect) {
+    if (!special_vars.hasOwnProperty(sect+"_open")) {
+	special_vars[sect+"_open"] = 1;
+    }
+
+    var disp = "table-row";
+    var mipl = "&ndash;";
+    if (special_vars[sect+"_open"] == 1) {
+	disp = "none";
+	mipl = "+";
+    }
+
+    for (var tr of Array.from(document.getElementById(form_id+"_table").rows)) {
+	if (tr.dataset.sect == sect) {
+	    tr.style.display = disp; 
+	}
+    }
+    document.getElementById(sect+"_clop").innerHTML = mipl;
+
+    special_vars[sect+"_open"] = 1 - special_vars[sect+"_open"];
+}
+
 function toggleMsgs() {
     var lp = "0px";
-    if (  document.getElementById("sidenav").style.left == lp) {
-	lp = "-500px";
+    var lt = "504px";
+    if (document.getElementById("sidenav").style.left == lp) {
+	lp = "-505px";
+	lt = "0px";
     }
     document.getElementById("sidenav").style.left = lp;
+    document.getElementById("sidenav_toggle").style.left = lt;
 }
 
 function dismissBox(box_id) {
     document.getElementById(box_id).style.visibility = "hidden";
+    document.getElementById("overlay").style.display = "none";
 }
 
 function showAlerts(msg) {
@@ -883,4 +1098,15 @@ function showAlerts(msg) {
 
 function showPXDInput() {
     document.getElementById("newDataset").style.visibility = "visible";
+    document.getElementById("overlay").style.display = "block";
+}
+
+
+HTMLSelectElement.prototype.contains = function(val) {
+    for (var opt of this.options) {
+        if (opt.value == val) {
+            return true;
+        }
+    }
+    return false;
 }
