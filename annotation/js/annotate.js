@@ -398,7 +398,7 @@ function add_section(sect_name, clonable) {
 
 	    tr = document.createElement("tr");
 	    tr.id = "msruns_summarytable";
-	    tr.className = "sect sect_id";
+	    tr.className = "sect";
 
 	    // open/close widget
 	    td = document.createElement("td");
@@ -491,7 +491,7 @@ function add_section(sect_name, clonable) {
 
     span = document.createElement("span");
     if (clonable) {
-	span.className = "tdplus right_btn";
+	span.className = "tdplus right_btn sect_id";
 	span.title = "Clone this section";
 	span.setAttribute('onclick', 'clone_section(\"'+sect_name+'\");');
 
@@ -878,6 +878,21 @@ function add_field(section,field,fieldobj,rownum,rem) {
     if (list) {
 	retrieve_field_values(field,field_id);
     }
+
+    // invalid field value?
+    if (fieldobj["is_invalid"]) {
+	tr.className = "badfield";
+
+	tr = document.getElementById(form_id+"_table").insertRow(rownum);
+	tr.className = "badfield";
+
+	td = document.createElement("td");
+	td.colSpan = 6;
+	txt = document.createTextNode(fieldobj.is_invalid);
+	td.appendChild(txt);
+	tr.appendChild(td);
+    }
+
 
     response_json[field_id] = {
 	"section" : section,
