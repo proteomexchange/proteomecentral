@@ -71,8 +71,7 @@ def main():
                                        "description": "Free text notes about the curation process of this paper. For example, what global problems where encountered, etc." } } },
 
             "study metadata": { "data rows": [ "dataset id", "dataset title", "publication", "lab head name", "lab head email address", "lab head affiliation", 
-                                               "lab head country", "contributor", "acquisition type", "artifacts searched", "PTMs searched",
-                                               "labeling modifications", "n conditions", "n assays", "n proteins claimed", "protein-level FDR",
+                                               "lab head country", "contributor", "n conditions", "n assays", "n proteins claimed", "protein-level FDR",
                                                "study variables", "dataset description", "metadata completeness level" ], "is clonable": "false", "is required": "true",
                    "row attributes": {
                        "dataset id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
@@ -91,14 +90,6 @@ def main():
                                        "description": "Name of the country for the lab head (used for ProteomeXchange statistics)" },
                        "contributor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
                                        "description": "Name of a contributor to the dataset, often a coauthor on the journal article" },
-                       "acquisition type": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
-                                             "description": "Mode of mass spectrometry acquisition such as DDA, DIA, SRM, PMF, PASEF, diaPASEF, etc." },
-                       "artifacts searched": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
-                                               "description": "Sample artifactual mass modifications assessed by the submitters (e.g. C+57; M+15.99)" },
-                       "PTMs searched": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
-                                          "description": "True biological post-translational modifications assessed by the submitters (e.g. phospho)" },
-                       "labeling modifications": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
-                                                   "description": "Type(s) of labeling applied for the purposes of quantification (e.g., SILAC, TMT8, iTRAQ4plex, 13C, etc)" },
                        "n conditions": { "is required": "true", "data type": "integer", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
                                          "description": "Number of biological conditions tested (ignoring replicates)" },
                        "n assays": { "is required": "true", "data type": "integer", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
@@ -120,7 +111,8 @@ def main():
                                                    "growth protocol", "treatment", "treatment duration", "time since reference", "treatment protocol", 
                                                    "other condition factor", "other condition factor value", 
                                                    "tissue prep protocol", "cleanup protocol", "enrichment", "depletion", "fractionation", "separation protocol", 
-                                                   "alkylation agent", "cleavage agent", "digestion protocol", "quantitative label", "instrument", "acquisition protocol", "informatics protocol", 
+                                                   "alkylation agent", "cleavage agent", "digestion protocol", "acquisition type", "artifacts searched", "PTMs searched", 
+                                                   "quantitative label", "instrument", "acquisition protocol", "informatics protocol", 
                                                    "other sample prep factor", "other sample prep factor value" ], "is clonable": "true", "is required": "true",
 	        "row attributes": {
 		    "condition id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
@@ -208,6 +200,12 @@ def main():
 		    "digestion protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
 		        "description": "Protocol describing the digestion of proteins into peptides (extended free text with sentences)" },
 
+                    "acquisition type": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                             "description": "Mode of mass spectrometry acquisition such as DDA, DIA, SRM, PMF, PASEF, diaPASEF, etc." },
+                    "artifacts searched": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                               "description": "Sample artifactual mass modifications assessed by the submitters (e.g. C+57; M+15.99)" },
+                    "PTMs searched": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                          "description": "True biological post-translational modifications assessed by the submitters (e.g. phospho)" },
 		    "quantitative label": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
 		        "description": "Type of quantitative label used (e.g., TMT6, TMT10, iTRAQ4plex, iTRAQ8plex, SILAC 13C, label-free, none)" },
 		    "instrument": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
@@ -255,6 +253,7 @@ def main():
 
     data = None
     dataset_id = params.dataset_id
+    loaded_annotation_datetime = None
 
     #### Make a deep copy of the blank definitions as a template for extra sections
     reference_definitions = copy.deepcopy(definitions)
@@ -271,6 +270,7 @@ def main():
         #### Open and load the file
         with open(filename) as infile:
             data = json.load(infile)
+        loaded_annotation_datetime = os.path.getmtime(filename)
 
         #### Determine what the dataset_id is from the loaded data
         for field_key,field in data.items():
@@ -285,6 +285,85 @@ def main():
         global_counter = 100
         add_message(response, level='INFO', message=f"Merging loaded annotations into template definitions")
 
+        #### Set up a container to contain any rows that used to be in the study metadata that need to be replicated to the condition metadata
+        replicate_to_condition_metadata = {}
+
+        #### Loop over each field in the loaded annotations file in a first pass to collect things affected by schema changes
+        for field_key,field in data.items():
+            section = field["section"]
+            name = field["name"]
+
+            #### Address fixes due to schema changes
+            if name == "labeling modifications" and section == "study metadata":
+                continue
+            if name == "acquisition type" and section == "study metadata":
+                if name not in replicate_to_condition_metadata:
+                    replicate_to_condition_metadata[name] = []
+                replicate_to_condition_metadata[name].append(field)
+            if name == "artifacts searched" and section == "study metadata":
+                if name not in replicate_to_condition_metadata:
+                    replicate_to_condition_metadata[name] = []
+                replicate_to_condition_metadata[name].append(field)
+            if name == "PTMs searched" and section == "study metadata":
+                if name not in replicate_to_condition_metadata:
+                    replicate_to_condition_metadata[name] = []
+                replicate_to_condition_metadata[name].append(field)
+
+        #### If there are things to replicate, do it now
+        for replicate_key,replicate_fields in replicate_to_condition_metadata.items():
+            if replicate_key in definitions['section_definitions']['condition metadata']['row attributes']:
+                name = replicate_key
+                section = 'condition metadata'
+                ireplicate = 0
+                for replicate_field in replicate_fields:
+                    ireplicate += 1
+                    if ireplicate == 1:
+                        definitions['section_definitions'][section]['row attributes'][name]['value'] = replicate_field['value']
+                        definitions['section_definitions'][section]['row attributes'][name]['comment'] = replicate_field['comment']
+                        definitions['section_definitions'][section]['row attributes'][name]['cv'] = replicate_field['cv']
+                        reference_definitions['section_definitions'][section]['row attributes'][name]['value'] = replicate_field['value']
+                        reference_definitions['section_definitions'][section]['row attributes'][name]['comment'] = replicate_field['comment']
+                        reference_definitions['section_definitions'][section]['row attributes'][name]['cv'] = replicate_field['cv']
+                    else:
+                        new_row_name = f"{name}___{global_counter}"
+                        global_counter += 1
+
+                        #### Get a new copy of the row to fill in below
+                        row = copy.deepcopy(reference_definitions['section_definitions'][section]['row attributes'][name])
+
+                        #### Now need to insert that new row name into the list
+                        #### This complex bit iterates through the rows to look for the last row that is like this one
+                        #### and then insert the new row after the last of its kind
+                        new_rows = []
+                        loop_state = 'before'
+                        for row_name in definitions['section_definitions'][section]['data rows']:
+                            #eprint(f"loop_state={loop_state}, row_name={row_name}")
+                            if loop_state == 'correct area':
+                                if row_name[0:(len(name)-1)] != name:
+                                    #eprint(f"INFO: Inserting new row {new_row_name}")
+                                    new_rows.append(new_row_name)
+                                    loop_state = 'after'
+                            if loop_state == 'before':
+                                if row_name == name:
+                                    loop_state = 'correct area'
+                            new_rows.append(row_name)
+                        #### If it hasn't been placed, place it here
+                        if loop_state != 'after':
+                            #eprint(f"INFO: Appending new section {section} at end")
+                            new_sections.append(section)
+                            loop_state = 'after'
+                        definitions['section_definitions'][section]['data rows'] = new_rows
+                        definitions['section_definitions'][section]['row attributes'][new_row_name] = row
+                        reference_definitions['section_definitions'][section]['data rows'] = new_rows
+                        reference_definitions['section_definitions'][section]['row attributes'][new_row_name] = row
+
+                        #### Add the data
+                        row['value'] = replicate_field['value']
+                        row['comment'] = replicate_field['comment']
+                        row['cv'] = replicate_field['cv']
+
+
+
         #### Loop over each field in the loaded annotations file and insert it into the definitions
         for field_key,field in data.items():
             section = field["section"]
@@ -295,6 +374,16 @@ def main():
             if match:
                 name = re.sub(r'pattern','conditions',name)
 
+            #### Skip rows that have moved due to schema changes
+            if name == "labeling modifications" and section == "study metadata":
+                continue
+            if name == "acquisition type" and section == "study metadata":
+                continue
+            if name == "artifacts searched" and section == "study metadata":
+                continue
+            if name == "PTMs searched" and section == "study metadata":
+                continue
+ 
             #### If the name section does not exist, it is like a copied section. Deal with that here: CS1
             if section not in definitions['section_definitions']:
                 #### The pattern is {referencesection___nnn}
@@ -524,7 +613,7 @@ def main():
 
     #### See if there is an MS Run Metadata table to import
     if dataset_id is not None:
-        merge_msrun_metadata(dataset_id, definitions, reference_definitions, response)
+        merge_msrun_metadata(dataset_id, definitions, reference_definitions, response, loaded_annotation_datetime)
 
     add_message(response, level='INFO', message=f"Processing complete")
     send_response(response, output_format=params.output_format, mode=mode)
@@ -535,7 +624,7 @@ def main():
 
 
 ############################################################################
-def merge_msrun_metadata(dataset_id, definitions, reference_definitions, response):
+def merge_msrun_metadata(dataset_id, definitions, reference_definitions, response, loaded_annotation_datetime):
 
     #### Find the most recent version
     version = 1
@@ -552,6 +641,8 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
         add_message(response, level='INFO', message=f"No MS run metadata TSV file found for {dataset_id}, so nothing to integrate")
         return
 
+    msrun_table_datetime = os.path.getmtime(filename)
+
     expected_column_titles = definitions['section_definitions']['MS run metadata']['data rows']
 
     # #### Determine how many MS run metadata sections we have already
@@ -559,26 +650,24 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
     new_sections = []
     sections_to_delete = []
     for section_name in definitions['sections']:
-        if "MS run metadata" in section_name:
+        if section_name == "MS run metadata" or "MS run metadata" in section_name:
             n_existing_msruns += 1
             sections_to_delete.append(section_name)
         else:
             new_sections.append(section_name)
 
     # #### If there are fewer than 2, then go ahead and delete them all in anticipation of loading from the file
-    if n_existing_msruns < 2:
+    if loaded_annotation_datetime is None or msrun_table_datetime > loaded_annotation_datetime:
         definitions['sections'] = new_sections
-        add_message(response, level='INFO', message=f"Purging existing MS run metadata section in order to load from a file")
+        add_message(response, level='INFO', message=f"There is a new(er) version of an MS run table found. Purging existing MS run metadata section in order to load from a file")
         for section_name in sections_to_delete:
             del definitions['section_definitions'][section_name]
 
     # #### Else, write a detailed message on why we opted not to load from the file and return
     else:
-        add_message(response, level='WARNING', message="There are already more than one MS run metadata sections in this saved annotation. " +
-            "Although there is a metadata file available for loading, it is assumed that it has already loaded. The file can be reloaded " +
-            "only when an annotation with 0 or 1 MS run metadata sections are present. So, if you want to reload from the file, delete all " +
-            "(or all but one) of the MS run metadata sections, save the annotation, and then reload it. This will trigger a fresh read of " +
-            "the MS run metadata file for this PXD.")
+        add_message(response, level='WARNING', message=
+            "Although there is a metadata file available for loading, it is older than the annotation you just loaded, so it will not be merged. " +
+            "If you store a new MSrun table, then upon the next load of this annotation, it will be imported.")
         return
 
     # #### Get a list of the expected MS run names
@@ -625,7 +714,7 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
                 for column in columns:
                     if column.lower() != expected_header_columns[icolumn].lower():
                         add_message(response, level='ERROR', status=464, code='MSRunMetadataWrongColumnHeader',
-                            message=f"In header of MS run metadata file {msrun_metadata_file}, expected column {icolumn} (beginning with 0) to be '{expected_header_columns[icolumn]}' but instead found '{column}'.")
+                                    message=f"In header of MS run metadata file {filename}, expected column {icolumn} (beginning with 0) to be '{expected_header_columns[icolumn]}' but instead found '{column}'.")
                     icolumn += 1
                     if icolumn >= len(expected_header_columns):
                         break
