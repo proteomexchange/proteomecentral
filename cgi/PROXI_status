@@ -100,7 +100,7 @@ def main():
     }
 
     #### Define the defined PROXI endpoints
-    proxi_endpoints = [ 'datasets', 'spectra', 'psms', 'peptides', 'proteins' ]
+    proxi_endpoints = [ 'datasets', 'spectra', 'psms', 'peptidoforms', 'proteins' ]
 
     #### Define example example suffixes
     proxi_endpoint_suffixes = {
@@ -112,7 +112,7 @@ def main():
         'PRIDE-spectra': '?pageSize=100&pageNumber=1&resultType=compact',
         'ProteomeCentral-spectra': '?resultType=compact&usi=mzspec:PXL000006:02-14-2019:index:1250',
         'psms': '?resultType=compact&accession=PXD005942',
-        'peptides': '?resultType=compact',
+        'peptidoforms': '?resultType=compact&peptideSequence=AAHEEICTTNEGVMYR',
         'proteins': '?resultType=compact',
         'PRIDE-ui': '/swagger-ui.html',
     }
