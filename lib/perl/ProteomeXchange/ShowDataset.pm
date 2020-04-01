@@ -716,7 +716,6 @@ sub showDataset {
   $status = $datasets[0][1];
 
   #print STDERR "datasetID=$datasetID, inputReanalysisNumber=$inputReanalysisNumber, inputRevisionNumber=$inputRevisionNumber\n";
-  print STDERR "datasetID=$datasetID, status=$status\n";
 
   #### Set the default status to be set later
   $response->{httpStatus} = "200 OK";
