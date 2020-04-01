@@ -701,20 +701,22 @@ sub showDataset {
     $datasetID =~ s/-\d+//;
   }
 
+  my ($title,$status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetTitle);
+  my ($datasetSubmitter,$datasetLabHead,$datasetSpeciesString);
+
   #### Find the record for this identifier and get the official identifier
   my $dbh = new ProteomeXchange::Database;
   my $sql = qq~
-    SELECT datasetIdentifier
+    SELECT datasetIdentifier,status
       FROM $table_name
      WHERE dataset_id = "$datasetID"
   ~;
-  my @datasets = $dbh->selectOneColumn($sql);
-  my $baseIdentifier = $datasets[0];
+  my @datasets = $dbh->selectSeveralColumns($sql);
+  my $baseIdentifier = $datasets[0][0];
+  $status = $datasets[0][1];
 
   #print STDERR "datasetID=$datasetID, inputReanalysisNumber=$inputReanalysisNumber, inputRevisionNumber=$inputRevisionNumber\n";
-
-  my ($title,$status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetTitle);
-  my ($datasetSubmitter,$datasetLabHead,$datasetSpeciesString);
+  print STDERR "datasetID=$datasetID, status=$status\n";
 
   #### Set the default status to be set later
   $response->{httpStatus} = "200 OK";
@@ -737,7 +739,7 @@ sub showDataset {
   }
 
   my $datasetIDstr = $datasetID;
-  if ($response->{status} eq 'OK') {
+  if ($response->{status} eq 'OK' ) {
     my $len = 9 - length($datasetID);
     $datasetIDstr = $baseIdentifier;
     $title = $datasetIDstr;
@@ -770,7 +772,6 @@ sub showDataset {
          WHERE dataset_id=$datasetID
     ~;
     $sql .= "   AND revisionNumber = $inputRevisionNumber\n" if ( $inputRevisionNumber );
-    #$sql .= "   AND reanalysisNumber = $inputReanalysisNumber\n" if ( defined($inputReanalysisNumber) && $inputReanalysisNumber ne '' );
     $sql .= "   AND ( reanalysisNumber = $inputReanalysisNumber OR reanalysisNumber IS NULL )\n" if ( defined($inputReanalysisNumber) && $inputReanalysisNumber ne '' );
     $sql .= "   ORDER BY reanalysisNumber DESC, revisionNumber DESC\n";
 
@@ -781,30 +782,40 @@ sub showDataset {
       $response->{httpStatus} = "404 Identifier not assigned";
       $response->{status} = "ERROR";
       $response->{code} = "1002";
-      $response->{message} = "Identifier '$datasetIDstr' has not yet been assigned to a repository";
+      $response->{message} = "The requested identifier has not yet been assigned to a repository";
     }
 
-    my ($selectedReanalysisNumber, $selectedRevisionNumber);
+
+    #### Check the status of this dataset in the main table. If this dataset is not public yet, then set a special status to be handled later
+    #### Note that this also catches datasets that have been "reverted", i.e. the main status set back to "ID requested". This really should be
+    #### Handled better! FIXME.
+    if ( $response->{status} eq 'OK' ) {
+      $sql = qq~
+        SELECT status,PXPartner,title
+          FROM $table_name
+         WHERE dataset_id=$datasetID
+      ~;
+      my @rows = $dbh->selectSeveralColumns($sql);
+      ($status,$PXPartner,$title) = @{$rows[0]};
+      if ( $status =~ /requested/ ) {
+	$response->{status} = "DEFERRED";
+      }
+    }
+
+
+    my ($selectedReanalysisNumber, $selectedRevisionNumber, $datasetOrigin);
     if ( $response->{status} eq 'OK' ) {
 
       #### Go through the result of the history table query to compute how many reanalyses there are
       my %reanalyses = ();
-      my $datasetOrigin;
       foreach my $row ( @results ) {
 	($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetOrigin,$title,$selectedReanalysisNumber,$selectedRevisionNumber) = @{$row};
 	$reanalyses{$selectedReanalysisNumber} = 1 if ( $selectedReanalysisNumber );
       }
       $nReanalyses = scalar(keys(%reanalyses));
 
-      #### If there were multiple reanalyses available and one was not specified, then simply list them all
-#      if ( $nReanalyses => 1 && ! $inputReanalysisNumber ) {
-#	$containerStr .= "This dataset identifier represents one more reanalyses of an original dataset. This identifier currently holds $nReanalyses reanalyses.<BR>Below is a listing of all reanalysis containers for this identifier.<BR>Select the desired one to view by selecting a reanalysis number.";
-#	$containerStr .= showDatasetHistory(dataset_id => $datasetID, test => $test, containersOnly => "true");
-#      }
-
       ($status,$PXPartner,$announcementXML,$identifierDate,$datasetIdentifier,$datasetOrigin,$title,$selectedReanalysisNumber,$selectedRevisionNumber) = @{$results[0]};
       $title = $datasetIdentifier;
-      #$str .= "==$datasetIdentifier,$selectedReanalysisNumber,$selectedRevisionNumber==\n";
 
       my $fullpath = $announcementXML ? "$path/$announcementXML" : "$path/";
       my $parser = new ProteomeXchange::DatasetParser;
@@ -978,12 +989,12 @@ sub showDataset {
   } # end else
 
 
-  if ( $response->{status} eq 'OK' && $status =~ /requested/ ) {
+  if ( $status =~ /requested/ ) {
     $response->{httpStatus} = "404 Dataset not yet accessible";
     $response->{status} = "ERROR";
     $response->{code} = "1003";
-    $response->{message} = "The identifier '$title' has been reserved but it not yet accessible";
-    $str = getNotAccessibleMessage( identifier => $title, PXPartner => $PXPartner );
+    $response->{message} = "The identifier '$datasetIDstr' has been reserved but it not yet accessible";
+    $str = getNotAccessibleMessage( identifier => $datasetIDstr, PXPartner => $PXPartner, title => $title );
   }
 
 
@@ -1087,27 +1098,7 @@ sub showDataset {
       ~;
 #    }
 
-    #### Removed display of the tweet here. It wasn't working correctly anyway. Would be good to revive for testing.
-    #### LM: need to pass actual values for datasetTitle, datasetSubmitter, datasetLabHead, datasetSpeciesString, etc
-
-    #### Show what the tweet message would be
-    #use ProteomeXchange::Tweet;
-    #my $tweet = new ProteomeXchange::Tweet;
-    #$tweet->prepareTweetContent(
-    #  datasetTitle => $datasetTitle,
-    #  PXPartner => $PXPartner,
-    #  datasetIdentifier => $title,
-    #  datasetSubmitter  => $datasetSubmitter,
-    #  datasetLabHead => $datasetLabHead,
-    #  datasetSpeciesString => $datasetSpeciesString,
-    #  datasetStatus => 'new',
-    #  );
-
-    #### Removed display of the tweet here. It wasn't working correctly anyway. Would be good to revive for testing.
-    #print "<BR><BR>".$tweet->getTweetAsHTML()."<BR><BR>";
-
     #### Finish the display card window
-
     print qq~
 	 </div><!-- #content -->
 	 </div><!-- #primary .site-content -->
@@ -1327,10 +1318,16 @@ sub getNotAccessibleMessage {
   #### Decode the argument list
   my $identifier = $args{'identifier'} || die("[$SUB_NAME] ERROR: identifier not passed");
   my $PXPartner = $args{'PXPartner'} || die("[$SUB_NAME] ERROR: PXPartner not passed");
+  my $title = $args{'title'};
 
-  my $str = qq~
-ProteomeXchange dataset $identifier has been reserved by the $PXPartner repository for a dataset that has been deposited but is not yet publicly released and announced to ProteomeXchange.<BR><BR>
-~;
+  my $str = "ProteomeXchange dataset $identifier has been reserved by the $PXPartner repository for a dataset that has been deposited, ";
+
+  if ( $title ) {
+    $str .= "and it was announced as released, but then a problem was discovered, and the dataset was removed from circulation while the problem is being addressed.";
+  } else {
+    $str .= "but is not yet publicly released and announced to ProteomeXchange.";
+  }
+  $str .= "<BR><BR>";
 
   my $url = "??";
   my $contact = "??";
