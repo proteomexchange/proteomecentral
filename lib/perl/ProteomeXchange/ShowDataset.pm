@@ -1091,6 +1091,7 @@ sub showDataset {
 #      ~;
 #    #### Else show the card for this record
 #    } else {
+    binmode STDOUT, ":encoding(UTF-8)";
     print qq~
 	<div class="dataset-content">
 	$str
