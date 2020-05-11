@@ -1359,10 +1359,9 @@ sub getNotAccessibleMessage {
 </UL>
 ~;
 
-  }
 
 
-  if ( $PXPartner eq 'MassIVE' ) {
+  } elsif ( $PXPartner eq 'MassIVE' ) {
 
     $url = "http://massive.ucsd.edu/ProteoSAFe/QueryPXD?id=$identifier";
     $contact = "ccms\@proteomics.ucsd.edu";
@@ -1390,14 +1389,39 @@ sub getNotAccessibleMessage {
 </UL>
 ~;
 
-  }
+  } else {
+
+    $str .= qq~
+<B>If you are a reviewer of a manuscript that includes this dataset:</B><BR><BR>
+<UL>
+<LI> You should also have received a username and password to access this dataset $identifier.
+<LI> If you did not, contact your manuscript editor about obtaining this information.
+</UL>
+~;
+
+    $str .= qq~
+<UL>
+<LI> If you did, go directly to the $PXPartner web site to enter the reviewer credentials and access the data.
+</UL>
+    ~;
+
+    $str .= qq~
+<B>If you have seen this identifier in an accepted manuscript:</B><BR><BR>
+<UL>
+<LI> Then this dataset should be publicly released. Probably the authors and/or the journal have not contacted the original repository yet in order to trigger the public release.
+<LI> Please contact $PXPartner to request that the dataset be associated with the article and released.
+</UL>
+~;
+
+}
+
 
 
   $str .= qq~
 <B>If you are just waiting for this dataset to be released:</B><BR><BR>
 <UL>
-<LI> The dataset has not yet been released.
-<LI> Please check again later or contact the original data submitters to see when it will be public.
+<LI> It is not available at this time
+<LI> Please check again later or contact the original data submitters or $PXPartner curators to see when it will be public
 </UL>
 ~;
 
