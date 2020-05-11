@@ -1228,10 +1228,10 @@ sub showDatasetHistory {
           }
 	  $item = "<a href=\"GetDataset?ID=$datasetIdentifier.$reanalysisNumber&test=$test\">$item</a>";
         } elsif ( $iColumn == 4 ) {
-	  if ( $item > '' ) {
+	  if ( $item gt '' ) {
 	    $item = "$title<BR><I>$item</I>";
  	  } else {
-	    $item = "$title";
+	    $item = $title || '';
 	  }
         }
 
