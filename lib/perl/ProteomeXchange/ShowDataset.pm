@@ -540,6 +540,15 @@ sub process_result{
   foreach my $row (@$result){
     ## fix old publication link. open link to new tab by default
     $row->[5] ||= '';   # to silence perl warning when this is undefined
+
+    #### If the length is 255 then this record is probably truncated, so as a bandaid
+    #### split all the publications, discard the last one, and put back together
+    if ( length($row->[5]) == 255 ) {
+      my @publications = split(';',$row->[5]);
+      pop(@publications);
+      $row->[5] = join(";",@publications) . '; ...';
+    }
+
     if ($row->[5] =~ /href/ && $row->[5] !~ /blank/){
       $row->[5] =~ s/(href\s?=\s?"[^"]+")>/$1 target="_blank">/g;
     }
