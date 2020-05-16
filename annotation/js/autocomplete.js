@@ -68,6 +68,9 @@ function add_typeahead(element_id) {
 	    query = query.split(",");
 	    //var first_part = query.slice(0,query.length-1).join(", ");
 	    //console.log(first_part);
+
+	    $('#'+element_id+"_CV").val(''); // clear it in case blank or there is no match
+
 	    query = query[query.length-1].trim();
 	    if (query.length == 0){
 		return;

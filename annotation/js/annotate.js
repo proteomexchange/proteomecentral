@@ -1,4 +1,9 @@
 var form_defs_url   = "/cgi/definitions"; // "/devED/cgi/definitions";
+
+var ols_cvdefs_url  = "https://www.ebi.ac.uk/ols/ontologies/NAMESPACE/terms?short_form=";
+var pubmed_url      = "https://www.ncbi.nlm.nih.gov/pubmed/";
+var orchid_url      = "https://orcid.org/";
+
 var base_api        = "/api/autocomplete/v0.1/";
 var field_def_url   = base_api+"autocomplete?word=*&field_name=";
 var form_post_url   = base_api+"annotations";
@@ -832,6 +837,7 @@ function add_field(section,field,fieldobj,rownum,rem) {
     // user input :: cv
     td = document.createElement("td");
     if (cv) {
+	td.style.whiteSpace = "nowrap";
 	i = document.createElement("input");
 	i.id    = field_id+"_CV";
 	i.type  = "text";
@@ -844,12 +850,26 @@ function add_field(section,field,fieldobj,rownum,rem) {
 	i.addEventListener('change', valueChanged);
 	td.appendChild(i);
 
+        var span = document.createElement("span");
+        span.className = "cvlink";
+	if (field == "annotator name")
+            span.title = "Look up in ORCiD";
+	else if (field == "publication")
+            span.title = "Open in PubMed";
+	else
+            span.title = "Look up term in OLS";
+
+        span.innerHTML = "\u2148";
+	span.setAttribute('onclick', "ols_lookup('"+field_id+"_CV\');");
+        td.appendChild(span);
+
 	tr.appendChild(td);
     }
     else { // meh...
 	txt = document.createTextNode("n/a");
 	td.className = "infotext";
 	td.appendChild(txt);
+	// not appending to tr, so this block is irrelevant at the moment
     }
 
 
@@ -916,7 +936,6 @@ function uploadTable(e) {
 
     //alert("atts : "+JSON.stringify(response_json, undefined, 2));
 
-
     var xhr = new XMLHttpRequest();
     xhr.open("post", msruns_post_url, true);
     xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
@@ -971,6 +990,12 @@ function valueChanged(e) {
 	if (document.getElementById(e.target.id + "_summary_entry")) {
 	    document.getElementById(e.target.id + "_summary_entry").innerHTML = e.target.value;
 	}
+
+        if (document.getElementById(e.target.id + "_CV") &&
+	    e.target.value == "") {
+	    document.getElementById(e.target.id + "_CV").value = '';
+	}
+
     }
 }
 
@@ -1036,6 +1061,38 @@ function update_title(elem, text) {
     document.getElementById(elem).innerHTML = text;
 }
 
+
+function ols_lookup(cv_id) {
+    if (cv_id == "") return;
+    var cvterm = document.getElementById(cv_id) ?
+	document.getElementById(cv_id).value : '';
+
+    if (cvterm == "") return;
+    if (cvterm.startsWith("MS:1008")) {
+	showAlerts(cvterm+" is not an official ontology term, but it is valid within this form.");
+	return;
+    }
+
+    var url;
+    if (cvterm.startsWith("ORCiD")) {
+	cvterm = cvterm.split(":")[1];
+	url = orchid_url + cvterm;
+    }
+    else if (cvterm.startsWith("PMID")) {
+        cvterm = cvterm.split(":")[1];
+        url = pubmed_url + cvterm;
+    }
+    else {
+	var namespace = cvterm.split(":")[0].toLowerCase();
+	cvterm = cvterm.replace(":","_");
+	url = ols_cvdefs_url.replace("NAMESPACE",namespace) + cvterm;
+    }
+
+    messages.push( { level: 'INFO', prefix: 'Looking up '+cvterm, message: url } );
+    show_messages();
+
+    window.open(url,'OLS');
+}
 
 
 function process_querystring(url) {
