@@ -107,7 +107,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
-  /datasets/{accession}:
+  /datasets/{identifier}:
     get:
       summary: Get an specific dataset
       operationId: getDataset
@@ -116,9 +116,9 @@ paths:
       produces:
         - "application/json"
       parameters:
-        - name: accession
+        - name: identifier
           in: path
-          description: Accession of the dataset
+          description: Identifier of the dataset
           required: true
           type: string
       responses:
@@ -192,7 +192,9 @@ paths:
         "200":
           description: Spectrum and metadata of the requested Universal Spectrum Identifier
           schema:
-            $ref: "#/definitions/Spectrum"
+            type: "array"
+            items:
+              $ref: "#/definitions/Spectrum"
         '400':
           description: Bad request. The requested parameters are not supported.
           schema:
@@ -274,15 +276,17 @@ paths:
           in: query
           type: string 
           description: modification found in the peptide. For example, to query all peptides that are oxidated. 
-        - name: peptidoForm   
+        - name: peptidoform
           in: query 
           type: string
           description: Peptidform specific including PTM localizations, it will only retrieve the specific PSMs.
       responses:
         "200":
-          description: Peptide Spectrum match 
+          description: Peptide Spectrum match
           schema:
-            $ref: "#/definitions/Psm"
+            type: "array"
+            items:
+              $ref: "#/definitions/Psm"
         '400':
           description: Bad request. The requested parameters are not supported.
           schema:
@@ -295,11 +299,11 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /peptides:
+  /peptidoforms:
      get:
-      summary: Get a collection of peptides   
+      summary: Get a collection of peptidoforms
       operationId: getPeptides
-      description: The peptide entry point returns global peptidoform statistics across an entire resource. Each peptide contains a summary of the statistics of the peptidoform across the entire resource.
+      description: The peptidoforms entry point returns global peptidoform statistics across an entire resource. Each peptidoform contains a summary of the statistics of the peptidoform across the entire resource.
       tags:
         - molecules
       produces:
@@ -340,15 +344,17 @@ paths:
           in: query
           type: string 
           description: modification that found in the peptide. For example, to query all peptides that are oxidated. 
-        - name: peptidoForm   
+        - name: peptidoform
           in: query 
           type: string
           description: Peptidoform specific including PTM localizations, it will only retrieve the specific PSMs.
       responses:
         "200":
-          description: Peptide
+          description: Peptidoform
           schema:
-            $ref: "#/definitions/Peptide"
+            type: "array"
+            items:
+              $ref: "#/definitions/Peptidoform"
         '400':
           description: Bad request. The requested parameters are not supported.
           schema:
@@ -407,7 +413,58 @@ paths:
         "200":
           description: Protein entity containing the summary of a protein across the entire resource.
           schema:
-            $ref: "#/definitions/Protein"
+            type: "array"
+            items:
+              $ref: "#/definitions/Protein"
+        '400':
+          description: Bad request. The requested parameters are not supported.
+          schema:
+            $ref: "#/definitions/Error"
+        '404':
+          description: No data found for the specified parameters.
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /libraries:
+    get:
+      summary: Get a collection of spectral libraries
+      operationId: getLibraries
+      description: An endpoint to retrieve the list of registered spectral libraries
+      tags:
+      - libraries
+      produces:
+      - "application/json"
+      parameters:
+      - name: pageSize
+        in: query
+        description: How many items to return at one time (default 100, max 100)
+        required: false
+        type: integer
+        default: 100
+      - name: pageNumber
+        in: query
+        description: Current page to be shown paged peptides (default page 1)
+        required: false
+        type: integer
+        default: 0
+      - name: resultType
+        in: query
+        description: Type of the object to be retrieve Compact or Full dataset
+        required: false
+        type: string
+        enum: [compact, full]
+        default: compact
+      responses:
+        "200":
+          description: Protein entity containing the summary of a protein across the entire resource.
+          schema:
+            type: "array"
+            items:
+              type: object
         '400':
           description: Bad request. The requested parameters are not supported.
           schema:
@@ -436,7 +493,9 @@ definitions:
         type: string
       cv_param_group:
         type: string
-  
+      value_accession:
+        type: string
+
   OntologyTermList:
     required:
       - terms
@@ -448,20 +507,20 @@ definitions:
   
   Dataset:
     required:
-      - accession
+      - identifiers
       - title
       - species
       - instruments
       - contacts
       - publications
     properties:
-      accession:
+      identifiers:
         type: array
         items:
           $ref: "#/definitions/OntologyTerm"
       title:
         type: string
-      summary:
+      description:
         type: string
       species:
         type: array
@@ -487,11 +546,11 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/OntologyTerm"
-      datasetLink:
+      fullDatasetLinks:
         type: "array"
         items:
           $ref: "#/definitions/OntologyTerm"
-      dataFiles:
+      datasetFiles:
         type: "array"
         items:
           $ref: "#/definitions/OntologyTerm"
@@ -596,11 +655,11 @@ definitions:
          $ref: "#/definitions/ProteinIdentification"
         
 
-  Peptide:
+  Peptidoform:
     required:
-      - peptidoForm 
+      - peptidoform
     properties:
-      peptidoForm: 
+      peptidoform:
         type: string 
         description: Peptidoform as String 
       peptideSequence: 
@@ -611,11 +670,15 @@ definitions:
         description: Number of PSMs that support the current Peptidoform 
       countDatasets: 
         type: string 
-        description: Number of datasets that support the current PeptidoForm 
+        description: Number of datasets that support the current Peptidoform
       ptms:
         type: array
         items:
           $ref: "#/definitions/Modification"
+      proteinAccessions:
+        type: array
+        items:
+          $ref: "#/definitions/ProteinIdentification"
 
   Protein:
     required:
@@ -629,7 +692,7 @@ definitions:
         description: Number of PSMs that support the current Peptidoform
       countDatasets:
         type: string
-        description: Number of datasets that support the current PeptidoForm
+        description: Number of datasets that support the current Peptidoform
       ptms:
         type: array
         items:
@@ -640,7 +703,7 @@ definitions:
       countUniquePeptides:
         type: integer
         description: Number of unique peptides identified for the protein
-      countPeptidoForms:
+      countPeptidoforms:
         type: integer
         description: Number of peptidoforms identified for the protein
 
