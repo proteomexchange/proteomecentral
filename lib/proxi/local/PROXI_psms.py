@@ -242,8 +242,8 @@ class PROXIPsms(object):
                     previous_percent_done = percent_done
 
                 #### End early for testing
-                if iprocessed > 2000000:
-                    eprint(f"End early after 2 million rows for testing")
+                if iprocessed > 20000000:
+                    eprint(f"End early after 20 million rows for testing")
                     break
 
 
