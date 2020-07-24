@@ -164,7 +164,7 @@ def main():
     print(json.dumps(output,sort_keys=True), flush=True)
 
     #### Loop over the endpoint_list, fetching data from each, using threaded pool
-    n_threads = 2
+    n_threads = 10
     if int(params.delay) > 2: n_threads = 1
 
     results = ThreadPool(n_threads).imap_unordered(fetch_url, endpoint_list)
