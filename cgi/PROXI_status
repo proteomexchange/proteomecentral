@@ -107,10 +107,10 @@ def main():
         #'datasets': '?resultType=full&accession=PXD000561',
         'datasets': '/PXD000561',
         'jPOST-datasets': '?resultType=full&accession=PXD005159',
-        'spectra': '?usi=mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2&resultType=compact',
+        'spectra': '?usi=mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2&resultType=full',
         'PeptideAtlas-spectra': '?usi=mzspec:PXD000561:Adult_Urinarybladder_bRP_Elite_71_f14:scan:1872:FSGSSSGADR/2&resultType=compact',
-        'PRIDE-spectra': '?pageSize=100&pageNumber=1&resultType=compact',
-        'ProteomeCentral-spectra': '?resultType=compact&usi=mzspec:PXL000006:02-14-2019:index:1250',
+        'PRIDE-spectra': '?pageSize=10&pageNumber=1&resultType=full',
+        'ProteomeCentral-spectra': '?resultType=full&usi=mzspec:PXL000006:02-14-2019:index:1250',
         'psms': '?resultType=compact&accession=PXD005942',
         'MassIVE-psms': '?resultType=compact&accession=PXD002346',
         'peptidoforms': '?resultType=compact&peptideSequence=AAHEEICTTNEGVMYR',
@@ -189,7 +189,7 @@ def main():
                             endpoint['code'] = '-200'
                             endpoint['message'] = 'Payload is empty list'
                         else:
-                            if 'attributes' in payload[0] and 'mzs' in payload[0] and 'intensities' in payload[0]:
+                            if 'mzs' in payload[0] and 'intensities' in payload[0]:
                                 pass
                             else:
                                 endpoint['code'] = '-200'
