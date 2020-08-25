@@ -169,10 +169,37 @@ def main():
     if int(params.delay) > 2: n_threads = 1
 
     results = ThreadPool(n_threads).imap_unordered(fetch_url, endpoint_list)
-    for endpoint, code, html, error, elapsed in results:
+    for endpoint, code, content, error, elapsed in results:
         endpoint['code'] = code
         endpoint['message'] = str(error)
         endpoint['elapsed'] = elapsed
+
+        if code == 200:
+            payload = None
+            try:
+                payload = json.loads(content)
+            except:
+                endpoint['code'] = '-200'
+                endpoint['message'] = 'Response is not valid JSON'
+
+            if payload is not None:
+                if isinstance(payload,list):
+                    if endpoint['endpoint'] == 'spectra':
+                        if len(payload) == 0:
+                            endpoint['code'] = '-200'
+                            endpoint['message'] = 'Payload is empty list'
+                        else:
+                            if 'attributes' in payload[0] and 'mzs' in payload[0] and 'intensities' in payload[0]:
+                                pass
+                            else:
+                                endpoint['code'] = '-200'
+                                endpoint['message'] = 'Payload not valid PROXI schema'
+                else:
+                    if endpoint['endpoint'] != 'datasets':
+                        endpoint['code'] = '-200'
+                        endpoint['message'] = 'Payload not valid PROXI schema'
+
+
         print(json.dumps(endpoint,sort_keys=True), flush=True)
 
     return()
