@@ -49,6 +49,9 @@ a:hover {
 .code200 {
  background-color: #5f5;
 }
+.code-200 {
+ background-color: #f88;
+}
 .code404 {
  background-color: #ec1;
 }
