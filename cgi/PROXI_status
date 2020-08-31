@@ -179,24 +179,24 @@ def main():
             try:
                 payload = json.loads(content)
             except:
-                endpoint['code'] = '-200'
+                #endpoint['code'] = '-200'
                 endpoint['message'] = 'Response is not valid JSON'
 
             if payload is not None:
                 if isinstance(payload,list):
                     if endpoint['endpoint'] == 'spectra':
                         if len(payload) == 0:
-                            endpoint['code'] = '-200'
+                            #endpoint['code'] = '-200'
                             endpoint['message'] = 'Payload is empty list'
                         else:
                             if 'mzs' in payload[0] and 'intensities' in payload[0]:
                                 pass
                             else:
-                                endpoint['code'] = '-200'
+                                #endpoint['code'] = '-200'
                                 endpoint['message'] = 'Payload not valid PROXI schema'
                 else:
                     if endpoint['endpoint'] != 'datasets':
-                        endpoint['code'] = '-200'
+                        #endpoint['code'] = '-200'
                         endpoint['message'] = 'Payload not valid PROXI schema'
 
 
