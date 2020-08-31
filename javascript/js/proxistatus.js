@@ -25,9 +25,13 @@ function get_proxi_stream() {
 		var rjson = JSON.parse(response[r]);
 		var rowid = rjson.provider_name + rjson.endpoint;
 		document.getElementById(rowid+"_code").innerHTML = rjson.code;
-		document.getElementById(rowid+"_code").className = "code"+rjson.code;
 		document.getElementById(rowid+"_msg").innerHTML = he.encode(rjson.message);
+
+		if (rjson.code == 200 && he.encode(rjson.message) != "OK")
+		    rjson.code = -200;
+		document.getElementById(rowid+"_code").className = "code"+rjson.code;
 		document.getElementById(rowid+"_msg").className = "code"+rjson.code;
+
 		document.getElementById(rowid+"_time").innerHTML = rjson.elapsed;
 		document.getElementById(rowid+"_turl").innerHTML = "<a target='proxtest' href='"+rjson.url+"'>"+rjson.display_url+"</a>";
 		//document.getElementById("debug").innerHTML += rowid + ", ";
@@ -50,7 +54,7 @@ function get_proxi_stream() {
 	    document.getElementById("stat").innerHTML = "&nbsp;&nbsp;Error...&nbsp;&nbsp;";
 	    document.getElementById("stat").className = "code500";
 	}
-
+        document.getElementById("debug").innerHTML += "<br/><a href='"+proxi_status_url+"'>Raw stream</a><br/>";
     };
     return;
 }

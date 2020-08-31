@@ -91,7 +91,7 @@ a:hover {
 <body onload="main();">
 
 <!-- BEGIN main content -->
-<h1>PROXI Servers Status&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code404 running" id="stat">&nbsp;&nbsp;Checking...&nbsp;&nbsp;</span></h1>
+<h1 style="margin-left:10px;">PROXI Servers Status&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code404 running" id="stat">&nbsp;&nbsp;Checking...&nbsp;&nbsp;</span></h1>
 
 <div id="main"></div>
 <hr size="1">
