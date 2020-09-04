@@ -19,11 +19,21 @@ a:hover {
 .prox {
  border-collapse: collapse;
 }
+.rowdata {
+ border-left: 2px solid transparent;
+ border-right:2px solid transparent;
+ border-top:2px solid transparent;
+ border-bottom:2px solid #cdcdcd;
+}
 .rowdata:hover {
- border: 3px solid black;
+ border-right:2px solid black;
+ border-left: 2px solid black;
+}
+.rowdata:hover td {
+ border-top: 2px solid black;
+ border-bottom: 2px solid black;
 }
 .prox td {
- border-bottom: 1px solid #cdcdcd;
  padding: 3px 10px;
  transition: background-color 2s;
 }
