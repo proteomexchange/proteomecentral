@@ -18,6 +18,8 @@ basePath: /api/proxi/v0.1
 tags:
   - name: datasets
     description: A set of datasets, peptides and protein identified acrosss ProteomeXchange partners
+  - name: usi_validator
+    description: A batch validator for Universal Spectrum Identifiers (USIs)
 consumes:
   - application/json
 produces:
@@ -471,6 +473,41 @@ paths:
             $ref: "#/definitions/Error"
         '404':
           description: No data found for the specified parameters.
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /usi_validator:
+    post:
+      summary: Validate an input list of USI strings
+      operationId: usiValidator
+      description: An endpoint to validate a POSTed JSON list of USIs
+      tags:
+      - usi_validator
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "JSON list of USIs"
+        required: true
+        schema:
+          type: array
+          items:
+            type: string
+            example: "mzspec:PXD002437:00261_A06_P001564_B00E_A00_R1:scan:10951:PEPT[Phospho]IDELVISK/2"
+      responses:
+        "200":
+          description: Validation results successfully returned. May be valid or invalid
+          schema:
+            type: object
+        '400':
+          description: Bad request. The requested parameters are not supported.
           schema:
             $ref: "#/definitions/Error"
         default:
