@@ -98,24 +98,24 @@ class ProxiSpectra:
         if usi is None:
             status_code = 501
             message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string as input", "type": "about:blank" }
-            return(status_code, message)
+            return(message, status_code)
 
         #### So far, the USI must contain a PXL or a PXD. If it has a PXL, route it appropriately
         match = re.search(":PXL",usi)
         if match:
             status_code, message = self.fetch_from_local_spectra_cgi(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
-            return(status_code, message)
+            return(message, status_code)
 
         #### If it has a PXD, route it appropriately
         match = re.search(":PXD",usi)
         if match:
             status_code, message = self.fetch_from_PeptideAtlas_ShowObservedSpectrum(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
-            return(status_code, message)
+            return(message, status_code)
 
         #### Or otherwise this USI doesn't seem to have an identifier we can deal with
         status_code = 484
         message = { "status": status_code, "title": "USI must contain PXL or PXD", "detail": "This endpoint as currently implemented requires a USI to have a PXL or PXD identifier", "type": "about:blank" }
-        return(status_code, message)
+        return(message, status_code)
 
 
     ############################################################################################
@@ -125,7 +125,7 @@ class ProxiSpectra:
         if usi is None:
             status_code = 501
             message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string as input", "type": "about:blank" }
-            return(status_code, message)
+            return(message, status_code)
 
         server = 'proteomecentral.proteomexchange.org'
         url_base = '/cgi/spectra?output_format=json&usi='
@@ -143,12 +143,12 @@ class ProxiSpectra:
             try:
                 spectrum = json.loads(payload)
                 self.spectra = [ spectrum ]
-                return(status_code, message)
+                return(message, status_code)
 
             except Exception as error:
                 status_code = 500
                 message = { "status": status_code, "title": "Internal JSON parsing error", "detail": "Unable to parse JSON from internal call", "type": "about:blank" }
-                return(status_code, message)
+                return(message, status_code)
 
         if status_code == 404:
             title = 'Dataset not available'
@@ -166,9 +166,9 @@ class ProxiSpectra:
                     detail = value
             message = { "status": status_code, "title": title, "detail": detail, "type": "about:blank" }
             self.spectra = None
-            return(status_code, message)
+            return(message, status_code)
 
-        return(status_code, { "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" } )
+        return({ "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" }, status_code )
 
 
     ############################################################################################
@@ -178,7 +178,7 @@ class ProxiSpectra:
         if usi is None:
             status_code = 501
             message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string as input", "type": "about:blank" }
-            return(status_code, message)
+            return(message, status_code)
 
         server = 'db.systemsbiology.net'
         url_base = '/dev2/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?output_mode=json&USI='
@@ -196,12 +196,12 @@ class ProxiSpectra:
             try:
                 spectrum = json.loads(payload)
                 self.spectra = [ spectrum ]
-                return(status_code, message)
+                return(message, status_code)
 
             except Exception as error:
                 status_code = 500
                 message = { "status": status_code, "title": "Internal JSON parsing error", "detail": "Unable to parse JSON from internal call", "type": "about:blank" }
-                return(status_code, message)
+                return(message, status_code)
 
         if status_code == 404:
             title = 'Dataset not available'
@@ -219,9 +219,9 @@ class ProxiSpectra:
                     detail = value
             message = { "status": status_code, "title": title, "detail": detail, "type": "about:blank" }
             self.spectra = None
-            return(status_code, message)
+            return(message, status_code)
 
-        return(status_code, { "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" } )
+        return({ "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" }, status_code )
 
 
 ################################################################################################
