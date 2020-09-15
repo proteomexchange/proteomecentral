@@ -46,7 +46,8 @@ class ProxiLibraries:
 
         status_code = 200
         message = { "status": status_code, "title": "Success", "detail": "List of libraries returned", "type": "about:blank" }
-        return(status_code, message)
+        message = libraries_list
+        return(message, status_code)
 
 
     #### Print the contents of the dataset object
