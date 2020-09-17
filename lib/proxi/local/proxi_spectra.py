@@ -204,22 +204,15 @@ class ProxiSpectra:
                 return(status_code, message)
 
         if status_code == 404:
-            title = 'Dataset not available'
-            detail = 'Specified dataset is not available for unknown reason'
-            payload = str(payload, 'utf-8', 'ignore')
-            lines = payload.split("\n")
-            for line in lines:
-                if line == '': continue
-                key,value = line.split('=')
-                if key == 'code':
-                    title = value
-                    if value == '1002': title = 'Dataset not yet assigned'
-                    if value == '1003': title = 'Dataset not yet released'
-                if key == 'message':
-                    detail = value
-            message = { "status": status_code, "title": title, "detail": detail, "type": "about:blank" }
-            self.spectra = None
-            return(status_code, message)
+            try:
+                error_message = json.loads(payload)
+                return(status_code, error_message)
+
+            except Exception as error:
+                status_code = 500
+                message = { "status": status_code, "title": "Internal JSON parsing error", "detail": "Unable to parse JSON from internal call", "type": "about:blank" }
+                return(status_code, message)
+
 
         return({ "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" }, status_code )
 
