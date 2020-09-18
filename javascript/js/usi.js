@@ -1,17 +1,112 @@
+var validation_url = "/api/proxi/v0.1/usi_validator";
+
 var usi_data = { "PRIDE"           : { "url" : "http://wwwdev.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
 				       "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=" },
 		 "ProteomeCentral" : { "url" : "http://proteomecentral.proteomexchange.org/api/proxi/v0.1/spectra?resultType=full&usi=" },
 		 "PeptideAtlas"    : { "url" : "http://www.peptideatlas.org/api/proxi/v0.1/spectra?resultType=full&usi=" ,
 				       "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=" },
-		 "MassIVE"         : { "url" : "http://ccms-internal.ucsd.edu/ProteoSAFe/proxi/v0.1/spectra?resultType=full&usi=" ,
+		 "MassIVE"         : { "url" : "http://massive.ucsd.edu/ProteoSAFe/proxi/v0.1/spectra?resultType=full&usi=" ,
 				       "view": "http://massive.ucsd.edu/ProteoSAFe/usi.jsp#{\"usi\":\"" ,
 				       "weiv": "\"}" },
 		 "jPOST"           : { "url" : "https://repository.jpostdb.org/proxi/spectra?resultType=full&usi=" }
 	       };
 
-function check_usi() {
+async function validate_usi(carryon) {
     var usi = document.getElementById("usi_input").value;
     if (usi == "") return;
+
+    clear_element("main");
+    clear_element("debug");
+    clear_element("spec");
+
+    var response = await fetch(validation_url, {
+	method: 'post',
+	headers: {
+	    'Accept': 'application/json',
+	    'Content-Type': 'application/json'
+	},
+	body: "["+JSON.stringify(usi)+"]" 
+    });
+    var data = await response.json();
+
+    if (data.error_code != "OK") {
+	document.getElementById("debug").innerHTML += " API error :: " + data.error_message + "<br>";
+	return false;
+    }
+
+    if (data.validation_results[usi]["is_valid"] == true) {
+	if (carryon) return true;
+
+	var txt = document.createElement("h2");
+
+	txt.className = "valid";
+	txt.style.marginBottom = "0";
+	txt.appendChild(document.createTextNode("VALID SYNTAX"));
+	document.getElementById("main").appendChild(txt);
+
+	txt = document.createElement("h4");
+        txt.className = "valid";
+	txt.style.marginTop = "0";
+	txt.appendChild(document.createTextNode("The syntax of this USI is valid, although it may not be resolvable at any resource"));
+	document.getElementById("main").appendChild(txt);
+    }
+    else {
+        var txt = document.createElement("h2");
+	txt.className = "invalid";
+	txt.style.marginBottom = "0";
+        txt.appendChild(document.createTextNode("INVALID"));
+        document.getElementById("main").appendChild(txt);
+
+        txt = document.createElement("h4");
+	txt.className = "invalid";
+	txt.style.marginTop = "0";
+        txt.appendChild(document.createTextNode(data.validation_results[usi]["error_message"]));
+        document.getElementById("main").appendChild(txt);
+    }
+
+    var txt = document.createElement("span");
+    txt.className = "smgr";
+    txt.style.cursor = "pointer";
+    txt.appendChild(document.createTextNode("[ show / hide details ]"));
+    txt.setAttribute('onclick', 'shta("usideets");');
+
+    document.getElementById("main").appendChild(txt);
+
+    var table = document.createElement("table");
+    table.id = "usideets";
+    table.className = "prox";
+    table.style.display = "none";
+
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.className = "rep";
+    td.colSpan = 2;
+    td.appendChild(document.createTextNode(usi));
+    tr.appendChild(td);
+    table.appendChild(tr);
+
+    for (var f in data.validation_results[usi]) {
+        tr = document.createElement("tr");
+        td = document.createElement("th");
+        td.appendChild(document.createTextNode(f));
+        tr.appendChild(td);
+
+        td = document.createElement("td");
+        td.appendChild(document.createTextNode(data.validation_results[usi][f]));
+        tr.appendChild(td);
+        table.appendChild(tr);
+    }
+    document.getElementById("spec").appendChild(table);
+
+    return false;
+}
+
+async function check_usi() {
+    var usi = document.getElementById("usi_input").value;
+    if (usi == "") return;
+
+    var valid = await validate_usi(true);
+    if (!valid) return;
 
     render_tables(usi);
     clear_element("spec");
@@ -21,11 +116,17 @@ function check_usi() {
     for (let p in usi_data) {
 	var url = usi_data[p].url + usi;
 
+        var ccell = document.getElementById(p+"_code");
+        ccell.title = "view raw response from API";
+        ccell.setAttribute('onclick', 'window.open("'+url+'");');
+        ccell.style.cursor = "pointer";
+
 	var rcode = -1;
 	fetch(url)
             .then(response => {
+                //console.log(p+" RESPONSE: "+response);
 		rcode = response.status; // must capture it before json parsing
-		// console.log("CODE: "+rcode);
+		//console.log(p+" CODE: "+rcode);
 		return response;
             })
             .then(response => response.json())
@@ -34,8 +135,11 @@ function check_usi() {
 		    done++;
 		    if (done == Object.keys(usi_data).length)
 			document.getElementById("usi_stat").classList.remove("running");
-                    document.getElementById(p+"_code").innerHTML = rcode;
-		    document.getElementById(p+"_code").classList.add("code"+rcode);
+
+                    var cell = document.getElementById(p+"_code");
+                    cell.innerHTML = rcode;
+		    cell.classList.add("code"+rcode);
+
                     if (rcode != 200) {
 			document.getElementById(p+"_msg").innerHTML = alldata.title;
 			document.getElementById(p+"_spectrum").innerHTML = "n/a";
@@ -48,6 +152,11 @@ function check_usi() {
 		    var data = alldata[0]; // just consider the first one  FIXME??
 
 		    usi_data[p].usi_data = data;
+
+                    cell = document.getElementById(p+"_json");
+                    cell.title = "view JSON response";
+                    cell.setAttribute('onclick', 'viewJSON("spec","'+p+'");');
+                    cell.innerHTML = "view";
 
 		    var s = {};
                     s.ms1peaks = null;
@@ -63,11 +172,15 @@ function check_usi() {
 
 		    var has_spectrum = false;
 		    var usimods = {};
+		    var maxMz = 1999.0;
                     for (var i in data.mzs) {
                         var usipeaks = [Number(data.mzs[i]), Number(data.intensities[i])];
                         s.ms2peaks.push(usipeaks);
+			if (Number(data.mzs[i]) > maxMz) maxMz = Number(data.mzs[i]);
 			has_spectrum = true;
                     }
+		    s.minDisplayMz = 0.01;
+                    s.maxDisplayMz = maxMz+1.0;
 
 		    if (data.attributes) {
 			for (var att of data.attributes) {
@@ -99,16 +212,11 @@ function check_usi() {
 			document.getElementById(p+"_spectrum").innerHTML = "-none!-";
 		    }
 
-                    var cell = document.getElementById(p+"_json");
-                    cell.title = "view JSON response";
-                    cell.setAttribute('onclick', 'viewJSON("spec","'+p+'");');
-                    cell.innerHTML = "view";
-
 		} catch(err) {
                     document.getElementById(p+"_code").innerHTML = "--error--";
                     document.getElementById(p+"_msg").innerHTML = err;
                     document.getElementById(p+"_spectrum").innerHTML = "-n/a-";
-                    document.getElementById(p+"_json").innerHTML = "-n/a-";
+                    //document.getElementById(p+"_json").innerHTML = "-n/a-";
 		    document.getElementById("debug").innerHTML += p + " :: " + err + "<br>";
                     console.log(err);
 		}
@@ -117,8 +225,14 @@ function check_usi() {
 		done++;
 		if (done == Object.keys(usi_data).length)
 		    document.getElementById("usi_stat").classList.remove("running");
-                document.getElementById(p+"_code").classList.add("code500");
-                document.getElementById(p+"_code").innerHTML = "--ERROR--";
+		if (rcode != -1) {
+                    document.getElementById(p+"_code").classList.add("code"+rcode);
+                    document.getElementById(p+"_code").innerHTML = rcode;
+		}
+		else {
+                    document.getElementById(p+"_code").classList.add("code500");
+                    document.getElementById(p+"_code").innerHTML = "--ERROR--";
+		}
                 document.getElementById(p+"_msg").innerHTML = error;
                 document.getElementById(p+"_spectrum").innerHTML = "--n/a--";
                 document.getElementById(p+"_json").innerHTML = "--n/a--";
@@ -174,6 +288,13 @@ function extractUSIMods(peptidoform) {
     return o;
 }
 
+
+function shta(tid) {
+    if (document.getElementById(tid).style.display == "none")
+	document.getElementById(tid).style.display = "table";
+    else
+	document.getElementById(tid).style.display = "none";
+}
 
 function viewJSON(divid,src) {
     clear_element(divid);

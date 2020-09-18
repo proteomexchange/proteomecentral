@@ -76,7 +76,7 @@ h1.title {
 .rep {
  border-top: 2px solid black;
  background-color: #cdcdcd;
- font-size: 25px;
+ font-size: large;
  font-weight:bold;
 }
 .rep a {
@@ -100,7 +100,7 @@ h1.title {
 .code598 {
  background-color: #f55;
 }
-#usi_stat {
+#usi_stat, #usi_valid {
  border-radius: 20px;
  border: 2px solid black;
  transition: background-color .5s;
@@ -110,10 +110,16 @@ h1.title {
  display:inline-block;
  text-align: center;
 }
-#usi_stat:hover {
+#usi_stat:hover, #usi_valid:hover {
  cursor:pointer;
  background:#fff;
  color:#000;
+}
+.valid {
+ color: #2b2;
+}
+.invalid {
+ color: #b22;
 }
 .running {
     animation-name:processing;
@@ -145,14 +151,16 @@ h1.title {
 <!-- BEGIN main content -->
 <h1 style="display:inline-block;">Universal Spectrum Identifier</h1>
 <span onclick="document.getElementById('usi_input').value='mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_12_5Feb12_Cougar_11-10-11.mzML:scan:11850:[UNIMOD:214]YYWGGLYSWDMSK[UNIMOD:214]/2';" style="cursor:pointer;margin-left:40px;" class="smgr">[ example ]</span>
+<span style="margin-left:150px;" onclick="check_usi();" id="usi_stat">&nbsp;&nbsp;Look Up USI&nbsp;&nbsp;</span>
+<span style="margin-left:50px;" onclick="validate_usi(false);" id="usi_valid">&nbsp;&nbsp;Validate USI&nbsp;&nbsp;</span>
 <br>
-<input id="usi_input" size="120"/>&nbsp;<span onclick="check_usi();" id="usi_stat">&nbsp;&nbsp;Look Up USI&nbsp;&nbsp;</span>
+<input id="usi_input" style="min-width:95%;"/>
 
 <br>
 
 <div style="margin-top:50px;" id="main"></div>
 
-<div id="spec"></div>
+<div style="min-height:500px;" id="spec"></div>
 
 <hr size="1">
 Debug Info::<br/>
