@@ -146,7 +146,7 @@ h1.title {
 }
 </style>
 
-<body>
+<body onload="init();">
 
 <!-- BEGIN main content -->
 <h1 style="display:inline-block;">Universal Spectrum Identifier</h1>

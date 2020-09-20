@@ -11,6 +11,15 @@ var usi_data = { "PRIDE"           : { "url" : "http://wwwdev.ebi.ac.uk/pride/pr
 		 "jPOST"           : { "url" : "https://repository.jpostdb.org/proxi/spectra?resultType=full&usi=" }
 	       };
 
+
+function init() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('usi')) {
+	document.getElementById("usi_input").value = params.get('usi');
+	check_usi();
+    }
+}
+
 async function validate_usi(carryon) {
     var usi = document.getElementById("usi_input").value;
     if (usi == "") return;
