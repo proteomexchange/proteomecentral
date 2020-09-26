@@ -28,7 +28,6 @@ async function validate_usi(carryon) {
     if (usi == "") return;
 
     clear_element("main");
-    clear_element("debug");
     clear_element("spec");
 
     var response = await fetch(validation_url, {
@@ -42,7 +41,7 @@ async function validate_usi(carryon) {
     var data = await response.json();
 
     if (data.error_code != "OK") {
-	document.getElementById("debug").innerHTML += " API error :: " + data.error_message + "<br>";
+	document.getElementById("main").innerHTML += "<h1 class='rep title'>API error :: " + data.error_message + "</h1>";
 	return false;
     }
 
@@ -165,8 +164,7 @@ async function check_usi() {
                     if (rcode != 200) {
 			document.getElementById(p+"_msg").innerHTML = alldata.title;
 			document.getElementById(p+"_spectrum").innerHTML = "n/a";
-			document.getElementById("debug").innerHTML += p + " :: " + alldata.detail + "<br>";
-			console.log("[DEBUG] "+p+" said: "+alldata.status+alldata.title);
+			console.log("[DEBUG] "+p+" said: "+alldata.status+"/"+alldata.title+"//"+alldata.detail);
 			return;
                     }
                     document.getElementById(p+"_msg").innerHTML = "OK";
@@ -261,8 +259,6 @@ async function check_usi() {
                     document.getElementById(p+"_code").innerHTML = "--error--";
                     document.getElementById(p+"_msg").innerHTML = err;
                     document.getElementById(p+"_spectrum").innerHTML = "-n/a-";
-                    //document.getElementById(p+"_json").innerHTML = "-n/a-";
-		    document.getElementById("debug").innerHTML += p + " :: " + err + "<br>";
                     console.log(err);
 		}
             })
@@ -281,7 +277,6 @@ async function check_usi() {
                 document.getElementById(p+"_msg").innerHTML = error;
                 document.getElementById(p+"_spectrum").innerHTML = "--n/a--";
                 document.getElementById(p+"_json").innerHTML = "--n/a--";
-		document.getElementById("debug").innerHTML += p + " :: " + error + "<br>";
 		console.log(error);
             });
     }
@@ -419,7 +414,6 @@ function renderLorikeet(divid,src) {
 
 function render_tables(usi) {
     clear_element("main");
-    clear_element("debug");
 
     var table = document.createElement("table");
     table.className = "prox";
