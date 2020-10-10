@@ -100,22 +100,12 @@ h1.title {
  float: right;
  color: #777;
 }
-.code200 {
- background-color: #5f5;
-}
-.code404 {
- background-color: #ec1;
-}
-.code500 {
- background-color: #d22;
- color: #eee;
-}
-.code501 {
- background-color: #bbb;
-}
-.code598 {
- background-color: #f55;
-}
+.code200 { background-color: #5f5; }
+.code400 { background-color: #666; color: #eee; }
+.code404 { background-color: #ec1; }
+.code500 { background-color: #d22; color: #eee; }
+.code501 { background-color: #bbb; }
+.code598 { background-color: #f55; }
 #usi_stat, #usi_valid {
  border-radius: 20px;
  border: 2px solid black;
