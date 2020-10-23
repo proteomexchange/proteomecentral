@@ -168,7 +168,7 @@ class ProxiSpectra:
             self.spectra = None
             return(status_code, message)
 
-        return({ "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" }, status_code )
+        return(status_code, { "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" } )
 
 
     ############################################################################################
