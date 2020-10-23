@@ -1,6 +1,4 @@
 #!/bin/bash
 
-cd /net/dblocal/wwwspecial/proteomecentral/devED/lib/proxi/server
-
 nohup ./PROXI_ProteomeCentral.sh &
 

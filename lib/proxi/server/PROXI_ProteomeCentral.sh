@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export RESOURCE=ProteomeCentral
-export DEVAREA=test
+export DEVAREA=production
 
 LOGFILE=PROXI_${RESOURCE}_${DEVAREA}.log
 ELOGFILE=PROXI_${RESOURCE}_${DEVAREA}.elog
@@ -16,9 +16,7 @@ then
     /bin/rm $ELOGFILE
 fi
 
-cd /net/dblocal/wwwspecial/proteomecentral/devED/lib/proxi/server
-
 export PATH=/net/dblocal/src/python/python3/bin:$PATH
 
-exec python3 app_ProteomeCentral.py 1>$LOGFILE 2>$ELOGFILE
+exec python3 app_ProteomeCentral_${DEVAREA}.py 1>$LOGFILE 2>$ELOGFILE
 
