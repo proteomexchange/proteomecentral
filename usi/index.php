@@ -42,6 +42,22 @@ td[title$=spectrum]:hover, td[title$=response]:hover {
  background-color: #2c99ce;
  color: #fff;
 }
+.examples {
+ display: inline-flex;
+ position: relative;
+ left: 50px;
+ padding: 5px 10px;
+ margin: 0;
+ border: 1px solid #aaa;
+ color: #666;
+ border-radius: 20px;
+ width:130px;
+ background-color: #eee;
+ appearance: none;
+}
+.examples:hover {
+ background-color: #fff;
+}
 .smgr {
  font-size: small;
  font-weight: normal;
@@ -84,22 +100,12 @@ h1.title {
  float: right;
  color: #777;
 }
-.code200 {
- background-color: #5f5;
-}
-.code404 {
- background-color: #ec1;
-}
-.code500 {
- background-color: #d22;
- color: #eee;
-}
-.code501 {
- background-color: #bbb;
-}
-.code598 {
- background-color: #f55;
-}
+.code200 { background-color: #5f5; }
+.code400 { background-color: #666; color: #eee; }
+.code404 { background-color: #ec1; }
+.code500 { background-color: #d22; color: #eee; }
+.code501 { background-color: #bbb; }
+.code598 { background-color: #f55; }
 #usi_stat, #usi_valid {
  border-radius: 20px;
  border: 2px solid black;
@@ -146,26 +152,35 @@ h1.title {
 }
 </style>
 
-<body>
+<body onload="init();">
 
 <!-- BEGIN main content -->
 <h1 style="display:inline-block;">Universal Spectrum Identifier</h1>
-<span onclick="document.getElementById('usi_input').value='mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_12_5Feb12_Cougar_11-10-11.mzML:scan:11850:[UNIMOD:214]YYWGGLYSWDMSK[UNIMOD:214]/2';" style="cursor:pointer;margin-left:40px;" class="smgr">[ example ]</span>
+
+<a href="http://psidev.info/usi" target="PSI" style="margin-left:30px;" class="smgr">what's this?</a>
+
+<select class="examples" onchange="document.getElementById('usi_input').value=this.value;this.value='';">
+<option value="">Example USIs&nbsp;&nbsp;&nbsp;⇣</option>
+<option value="mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_12_5Feb12_Cougar_11-10-11.mzML:scan:11850:[UNIMOD:214]YYWGGLYSWDMSK[UNIMOD:214]/2">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_12_5Feb12_Cougar_11-10-11.mzML:scan:11850:[UNIMOD:214]YYWGGLYSWDMSK[UNIMOD:214]/2</option>
+<option value="mzspec:PXD002255:ES_XP_Ubi_97H_HCD_349:scan:9617:LAEIYVNSSFYK/2">mzspec:PXD002255:ES_XP_Ubi_97H_HCD_349:scan:9617:LAEIYVNSSFYK/2</option>
+<option value="mzspec:PXD002286:081213-Wittie-Phos-1A:scan:14366:MVC[Carbamidomethyl]S[Phospho]PVTVR/2">mzspec:PXD002286:081213-Wittie-Phos-1A:scan:14366:MVC[Carbamidomethyl]S[Phospho]PVTVR/2</option>
+<option value="mzspec:PXD001464:CL_1hRP_rep3:nativeId:1,1,2740,10:Q[Gln->pyro-Glu]IGDALPVSC[Carbamidomethyl]TISASR/2">mzspec:PXD001464:CL_1hRP_rep3:nativeId:1,1,2740,10:Q[Gln->pyro-Glu]IGDALPVSC[Carbamidomethyl]TISASR/2</option>
+<option value="mzspec:PXD000865:00603_F01_P004608_B00F_A00_R1:scan:14453:SSLLDVLAAR/2">mzspec:PXD000865:00603_F01_P004608_B00F_A00_R1:scan:14453:SSLLDVLAAR/2</option>
+<option value="mzspec:PXD000561:Adult_Urinarybladder_bRP_Elite_71_f14:scan:1872:FSGSSSGADR/2">mzspec:PXD000561:Adult_Urinarybladder_bRP_Elite_71_f14:scan:1872:FSGSSSGADR/2</option>
+</select>
+
 <span style="margin-left:150px;" onclick="check_usi();" id="usi_stat">&nbsp;&nbsp;Look Up USI&nbsp;&nbsp;</span>
 <span style="margin-left:50px;" onclick="validate_usi(false);" id="usi_valid">&nbsp;&nbsp;Validate USI&nbsp;&nbsp;</span>
-<br>
-<input id="usi_input" style="min-width:95%;"/>
 
 <br>
+<input id="usi_input" style="min-width:95%;"/>
+<br>
+
 
 <div style="margin-top:50px;" id="main"></div>
 
 <div style="min-height:500px;" id="spec"></div>
 
-<hr size="1">
-Debug Info::<br/>
-<div id="debug"></div>
-<hr size="1">
 
 <!-- END main content -->
 

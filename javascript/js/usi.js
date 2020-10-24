@@ -1,22 +1,33 @@
 var validation_url = "/api/proxi/v0.1/usi_validator";
 
-var usi_data = { "PRIDE"           : { "url" : "http://wwwdev.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
-				       "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=" },
-		 "ProteomeCentral" : { "url" : "http://proteomecentral.proteomexchange.org/api/proxi/v0.1/spectra?resultType=full&usi=" },
-		 "PeptideAtlas"    : { "url" : "http://www.peptideatlas.org/api/proxi/v0.1/spectra?resultType=full&usi=" ,
-				       "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=" },
-		 "MassIVE"         : { "url" : "http://massive.ucsd.edu/ProteoSAFe/proxi/v0.1/spectra?resultType=full&usi=" ,
-				       "view": "http://massive.ucsd.edu/ProteoSAFe/usi.jsp#{\"usi\":\"" ,
-				       "weiv": "\"}" },
-		 "jPOST"           : { "url" : "https://repository.jpostdb.org/proxi/spectra?resultType=full&usi=" }
-	       };
+var usi_data = {
+    "jPOST"           : { "url" : "https://repository.jpostdb.org/proxi/spectra?resultType=full&usi=" },
+    "MassIVE"         : { "url" : "http://massive.ucsd.edu/ProteoSAFe/proxi/v0.1/spectra?resultType=full&usi=" ,
+			  "view": "http://massive.ucsd.edu/ProteoSAFe/usi.jsp#{\"usi\":\"" ,
+			  "weiv": "\"}" },
+    "PeptideAtlas"    : { "url" : "http://www.peptideatlas.org/api/proxi/v0.1/spectra?resultType=full&usi=" ,
+			  "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=" },
+    "PRIDE"           : { "url" : "http://wwwdev.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
+			  "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=" },
+    "ProteomeCentral" : { "url" : "http://proteomecentral.proteomexchange.org/api/proxi/v0.1/spectra?resultType=full&usi=" }
+};
+
+
+var _peptidoform = null;
+
+function init() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('usi')) {
+	document.getElementById("usi_input").value = params.get('usi');
+	check_usi();
+    }
+}
 
 async function validate_usi(carryon) {
     var usi = document.getElementById("usi_input").value;
     if (usi == "") return;
 
     clear_element("main");
-    clear_element("debug");
     clear_element("spec");
 
     var response = await fetch(validation_url, {
@@ -30,11 +41,17 @@ async function validate_usi(carryon) {
     var data = await response.json();
 
     if (data.error_code != "OK") {
-	document.getElementById("debug").innerHTML += " API error :: " + data.error_message + "<br>";
+	document.getElementById("main").innerHTML += "<h1 class='rep title'>API error :: " + data.error_message + "</h1>";
 	return false;
     }
 
     if (data.validation_results[usi]["is_valid"] == true) {
+	if (data.validation_results[usi]["peptidoform"]) {
+	    _peptidoform = data.validation_results[usi]["peptidoform"];
+	    _peptidoform._f = data.validation_results[usi]["interpretation"] || '';
+	    _peptidoform._z = data.validation_results[usi]["charge"] || 0;
+	    _peptidoform._s = data.validation_results[usi]["index"] || 0;
+	}
 	if (carryon) return true;
 
 	var txt = document.createElement("h2");
@@ -86,6 +103,9 @@ async function validate_usi(carryon) {
     table.appendChild(tr);
 
     for (var f in data.validation_results[usi]) {
+	if (typeof data.validation_results[usi][f] === 'object') // also skips nulls
+	    continue;
+
         tr = document.createElement("tr");
         td = document.createElement("th");
         td.appendChild(document.createTextNode(f));
@@ -105,6 +125,7 @@ async function check_usi() {
     var usi = document.getElementById("usi_input").value;
     if (usi == "") return;
 
+    _peptidoform = null;
     var valid = await validate_usi(true);
     if (!valid) return;
 
@@ -143,8 +164,7 @@ async function check_usi() {
                     if (rcode != 200) {
 			document.getElementById(p+"_msg").innerHTML = alldata.title;
 			document.getElementById(p+"_spectrum").innerHTML = "n/a";
-			document.getElementById("debug").innerHTML += p + " :: " + alldata.detail + "<br>";
-			console.log("[DEBUG] "+p+" said: "+alldata.status+alldata.title);
+			console.log("[DEBUG] "+p+" said: "+alldata.status+"/"+alldata.title+"//"+alldata.detail);
 			return;
                     }
                     document.getElementById(p+"_msg").innerHTML = "OK";
@@ -159,7 +179,6 @@ async function check_usi() {
                     cell.innerHTML = "view";
 
 		    var s = {};
-                    s.ms1peaks = null;
                     s.sequence = "";
                     s.charge = 1;
                     s.scanNum = 0;
@@ -171,8 +190,18 @@ async function check_usi() {
                     s.ms2peaks = [];
 
 		    var has_spectrum = false;
-		    var usimods = {};
 		    var maxMz = 1999.0;
+
+		    if (!data || !data.mzs || !data.intensities)
+			throw "Incomplete spectrum data!";
+
+		    if (!isSorted(data.mzs)) {
+			console.log(p+" data NOT sorted :: attempting to sort...");
+			var sorted = sortLinkedArrays(data.mzs,data.intensities);
+			data.mzs = sorted[0];
+			data.intensities = sorted[1];
+		    }
+
                     for (var i in data.mzs) {
                         var usipeaks = [Number(data.mzs[i]), Number(data.intensities[i])];
                         s.ms2peaks.push(usipeaks);
@@ -182,6 +211,26 @@ async function check_usi() {
 		    s.minDisplayMz = 0.01;
                     s.maxDisplayMz = maxMz+1.0;
 
+		    if (_peptidoform) {
+			s.sequence = _peptidoform.peptide_sequence;
+			s.fileName = _peptidoform._f;
+			s.charge   = _peptidoform._z;
+			s.scanNum  = _peptidoform._s;
+			for (var mod in _peptidoform["mass_modifications"]) {
+			    if (_peptidoform["mass_modifications"][mod].base_residue == "nterm")
+				s.ntermMod = _peptidoform["mass_modifications"][mod].delta_mass;
+			    else if (_peptidoform["mass_modifications"][mod].base_residue == "cterm")
+				s.ctermMod = _peptidoform["mass_modifications"][mod].delta_mass;
+			    else {
+				var varmod  = {};
+				varmod.index     = _peptidoform["mass_modifications"][mod].index;
+				varmod.modMass   = _peptidoform["mass_modifications"][mod].delta_mass;
+				varmod.aminoAcid = _peptidoform["mass_modifications"][mod].base_residue;
+				s.variableMods.push(varmod);
+			    }
+			}
+		    }
+
 		    if (data.attributes) {
 			for (var att of data.attributes) {
                             if (att.accession == "MS:1008025") s.scanNum     = att.value;
@@ -189,15 +238,9 @@ async function check_usi() {
                             if (att.accession == "MS:1000041") s.charge      = att.value;
                             if (att.accession == "MS:1000888") s.sequence    = att.value;
                             if (att.accession == "MS:1003061") s.fileName    = att.value;
-                            if (att.accession == "MS:1009999") usimods = extractUSIMods(att.value);
 			}
 		    }
 
-		    if (usimods) {
-			s.ntermMod = usimods.ntermMod;
-			s.ctermMod = usimods.ctermMod;
-			s.variableMods = usimods.variableMods;
-		    }
 
 		    if (has_spectrum) {
 			usi_data[p].lori_data = s;
@@ -216,8 +259,6 @@ async function check_usi() {
                     document.getElementById(p+"_code").innerHTML = "--error--";
                     document.getElementById(p+"_msg").innerHTML = err;
                     document.getElementById(p+"_spectrum").innerHTML = "-n/a-";
-                    //document.getElementById(p+"_json").innerHTML = "-n/a-";
-		    document.getElementById("debug").innerHTML += p + " :: " + err + "<br>";
                     console.log(err);
 		}
             })
@@ -236,7 +277,6 @@ async function check_usi() {
                 document.getElementById(p+"_msg").innerHTML = error;
                 document.getElementById(p+"_spectrum").innerHTML = "--n/a--";
                 document.getElementById(p+"_json").innerHTML = "--n/a--";
-		document.getElementById("debug").innerHTML += p + " :: " + error + "<br>";
 		console.log(error);
             });
     }
@@ -244,6 +284,28 @@ async function check_usi() {
 }
 
 
+function isSorted(arr) {
+    for(var i = 0 ; i < arr.length - 1 ; i++)
+	if (arr[i] > arr[i+1])
+	    return false;
+    return true;
+}
+
+function sortLinkedArrays(arr1,arr2) {
+    var hoa = {};
+    for (var i in arr1)
+	hoa[arr1[i]] = arr2[i];
+
+    arr1.sort(function(a, b){return a - b});
+
+    arr2 = [];
+    for (var i in arr1)
+	arr2.push(hoa[arr1[i]]);
+
+    return [arr1, arr2];
+}
+
+// on retirement road...
 function extractUSIMods(peptidoform) {
     var usi_nterm = 0;
     var usi_cterm = 0;
@@ -338,7 +400,7 @@ function renderLorikeet(divid,src) {
                        "maxDisplayMz":s.maxDisplayMz,
                        "selWinHigh":s.selWinHigh,
                        "massError":s.massError,
-                       "showMassErrorPlot":s.showMassErrorPlot,
+                       "showMassErrorPlot":true,
                        "fileName":s.fileName,
                        "showB":s.showB,
                        "showY":s.showY,
@@ -346,19 +408,12 @@ function renderLorikeet(divid,src) {
                        "ctermMod":s.ctermMod,
                        "variableMods":s.variableMods,
                        "maxNeutralLossCount":s.maxNeutralLossCount,
-                       "ms1peaks":s.ms1peaks,
-                       "ms1scanLabel":s.ms1scanLabel,
-                       "zoomMs1":s.zoomMs1,
-                       "precursorPeakClickFn":s.precursorPeakClicked,
-                       "peaks2":s.ms2peaks2,
-                       "ms2peaks2Label":s.ms2peaks2Label,
                        "peaks":s.ms2peaks});
 }
 
 
 function render_tables(usi) {
     clear_element("main");
-    clear_element("debug");
 
     var table = document.createElement("table");
     table.className = "prox";
