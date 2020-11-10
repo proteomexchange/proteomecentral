@@ -216,18 +216,20 @@ async function check_usi() {
 			s.fileName = _peptidoform._f;
 			s.charge   = _peptidoform._z;
 			s.scanNum  = _peptidoform._s;
-			for (var mod in _peptidoform["mass_modifications"]) {
-			    if (_peptidoform["mass_modifications"][mod].base_residue == "nterm")
-				s.ntermMod = _peptidoform["mass_modifications"][mod].delta_mass;
-			    else if (_peptidoform["mass_modifications"][mod].base_residue == "cterm")
-				s.ctermMod = _peptidoform["mass_modifications"][mod].delta_mass;
-			    else {
-				var varmod  = {};
-				varmod.index     = _peptidoform["mass_modifications"][mod].index;
-				varmod.modMass   = _peptidoform["mass_modifications"][mod].delta_mass;
-				varmod.aminoAcid = _peptidoform["mass_modifications"][mod].base_residue;
-				s.variableMods.push(varmod);
-			    }
+			for (var mod in _peptidoform["terminal_modifications"]) {
+			    if (_peptidoform["terminal_modifications"][mod].base_residue == "nterm")
+				s.ntermMod = _peptidoform["terminal_modifications"][mod].delta_mass;
+			    else if (_peptidoform["terminal_modifications"][mod].base_residue == "cterm")
+				s.ctermMod = _peptidoform["terminal_modifications"][mod].delta_mass;
+			    else
+				console.log("[WARN] Invalid mod terminus; ignoring...");
+			}
+			for (var mod in _peptidoform["residue_modifications"]) {
+			    var varmod  = {};
+			    varmod.index     = _peptidoform["residue_modifications"][mod].index;
+			    varmod.modMass   = _peptidoform["residue_modifications"][mod].delta_mass;
+			    varmod.aminoAcid = _peptidoform["residue_modifications"][mod].base_residue;
+			    s.variableMods.push(varmod);
 			}
 		    }
 
@@ -305,51 +307,6 @@ function sortLinkedArrays(arr1,arr2) {
     return [arr1, arr2];
 }
 
-// on retirement road...
-function extractUSIMods(peptidoform) {
-    var usi_nterm = 0;
-    var usi_cterm = 0;
-    var usi_vmods = [];
-
-    // n-term
-    var regex = /^\[.+\]-/;
-    var match = regex.exec(peptidoform);
-    if (match) {
-        usi_nterm = Number(match[0].replace(/\[(.+)\]-/, '$1'));
-        peptidoform = peptidoform.replace(regex, '');
-    }
-
-    // c-term
-    regex = /-\[.+\]$/;
-    match = regex.exec(peptidoform);
-    if (match) {
-        usi_cterm = Number(match[0].replace(/-\[(.+)\]/, '$1'));
-        peptidoform = peptidoform.replace(regex, '');
-    }
-
-    // aa mods
-    regex = /[A-Z]\[.+?\]/;
-    while (1) {
-        match = regex.exec(peptidoform);
-        if (match) {
-            var usi_varmod  = {};
-            usi_varmod.index = match.index+1;
-            usi_varmod.modMass = Number(match[0].replace(/.*\[(.+)\]/, '$1'));
-            usi_varmod.aminoAcid = match[0].replace(/^(.).*/, '$1');
-            usi_vmods.push(usi_varmod);
-
-            peptidoform = peptidoform.replace(regex, usi_varmod.aminoAcid);
-        }
-        else break;
-    }
-
-    var o = {};
-    o.ntermMod = usi_nterm;
-    o.ctermMod = usi_cterm;
-    o.variableMods = usi_vmods;
-    return o;
-}
-
 
 function shta(tid) {
     if (document.getElementById(tid).style.display == "none")
@@ -388,27 +345,25 @@ function renderLorikeet(divid,src) {
     document.getElementById(src+"_current").innerHTML = "&#128202;";
 
     $('#'+divid).specview({"sequence":s.sequence,
-                       "scanNum":s.scanNum,
-                       "charge":s.charge,
-                       "fragmentMassType":s.fragmentMassType,
-                       "precursorMassType":s.precursorMassType,
-                       "width":650,
-                       "height":400,
-                       "precursorMz":s.precursorMz,
-                       "selWinLow":s.selWinLow,
-                       "minDisplayMz":s.minDisplayMz,
-                       "maxDisplayMz":s.maxDisplayMz,
-                       "selWinHigh":s.selWinHigh,
-                       "massError":s.massError,
-                       "showMassErrorPlot":true,
-                       "fileName":s.fileName,
-                       "showB":s.showB,
-                       "showY":s.showY,
-                       "ntermMod":s.ntermMod,
-                       "ctermMod":s.ctermMod,
-                       "variableMods":s.variableMods,
-                       "maxNeutralLossCount":s.maxNeutralLossCount,
-                       "peaks":s.ms2peaks});
+			   "scanNum":s.scanNum,
+			   "charge":s.charge,
+			   "width":650,
+			   "height":400,
+			   "precursorMz":s.precursorMz,
+			   "minDisplayMz":s.minDisplayMz,
+			   "maxDisplayMz":s.maxDisplayMz,
+			   "massError":20,
+			   "massErrorUnit":'ppm',
+			   "showMassErrorPlot":true,
+			   "fileName":s.fileName,
+			   "showA":[1,0,0],
+			   "showB":[1,1,0],
+			   "showY":[1,1,0],
+			   "peakDetect":false,
+			   "ntermMod":s.ntermMod,
+			   "ctermMod":s.ctermMod,
+			   "variableMods":s.variableMods,
+			   "peaks":s.ms2peaks});
 }
 
 
