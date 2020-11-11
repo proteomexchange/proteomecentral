@@ -21,8 +21,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__))+"/../client/swagger_c
 from models.spectrum import Spectrum
 from models.ontology_term import OntologyTerm
 
-#### Set the base of where the SpectralLibraries Python libraries are
-basedir = "/net/dblocal/data/SpectralLibraries/python/devED/SpectralLibraries"
 
 class ProxiSpectra:
 
