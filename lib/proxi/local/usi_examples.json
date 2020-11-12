@@ -1,0 +1,22 @@
+[
+ {"id": "Example 1", "usi": "mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2",
+    "description": "PSM of an unmodified doubly-charged peptide VLHPLEGAVVIIFK from Kim et al. (ref) draft human proteome datasets. Most of the intense unannotated peaks are internal fragmentation peaks." },
+ {"id": "Example 2", "usi": "mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_12_5Feb12_Cougar_11-10-11.mzML:scan:11850:[UNIMOD:214]YYWGGLYSWDMSK[UNIMOD:214]/2",
+    "description": "PSM of a iTRAQ4plex-labeled peptide from a CPTAC CompRef dataset, with iTRAQ4plex labels expressed with Unimod identifiers." },
+ {"id": "Example 3", "usi": "mzspec:PXD000394:20130504_EXQ3_MiBa_SA_Fib-2:scan:4234:ATASPPRQK/2",
+    "description": "The demonstrated correct PSM of an ordinary UniProtKB protein Q9UQ35 from Mylonas et al. (ref) Figure 2B:" },
+ {"id": "Example 4", "usi": "mzspec:PXD000394:20130504_EXQ3_MiBa_SA_Fib-2:scan:4234:SGVSRKPAPG/2",
+    "description": "The same spectrum as example 3, annotated with previously, incorrectly reported HLA peptide as described in Mylonas et al. (ref) Figure 2A" },
+ {"id": "Example 5", "usi": "mzspec:MSV000080679:j12541_C5orf38:scan:12368:VAATLEILTLK/2",
+    "description": "PSM derived from a prey protein in the BioPlex dataset (ref) pulled down as a binding partner to bait protein C5orf38. With only this single identification, this protein remains an HPP ?missing protein? since a single identification does not meet HPP guidelines." },
+ {"id": "Example 6", "usi": "mzspec:MSV000080679:b11156_PRAMEF17:scan:22140:VAATLEILTLK/2",
+    "description": "PSM of the same peptide as above, but derived from a recombinant protein used as a bait in the BioPlex dataset (ref). This PSM provides a much higher signal-to-noise ratio synthetic peptide reference spectrum as required by HPP guidelines." },
+ {"id": "Example 7", "usi": "mzspec:PXD002286:081213-Wittie-Phos-1A:scan:14366:MVC[Carbamidomethyl]S[Phospho]PVTVR/2",
+    "description": "PSM of an identification of a phosphorylated peptidoform, annotated using Unimod names. This spectrum exhibits substantial contamination by low-mass ions." },
+ {"id": "Example 8", "usi": "mzspec:PXD001464:CL_1hRP_rep3:nativeId:1,1,2740,10:Q[Gln->pyro-Glu]IGDALPVSC[Carbamidomethyl]TISASR/2",
+    "description": "PSM of a peptidoform exhibiting n-terminal pyro-Glu cyclization and cysteine carbamidomethylation denoted with Unimod names, using the nativeId from a SCIEX TripleTOF." },
+ {"id": "Example 9", "usi": "mzspec:PXD010154:01283_A02_P013187_S00_N09_R1:scan:30190",
+    "description": "Spectrum of a peptide from dataset PXDxxxxxxx with no interpretation provided." },
+ {"id": "Example 10", "usi": "mzspec:PXD010154:01283_A02_P013187_S00_N09_R1:scan:30190:ELVISYLPPGM[L-methionine sulfoxide]ASK/2",
+    "description": "PSM of a potential interpretation of the example 9 spectrum with the oxidation in the peptidoform described using the PSI-MOD name. Methanesulfenic acid neutral loss peaks characteristic of oxidized methionine are prominent." }
+]
