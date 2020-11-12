@@ -21,7 +21,7 @@
 
  {"id": "Example 6", "usi": "mzspec:MSV000080679:b11156_PRAMEF17:scan:22140:VAATLEILTLK/2",
    "description": "PSM of the same peptide as above, but derived from a recombinant protein used as a bait in the BioPlex dataset (ref). This PSM provides a much higher signal-to-noise ratio synthetic peptide reference spectrum as required by HPP guidelines.",
-   "htMLdescription": "PSM of the same peptide as above, but derived from a recombinant protein used as a bait in the <a href=\"https://pubmed.ncbi.nlm.nih.gov/26186194/\" target=\"_blank\">Huttlin et al. BioPlex</a> dataset. This PSM provides a much higher signal-to-noise ratio synthetic peptide reference spectrum as required by HPP guidelines." },
+   "html_description": "PSM of the same peptide as above, but derived from a recombinant protein used as a bait in the <a href=\"https://pubmed.ncbi.nlm.nih.gov/26186194/\" target=\"_blank\">Huttlin et al. BioPlex</a> dataset. This PSM provides a much higher signal-to-noise ratio synthetic peptide reference spectrum as required by HPP guidelines." },
 
  {"id": "Example 7", "usi": "mzspec:PXD002286:081213-Wittie-Phos-1A:scan:14366:MVC[Carbamidomethyl]S[Phospho]PVTVR/2",
    "description": "PSM of an identification of a phosphorylated peptidoform, annotated using Unimod names. This spectrum exhibits substantial contamination by low-mass ions.",
