@@ -10,9 +10,15 @@ import re
 import json
 import ast
 
-BASE = '/net/dblocal/data/SpectralLibraries/python/devED/SpectralLibraries'
-sys.path.append(BASE + '/lib')
-from universal_spectrum_identifier_validator import UniversalSpectrumIdentifierValidator
+try:
+    from universal_spectrum_identifier_validator import UniversalSpectrumIdentifierValidator
+except:
+    proxi_instance = os.environ['PROXI_INSTANCE']
+    if not proxi_instance:
+        print("ERROR: Environment variable PROXI_INSTANCE must be set")
+        exit()
+    sys.path.append(f"/net/dblocal/data/SpectralLibraries/python/{proxi_instance}/SpectralLibraries/lib")
+    from universal_spectrum_identifier_validator import UniversalSpectrumIdentifierValidator
 
 
 #### ProxiDatasets class

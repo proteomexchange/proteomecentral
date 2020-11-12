@@ -14,7 +14,7 @@ import json
 import ast
 
 BASE = '/net/dblocal/data/SpectralLibraries/python/devED/SpectralLibraries'
-sys.path.append(BASE + '/lib')
+
 from SpectrumLibraryCollection import SpectrumLibraryCollection
 
 
