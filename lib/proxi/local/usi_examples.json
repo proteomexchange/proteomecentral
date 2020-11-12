@@ -8,7 +8,7 @@
    "html_description": "PSM of a iTRAQ4plex-labeled peptide from a <a href=\"http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=PXD000966\" target=\"_blank\">CPTAC CompRef dataset</a>, with iTRAQ4plex labels expressed with <a href=\"http://www.unimod.org/modifications_view.php?editid1=214\" target=\"_blank\">Unimod identifier UNIMOD:214</a>." },
 
  {"id": "Example 3", "usi": "mzspec:PXD000394:20130504_EXQ3_MiBa_SA_Fib-2:scan:4234:ATASPPRQK/2",
-   "description": "The demonstrated correct PSM of an ordinary UniProtKB protein Q9UQ35 from Mylonas et al. (ref) Figure 2B.",
+   "description": "The demonstrated correct PSM of an ordinary UniProtKB protein Q9UQ35 from Mylonas et al. Figure 2B.",
    "html_description": "The demonstrated correct PSM of an ordinary UniProtKB protein Q9UQ35 from <a href=\"https://pubmed.ncbi.nlm.nih.gov/30171158/\" target=\"_blank\">Mylonas et al.</a> <a href=\"https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&p=PMC3&id=6283289_zjw0121858270002.jpg\" target=\"_blank\">Figure 2B</a>." },
 
  {"id": "Example 4", "usi": "mzspec:PXD000394:20130504_EXQ3_MiBa_SA_Fib-2:scan:4234:SGVSRKPAPG/2",
