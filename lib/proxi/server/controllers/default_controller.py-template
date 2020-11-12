@@ -20,5 +20,8 @@ def get_ps_ms(resultType, pageSize = None, pageNumber = None, usi = None, access
 def get_spectra(resultType, pageSize = None, pageNumber = None, usi = None, accession = None, msRun = None, fileName = None, scan = None) -> str:
     return 'do some magic!'
 
+def usi_examples() -> str:
+    return 'do some magic!'
+
 def usi_validator(body) -> str:
     return 'do some magic!'
