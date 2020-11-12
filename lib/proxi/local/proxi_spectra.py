@@ -111,8 +111,8 @@ class ProxiSpectra:
             return(status_code, message)
 
         #### Or otherwise this USI doesn't seem to have an identifier we can deal with
-        status_code = 484
-        message = { "status": status_code, "title": "USI must contain PXL or PXD", "detail": "This endpoint as currently implemented requires a USI to have a PXL or PXD identifier", "type": "about:blank" }
+        status_code = 404
+        message = { "status": status_code, "title": "Unsupported collection prefix", "detail": "This endpoint currently only supports USIs with a PXL or PXD collection identifier", "type": "about:blank" }
         return(status_code, message)
 
 
