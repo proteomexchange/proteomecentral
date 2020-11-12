@@ -548,6 +548,25 @@ paths:
             $ref: "#/definitions/Error"
       x-tags:
       - tag: "spectra"
+  /usi_examples:
+    get:
+      tags:
+      - "usi_examples"
+      summary: "Provide a list of example USIs"
+      description: "An endpoint to provide a list of example USIs and descriptions\
+        \ of them"
+      operationId: "controllers.default_controller.usi_examples"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "List of examples is returned"
+          schema:
+            type: "object"
+            properties: {}
+      x-tags:
+      - tag: "usi_examples"
   /usi_validator:
     post:
       tags:

@@ -17,6 +17,7 @@ from proxi_spectra import ProxiSpectra
 from proxi_datasets import ProxiDatasets
 from proxi_libraries import ProxiLibraries
 from usi_validator import UsiValidator
+from usi_examples import UsiExamples
 
 
 def get_dataset(identifier) -> str:
@@ -61,4 +62,9 @@ def get_spectra(resultType, pageSize = None, pageNumber = None, usi = None, acce
 def usi_validator(body) -> str:
     usi_validator = UsiValidator()
     return usi_validator.validate(body)
+
+def usi_examples() -> str:
+    usi_examples = UsiExamples()
+    return(usi_examples.examples,200)
+
 
