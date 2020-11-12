@@ -1,10 +1,7 @@
 #!/bin/bash
 
-export RESOURCE=ProteomeCentral
-export DEVAREA=production
-
-LOGFILE=PROXI_${RESOURCE}_${DEVAREA}.log
-ELOGFILE=PROXI_${RESOURCE}_${DEVAREA}.elog
+LOGFILE=PROXI_${RESOURCE}_${PROXI_INSTANCE}.log
+ELOGFILE=PROXI_${RESOURCE}_${PROXI_INSTANCE}.elog
 
 if [ -e $LOGFILE ]
 then
@@ -18,5 +15,5 @@ fi
 
 export PATH=/net/dblocal/src/python/python3/bin:$PATH
 
-exec python3 app_ProteomeCentral_${DEVAREA}.py 1>$LOGFILE 2>$ELOGFILE
+exec python3 app_${RESOURCE}_${PROXI_INSTANCE}.py 1>$LOGFILE 2>$ELOGFILE
 

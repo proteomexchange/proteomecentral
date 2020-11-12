@@ -1,4 +1,19 @@
 #!/bin/bash
 
+if [[ -z "${RESOURCE}" ]]; then
+  echo "Please set env variable RESOURCE and try again"
+  exit
+fi
+
+if [[ -z "${PROXI_INSTANCE}" ]]; then
+  echo "Please set env variable PROXI_INSTANCE and try again"
+  exit
+fi
+
+if [[ -z "${PROXI_PORT}" ]]; then
+  echo "Please set env variable PROXI_PORT and try again"
+  exit
+fi
+
 nohup ./PROXI_ProteomeCentral.sh &
 
