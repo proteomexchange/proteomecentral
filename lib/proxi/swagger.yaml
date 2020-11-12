@@ -515,6 +515,21 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
+  /usi_examples:
+    get:
+      summary: Provide a list of example USIs
+      operationId: usiExamples
+      description: An endpoint to provide a list of example USIs and descriptions of them
+      tags:
+      - usi_examples
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: List of examples is returned
+          schema:
+            type: object
+
 definitions:
   
   OntologyTerm:
