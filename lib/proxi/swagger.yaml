@@ -17,9 +17,21 @@ basePath: /api/proxi/v0.1
 
 tags:
   - name: datasets
-    description: A set of datasets, peptides and protein identified acrosss ProteomeXchange partners
+    description: Access datasets in the resource
+  - name: spectra
+    description: Access spectra in the resource
+  - name: psms
+    description: Access PSMs in the resource
+  - name: peptidoforms
+    description: Access peptidoforms in the resource
+  - name: proteins
+    description: Access proteins in the resource
+  - name: libraries
+    description: Access spectral libraries in the resource
   - name: usi_validator
     description: A batch validator for Universal Spectrum Identifiers (USIs)
+  - name: usi_examples
+    description: Access a list of example USIs
 consumes:
   - application/json
 produces:
@@ -301,13 +313,14 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+
   /peptidoforms:
      get:
       summary: Get a collection of peptidoforms
       operationId: getPeptides
       description: The peptidoforms entry point returns global peptidoform statistics across an entire resource. Each peptidoform contains a summary of the statistics of the peptidoform across the entire resource.
       tags:
-        - molecules
+        - peptidoforms
       produces:
         - "application/json"
       parameters:
@@ -376,7 +389,7 @@ paths:
       operationId: getProteins
       description: The protein entrey point returns protein statistics across an entire resource.
       tags:
-      - molecules
+      - proteins
       produces:
       - "application/json"
       parameters:
