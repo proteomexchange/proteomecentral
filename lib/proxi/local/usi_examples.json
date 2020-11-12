@@ -6,7 +6,7 @@
  {"id": "Example 3", "usi": "mzspec:PXD000394:20130504_EXQ3_MiBa_SA_Fib-2:scan:4234:ATASPPRQK/2",
     "description": "The demonstrated correct PSM of an ordinary UniProtKB protein Q9UQ35 from Mylonas et al. (ref) Figure 2B." },
  {"id": "Example 4", "usi": "mzspec:PXD000394:20130504_EXQ3_MiBa_SA_Fib-2:scan:4234:SGVSRKPAPG/2",
-    "description": "The same spectrum as example 3, annotated with previously, incorrectly reported HLA peptide as described in <a href=\"https://pubmed.ncbi.nlm.nih.gov/30171158/\">Mylonas et al.</A> Figure 2A." },
+    "description": "The same spectrum as example 3, annotated with the previously, incorrectly reported HLA peptide as described in <a href=\"https://pubmed.ncbi.nlm.nih.gov/30171158/\">Mylonas et al.</A> Figure 2A." },
  {"id": "Example 5", "usi": "mzspec:MSV000080679:j12541_C5orf38:scan:12368:VAATLEILTLK/2",
     "description": "PSM derived from a prey protein in the BioPlex dataset (ref) pulled down as a binding partner to bait protein C5orf38. With only this single identification, this protein remains an HPP missing protein since a single identification does not meet HPP guidelines." },
  {"id": "Example 6", "usi": "mzspec:MSV000080679:b11156_PRAMEF17:scan:22140:VAATLEILTLK/2",
