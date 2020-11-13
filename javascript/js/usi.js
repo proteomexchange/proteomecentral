@@ -1,4 +1,4 @@
-var api_url = '../../api/proxi/v0.1/';
+var api_url = '../api/proxi/v0.1/';
 
 var validate_url = api_url + 'usi_validator';
 var examples_url = api_url + 'usi_examples';
