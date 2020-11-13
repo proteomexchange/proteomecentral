@@ -1,4 +1,7 @@
-var validation_url = "/api/proxi/v0.1/usi_validator";
+var api_url = '../../api/proxi/v0.1/';
+
+var validate_url = api_url + 'usi_validator';
+var examples_url = api_url + 'usi_examples';
 
 var usi_data = {
     "jPOST"           : { "url" : "https://repository.jpostdb.org/proxi/spectra?resultType=full&usi=" },
@@ -12,6 +15,7 @@ var usi_data = {
     "ProteomeCentral" : { "url" : "http://proteomecentral.proteomexchange.org/api/proxi/v0.1/spectra?resultType=full&usi=" }
 };
 
+var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730", "UNIMOD:731", "UNIMOD:737", "UNIMOD:738", "UNIMOD:739", "UNIMOD:889", "UNIMOD:984", "UNIMOD:985", "UNIMOD:1341", "UNIMOD:1342", "UNIMOD:2015", "UNIMOD:2016", "UNIMOD:2017" ];
 
 var _peptidoform = null;
 
@@ -21,6 +25,7 @@ function init() {
 	document.getElementById("usi_input").value = params.get('usi');
 	check_usi();
     }
+    retrieve_example_usis();
 }
 
 async function validate_usi(carryon) {
@@ -30,7 +35,7 @@ async function validate_usi(carryon) {
     clear_element("main");
     clear_element("spec");
 
-    var response = await fetch(validation_url, {
+    var response = await fetch(validate_url, {
 	method: 'post',
 	headers: {
 	    'Accept': 'application/json',
@@ -134,6 +139,7 @@ async function check_usi() {
     document.getElementById("usi_stat").classList.add("running");
 
     var done = 0;
+    var dispec = false;
     for (let p in usi_data) {
 	var url = usi_data[p].url + usi;
 
@@ -154,9 +160,11 @@ async function check_usi() {
             .then(alldata => {
 		try {
 		    done++;
-		    if (done == Object.keys(usi_data).length)
+		    if (done == Object.keys(usi_data).length) {
 			document.getElementById("usi_stat").classList.remove("running");
-
+			if (!dispec)
+			    displayMsg("spec","USI not found at any of the repositories!");
+		    }
                     var cell = document.getElementById(p+"_code");
                     cell.innerHTML = rcode;
 		    cell.classList.add("code"+rcode);
@@ -186,7 +194,9 @@ async function check_usi() {
                     s.fileName = p+" spectrum";
                     s.ntermMod = 0;
                     s.ctermMod = 0;
+		    s.reporterIons = false;
                     s.variableMods = [];
+		    s.maxNeutralLossCount = 1;
                     s.ms2peaks = [];
 
 		    var has_spectrum = false;
@@ -217,18 +227,30 @@ async function check_usi() {
 			s.charge   = _peptidoform._z;
 			s.scanNum  = _peptidoform._s;
 			for (var mod in _peptidoform["terminal_modifications"]) {
-			    if (_peptidoform["terminal_modifications"][mod].base_residue == "nterm")
+			    if (_peptidoform["terminal_modifications"][mod].base_residue == "nterm") {
 				s.ntermMod = _peptidoform["terminal_modifications"][mod].delta_mass;
+				if (isobaric_unimods.includes(_peptidoform["terminal_modifications"][mod].modification_curie))
+				    s.reporterIons = true;
+			    }
 			    else if (_peptidoform["terminal_modifications"][mod].base_residue == "cterm")
 				s.ctermMod = _peptidoform["terminal_modifications"][mod].delta_mass;
 			    else
-				console.log("[WARN] Invalid mod terminus; ignoring...");
+				console.warn("[WARN] Invalid mod terminus; ignoring...");
 			}
 			for (var mod in _peptidoform["residue_modifications"]) {
 			    var varmod  = {};
 			    varmod.index     = _peptidoform["residue_modifications"][mod].index;
 			    varmod.modMass   = _peptidoform["residue_modifications"][mod].delta_mass;
 			    varmod.aminoAcid = _peptidoform["residue_modifications"][mod].base_residue;
+			    if (varmod.aminoAcid == "M" && (varmod.modMass-15.9949 < 0.01)) {  //Ox
+				var loss = {};
+				loss.monoLossMass = 63.998285;
+				loss.avgLossMass  = 64.11;
+				loss.formula      = 'CH3SOH';
+				varmod.losses = [];
+				varmod.losses.push(loss);
+				s.maxNeutralLossCount++;
+			    }
 			    s.variableMods.push(varmod);
 			}
 		    }
@@ -251,6 +273,11 @@ async function check_usi() {
 			cell.title = "view spectrum";
 			cell.setAttribute('onclick', 'renderLorikeet("spec","'+p+'");');
 			cell.innerHTML = s.fileName;
+
+			if(!dispec) {
+			    dispec = true;
+			    renderLorikeet("spec",p);
+			}
 		    }
 		    else {
 			usi_data[p].lori_data = {};
@@ -261,13 +288,16 @@ async function check_usi() {
                     document.getElementById(p+"_code").innerHTML = "--error--";
                     document.getElementById(p+"_msg").innerHTML = err;
                     document.getElementById(p+"_spectrum").innerHTML = "-n/a-";
-                    console.log(err);
+                    console.error(err);
 		}
             })
             .catch(error => {
 		done++;
-		if (done == Object.keys(usi_data).length)
+		if (done == Object.keys(usi_data).length) {
 		    document.getElementById("usi_stat").classList.remove("running");
+                    if (!dispec)
+                        displayMsg("spec","USI not found at any of the repositories!");
+		}
 		if (rcode != -1) {
                     document.getElementById(p+"_code").classList.add("code"+rcode);
                     document.getElementById(p+"_code").innerHTML = rcode;
@@ -279,7 +309,7 @@ async function check_usi() {
                 document.getElementById(p+"_msg").innerHTML = error;
                 document.getElementById(p+"_spectrum").innerHTML = "--n/a--";
                 document.getElementById(p+"_json").innerHTML = "--n/a--";
-		console.log(error);
+		console.error(error);
             });
     }
 
@@ -313,6 +343,15 @@ function shta(tid) {
 	document.getElementById(tid).style.display = "table";
     else
 	document.getElementById(tid).style.display = "none";
+}
+
+function displayMsg(divid,msg) {
+    clear_element(divid);
+    var txt = document.createElement("h2");
+    txt.className = "invalid";
+    txt.style.marginBottom = "0";
+    txt.appendChild(document.createTextNode(msg));
+    document.getElementById(divid).appendChild(txt);
 }
 
 function viewJSON(divid,src) {
@@ -363,6 +402,8 @@ function renderLorikeet(divid,src) {
 			   "ntermMod":s.ntermMod,
 			   "ctermMod":s.ctermMod,
 			   "variableMods":s.variableMods,
+			   "maxNeutralLossCount":s.maxNeutralLossCount,
+			   "labelReporters":s.reporterIons,
 			   "peaks":s.ms2peaks});
 }
 
@@ -370,8 +411,18 @@ function renderLorikeet(divid,src) {
 function render_tables(usi) {
     clear_element("main");
 
+    var txt = document.createElement("span");
+    txt.className = "smgr";
+    txt.style.cursor = "pointer";
+    txt.appendChild(document.createTextNode("[ show / hide details ]"));
+    txt.setAttribute('onclick', 'shta("usideets");');
+
+    document.getElementById("main").appendChild(txt);
+
     var table = document.createElement("table");
+    table.id = "usideets";
     table.className = "prox";
+    table.style.display = "none";
 
     var tr = document.createElement("tr");
     var td = document.createElement("td");
@@ -440,6 +491,36 @@ function render_tables(usi) {
     document.getElementById("main").appendChild(table);
     document.getElementById("main").appendChild(document.createElement("br"));
     document.getElementById("main").appendChild(document.createElement("br"));
+}
+
+function update_usi_input(sel) {
+    document.getElementById('usi_input').value=sel.value;
+    if (sel.options[sel.selectedIndex].dataset.desc)
+	document.getElementById('usi_desc').innerHTML = sel.options[sel.selectedIndex].dataset.desc;
+    else
+	document.getElementById('usi_desc').innerHTML = '';
+
+    sel.value='';
+}
+
+function retrieve_example_usis() {
+    fetch(examples_url)
+        .then(response => response.json())
+        .then(data => {
+            try {
+		var examples = document.getElementById("example_usis");
+		var i = 1; // do not replace menu-like header (in position 0)
+		for (var eg of data) {
+		    var opt = document.createElement("option");
+		    opt.value = eg.usi;
+		    opt.text  = eg.usi;
+		    opt.title = eg.id + " : " + eg.description;
+		    opt.dataset.desc = eg.id + " : " + eg.html_description;
+		    examples.options[i++] = opt;
+		}
+	    }
+	    catch {} // ignore errors; leave html examples
+	});
 }
 
 
