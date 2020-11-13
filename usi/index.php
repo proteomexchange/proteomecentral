@@ -159,7 +159,7 @@ h1.title {
 
 <a href="http://psidev.info/usi" target="PSI" style="margin-left:30px;" class="smgr">what's this?</a>
 
-<select class="examples" onchange="document.getElementById('usi_input').value=this.value;this.value='';">
+<select id="example_usis" class="examples" onchange="update_usi_input(this);">
 <option value="">Example USIs&nbsp;&nbsp;&nbsp;⇣</option>
 <option value="mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_12_5Feb12_Cougar_11-10-11.mzML:scan:11850:[UNIMOD:214]YYWGGLYSWDMSK[UNIMOD:214]/2">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_12_5Feb12_Cougar_11-10-11.mzML:scan:11850:[UNIMOD:214]YYWGGLYSWDMSK[UNIMOD:214]/2</option>
 <option value="mzspec:PXD002255:ES_XP_Ubi_97H_HCD_349:scan:9617:LAEIYVNSSFYK/2">mzspec:PXD002255:ES_XP_Ubi_97H_HCD_349:scan:9617:LAEIYVNSSFYK/2</option>
@@ -173,11 +173,12 @@ h1.title {
 <span style="margin-left:50px;" onclick="validate_usi(false);" id="usi_valid">&nbsp;&nbsp;Validate USI&nbsp;&nbsp;</span>
 
 <br>
-<input id="usi_input" style="min-width:95%;"/>
+<input id="usi_input" onchange="document.getElementById('usi_desc').innerHTML = '';" style="min-width:95%;"/><br/>
+<span class="smgr" id="usi_desc">&nbsp;</span>
 <br>
 
 
-<div style="margin-top:50px;" id="main"></div>
+<div style="margin-top:20px;" id="main"></div>
 
 <div style="min-height:500px;" id="spec"></div>
 
