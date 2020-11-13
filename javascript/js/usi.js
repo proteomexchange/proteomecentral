@@ -57,7 +57,13 @@ async function validate_usi(carryon) {
 	    _peptidoform._z = data.validation_results[usi]["charge"] || 0;
 	    _peptidoform._s = data.validation_results[usi]["index"] || 0;
 	}
-	if (carryon) return true;
+	if (carryon) {
+	    if (data.validation_results[usi]["collection_type"] == 'placeholder') {
+                displayMsg("spec","WARNING: The USI you have entered uses the placeholder collection identifier of USI000000. This means that the creator of the USI used this placeholder instead of a public collection identifier such as PXD012345. In order for the USI resolution to work, you will need to find the correct dataset/collection identifier for the dataset you wish to access, and replace the USI000000 with the correct collection identifier.");
+		return false;
+	    }
+	    return true;
+	}
 
 	var txt = document.createElement("h2");
 
