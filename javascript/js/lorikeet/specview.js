@@ -380,6 +380,7 @@
         container.data("anticPrecursor", 0); // total annotated ion current: precursor peak
         container.data("anticImmonium", 0); // total annotated ion current: immonium ions
         container.data("anticReporter", 0); // total annotated ion current: reporter ions
+        container.data("totalIonCurrent", getTotalIonCurrent(options.peaks)); // total ion current
 
         var maxInt = getMaxIntPeaks(options.peaks);
         var maxIntUp = maxInt;      //get max peaks value in up peak list
@@ -446,6 +447,15 @@
 
         container.data("plotOptions", plotOptions);
         container.data("maxInt", maxInt);
+    }
+
+    // total ion current = sum all peak intensities
+    function getTotalIonCurrent(peaks) {
+        var totCurrent = 0;
+        for(var peak of peaks)
+            totCurrent += peak[1];
+        //console.log("Ion Current: "+totCurrent);
+        return totCurrent;
     }
 
     // extract max from peak list
@@ -2422,9 +2432,11 @@
             antic += container.data("anticUserReporterIons");
         }
 
+	var percent = 100*round(antic / container.data("totalIonCurrent"));
+
 	var anticInfo = '<div id="'+getElementId(container, elementIds.anticInfo)+'" style="margin-top:5px;">';
 	anticInfo += 'Annotated Ion Current: ';
-	anticInfo += "<div><b>"+round(antic)+"</b></div>";
+	anticInfo += "<div><b>"+round(antic)+"</b> ("+percent+"%)</div>";
 	anticInfo += '</div>';
 
 	$(getElementSelector(container, elementIds.anticInfo)).replaceWith(anticInfo);
