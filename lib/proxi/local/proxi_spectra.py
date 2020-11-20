@@ -15,6 +15,7 @@ import re
 import json
 import ast
 import http.client
+import urllib.parse
 
 #### Import the Swagger client libraries
 sys.path.append(os.path.dirname(os.path.abspath(__file__))+"/../client/swagger_client")
@@ -180,9 +181,13 @@ class ProxiSpectra:
 
         server = 'db.systemsbiology.net'
         url_base = '/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?output_mode=json&USI='
-        url = url_base + usi
 
-        connection = http.client.HTTPConnection(server, 80, timeout=30)
+        #### http.client dies if there are spaces in its URLs. Maybe just replace spaces? or go for complete URLencode?
+        #usi = re.sub(r' ','+',usi)
+        #url = url_base + usi
+        url = url_base + urllib.parse.quote_plus(usi)
+
+        connection = http.client.HTTPSConnection(server, 443, timeout=30)
         connection.request("GET", url)
         http_response = connection.getresponse()
         status_code = http_response.status
@@ -197,6 +202,7 @@ class ProxiSpectra:
                 return(status_code, message)
 
             except Exception as error:
+                #print(payload)
                 status_code = 500
                 message = { "status": status_code, "title": "Internal JSON parsing error", "detail": "Unable to parse JSON from internal call", "type": "about:blank" }
                 return(status_code, message)
@@ -207,6 +213,7 @@ class ProxiSpectra:
                 return(status_code, error_message)
 
             except Exception as error:
+                #print(payload)
                 status_code = 500
                 message = { "status": status_code, "title": "Internal JSON parsing error", "detail": "Unable to parse JSON from internal call", "type": "about:blank" }
                 return(status_code, message)
@@ -224,7 +231,8 @@ def main():
   resultType = 'compact'
   #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2')
   #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2')
-  result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXL000006:02-14-2019:index:1250')
+  #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXL000006:02-14-2019:index:1250')
+  result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01283_A02_P013187_S00_N09_R1:scan:30190:ELVISYLPPGM[L-methionine sulfoxide]ASK/2')
   if result[0] == 200:
       print(spectra.spectra)
   else:
