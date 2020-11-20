@@ -3,7 +3,7 @@
       "description": "PSM of an unmodified doubly-charged peptide VLHPLEGAVVIIFK from the Kim et al. draft human proteome dataset. Most of the intense unannotated peaks are internal fragmentation ions of this peptide.",
       "html_description": "PSM of an unmodified doubly-charged peptide VLHPLEGAVVIIFK from the <a href=\"https://pubmed.ncbi.nlm.nih.gov/24870542/\" target=\"_blank\">Kim et al.</a> draft human proteome dataset. Most of the intense unannotated peaks are internal fragmentation ions of this peptide." },
 
-   {"id": "Example 2", "usi": "mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_12_5Feb12_Cougar_11-10-11.mzML:scan:11850:[UNIMOD:214]YYWGGLYSWDMSK[UNIMOD:214]/2",
+   {"id": "Example 2", "usi": "mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_12_5Feb12_Cougar_11-10-11.mzML:scan:11850:[UNIMOD:214]-YYWGGLYSWDMSK[UNIMOD:214]/2",
       "description": "PSM of a iTRAQ4plex-labeled peptide from a CPTAC CompRef dataset, with iTRAQ4plex labels expressed with Unimod identifier UNIMOD:214.",
       "html_description": "PSM of a iTRAQ4plex-labeled peptide from a <a href=\"http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=PXD000966\" target=\"_blank\">CPTAC CompRef dataset</a>, with iTRAQ4plex labels expressed with <a href=\"http://www.unimod.org/modifications_view.php?editid1=214\" target=\"_blank\">Unimod identifier UNIMOD:214</a>." },
 
