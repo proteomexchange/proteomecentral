@@ -29,6 +29,7 @@ function init() {
 }
 
 async function validate_usi(carryon) {
+    document.getElementById("usi_input").value = document.getElementById("usi_input").value.trim();
     var usi = document.getElementById("usi_input").value;
     if (usi == "") return;
 
@@ -133,6 +134,7 @@ async function validate_usi(carryon) {
 }
 
 async function check_usi() {
+    document.getElementById("usi_input").value = document.getElementById("usi_input").value.trim();
     var usi = document.getElementById("usi_input").value;
     if (usi == "") return;
 
@@ -147,9 +149,9 @@ async function check_usi() {
     var done = 0;
     var dispec = false;
     for (let p in usi_data) {
-	var url = usi_data[p].url + usi;
+	var url = usi_data[p].url + encodeURIComponent(usi);
 
-        var ccell = document.getElementById(p+"_code");
+        var ccell = document.getElementById(p+"_msg");
         ccell.title = "view raw response from API";
         ccell.setAttribute('onclick', 'window.open("'+url+'");');
         ccell.style.cursor = "pointer";
@@ -171,26 +173,27 @@ async function check_usi() {
 			if (!dispec)
 			    displayMsg("spec","USI not found at any of the repositories!");
 		    }
-                    var cell = document.getElementById(p+"_code");
-                    cell.innerHTML = rcode;
+                    var cell = document.getElementById(p+"_msg");
+                    cell.title += " (Code:"+rcode+")";
 		    cell.classList.add("code"+rcode);
 
                     if (rcode != 200) {
-			document.getElementById(p+"_msg").innerHTML = alldata.title;
+			cell.innerHTML = alldata.title;
 			document.getElementById(p+"_spectrum").innerHTML = "n/a";
 			console.log("[DEBUG] "+p+" said: "+alldata.status+"/"+alldata.title+"//"+alldata.detail);
 			return;
                     }
-                    document.getElementById(p+"_msg").innerHTML = "OK";
+                    cell.innerHTML = "OK";
 
 		    var data = alldata[0]; // just consider the first one  FIXME??
 
 		    usi_data[p].usi_data = data;
 
                     cell = document.getElementById(p+"_json");
+                    cell.className = "smgr";
                     cell.title = "view JSON response";
                     cell.setAttribute('onclick', 'viewJSON("spec","'+p+'");');
-                    cell.innerHTML = "view";
+                    cell.innerHTML = "[ JSON ]";
 
 		    var s = {};
                     s.sequence = "";
@@ -277,6 +280,7 @@ async function check_usi() {
 
 			var cell = document.getElementById(p+"_spectrum");
 			cell.title = "view spectrum";
+			cell.style.fontWeight = "bold";
 			cell.setAttribute('onclick', 'renderLorikeet("spec","'+p+'");');
 			cell.innerHTML = s.fileName;
 
@@ -291,7 +295,6 @@ async function check_usi() {
 		    }
 
 		} catch(err) {
-                    document.getElementById(p+"_code").innerHTML = "--error--";
                     document.getElementById(p+"_msg").innerHTML = err;
                     document.getElementById(p+"_spectrum").innerHTML = "-n/a-";
                     console.error(err);
@@ -304,14 +307,12 @@ async function check_usi() {
                     if (!dispec)
                         displayMsg("spec","USI not found at any of the repositories!");
 		}
-		if (rcode != -1) {
-                    document.getElementById(p+"_code").classList.add("code"+rcode);
-                    document.getElementById(p+"_code").innerHTML = rcode;
-		}
-		else {
-                    document.getElementById(p+"_code").classList.add("code500");
-                    document.getElementById(p+"_code").innerHTML = "--ERROR--";
-		}
+
+		if (rcode != -1)
+                    document.getElementById(p+"_msg").classList.add("code"+rcode);
+		else
+                    document.getElementById(p+"_msg").classList.add("code500");
+
                 document.getElementById(p+"_msg").innerHTML = error;
                 document.getElementById(p+"_spectrum").innerHTML = "--n/a--";
                 document.getElementById(p+"_json").innerHTML = "--n/a--";
@@ -363,9 +364,12 @@ function displayMsg(divid,msg) {
 function viewJSON(divid,src) {
     clear_element(divid);
 
-    for (var rname in usi_data)
+    for (var rname in usi_data) {
 	clear_element(rname+"_current");
+        document.getElementById(rname+"_current").title = "";
+    }
     document.getElementById(src+"_current").innerHTML = "&#127859";
+    document.getElementById(src+"_current").title = "This JSON response is currently being displayed below";
 
     var jcode = document.createElement("div");
     jcode.className = "json";
@@ -385,9 +389,12 @@ function renderLorikeet(divid,src) {
     var s = usi_data[src].lori_data;
     clear_element(divid);
 
-    for (var rname in usi_data)
+    for (var rname in usi_data) {
 	clear_element(rname+"_current");
+	document.getElementById(rname+"_current").title = "";
+    }
     document.getElementById(src+"_current").innerHTML = "&#128202;";
+    document.getElementById(src+"_current").title = "This spectrum/PSM is currently being displayed below";
 
     $('#'+divid).specview({"sequence":s.sequence,
 			   "scanNum":s.scanNum,
@@ -428,18 +435,18 @@ function render_tables(usi) {
     var table = document.createElement("table");
     table.id = "usideets";
     table.className = "prox";
-    table.style.display = "none";
+    //table.style.display = "none";
 
     var tr = document.createElement("tr");
     var td = document.createElement("td");
     td.className = "rep";
-    td.colSpan = 6;
+    td.colSpan = 5;
     td.appendChild(document.createTextNode(usi));
     tr.appendChild(td);
     table.appendChild(tr);
 
     tr = document.createElement("tr");
-    var headings = ['Provider','Response Code','Message','Spectrum','','JSON']
+    var headings = ['Provider','Response','Spectrum / PSM (click to view)','','Dev Info']
     for (var heading of headings) {
         td = document.createElement("th");
         td.appendChild(document.createTextNode(heading));
@@ -466,11 +473,6 @@ function render_tables(usi) {
 	else
             td.appendChild(document.createTextNode(rname));
 
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-	td.id = rname+"_code";
-        td.appendChild(document.createTextNode('---'));
         tr.appendChild(td);
 
         td = document.createElement("td");

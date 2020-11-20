@@ -513,6 +513,7 @@ sub {
   border-bottom: 1px solid #666;
   margin-top: 30px;
   box-shadow: 0 -6px 8px 0 rgba(0,0,0,0.3), 0 6px 8px 0 rgba(0,0,0,0.3), 0 100px 200px 0 rgba(0,0,0,0.5);
+  box-sizing: border-box;
 }
 .logolink {
   vertical-align: top;

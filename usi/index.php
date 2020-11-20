@@ -37,10 +37,14 @@ a:hover {
  border: 2px solid black;
  vertical-align: baseline;
 }
-td[title$=spectrum]:hover, td[title$=response]:hover {
+td[title$=spectrum]:hover {
  cursor:pointer;
  background-color: #2c99ce;
  color: #fff;
+}
+td[title$=response]:hover {
+ cursor:pointer;
+ background-color: #e5e5e5;
 }
 .examples {
  display: inline-flex;
