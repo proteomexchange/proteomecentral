@@ -179,7 +179,7 @@ class ProxiSpectra:
             return(status_code, message)
 
         server = 'db.systemsbiology.net'
-        url_base = '/dev2/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?output_mode=json&USI='
+        url_base = '/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?output_mode=json&USI='
         url = url_base + usi
 
         connection = http.client.HTTPConnection(server, 80, timeout=30)
