@@ -70,6 +70,12 @@ td[title$=response]:hover {
  width:130px;
  background-color: #eee;
 }
+.on {
+ font-weight: bold;
+ background-color: #fff;
+ color: #2c99ce;
+ border: 2px solid #2c99ce;
+}
 .examples:hover {
  background-color: #fff;
  cursor:pointer;
@@ -185,7 +191,7 @@ h1.title {
 <option value="mzspec:PXD000561:Adult_Urinarybladder_bRP_Elite_71_f14:scan:1872:FSGSSSGADR/2">mzspec:PXD000561:Adult_Urinarybladder_bRP_Elite_71_f14:scan:1872:FSGSSSGADR/2</option>
 </select -->
 
-<span onclick="toggle_box_examples();" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
+<span onclick="toggle_box_examples();" id="NBTexamples_button" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
 
 <span style="margin-left:150px;" onclick="check_usi();" id="usi_stat">&nbsp;&nbsp;Look Up USI&nbsp;&nbsp;</span>
 <span style="margin-left:50px;" onclick="validate_usi(false);" id="usi_valid">&nbsp;&nbsp;Validate USI&nbsp;&nbsp;</span>
@@ -209,15 +215,15 @@ h1.title {
 
 <span class="dataset-secthead">Case 1: Typical identification of an unmodified peptide in support of protein identification (one spectrum, simple interpretation, no mass modifications)</span>
 <a onclick="pick_box_example(this);">mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2</a><br>
-<i>Example 1a: Peptide Spectrum Match (PSM) of an unmodified doubly-charged peptide VLHPLEGAVVIIFK from the Kim et al.15 draft human proteome dataset. Most of the intense unannotated peaks are internal fragmentation ions of this peptide.</i>
+<i>Example 1: Peptide Spectrum Match (PSM) of an unmodified doubly-charged peptide VLHPLEGAVVIIFK from the Kim et al.15 draft human proteome dataset. Most of the intense unannotated peaks are internal fragmentation ions of this peptide.</i>
 
 <br><br>
 <span class="dataset-secthead">Case 2: Flexible notation for reporting identification of post-translational modifications (one spectrum, interpretation with Unimod names, Unimod identifiers, PSI-MOD names and PSI-MOD identifiers for mass modifications)</span>
 <a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[iTRAQ4plex]-LHFFM[Oxidation]PGFAPLTSR/2</a><br>
-<i>Example 2a: PSM of a iTRAQ4plex-labeled peptide from a CPTAC CompRef dataset16, with modifications specified using Unimod names. This is the recommended notation since it precisely identifies the modification while also being easily interpretable.</i><hr>
+<i>Example 2a: PSM of a iTRAQ4plex-labeled peptide from a CPTAC CompRef dataset16, with modifications specified using Unimod names. Using names rather than accession numbers or mass deltas is the recommended notation since it precisely identifies the modification while also being easily interpretable.</i><hr>
 <a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[UNIMOD:214]-LHFFM[UNIMOD:35]PGFAPLTSR/2</a><br>
 <i>Example 2b: Same CPTAC PSM with modifications specified using Unimod accession numbers. This notation is equally precise but not as easily readable as modification names.</i><hr>
-<a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[MOD:01505]-LHFFM[L-methionine sulfoxide]PGFAPLTSR/2</a><br>
+<a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[MOD:01499]-LHFFM[L-methionine sulfoxide]PGFAPLTSR/2</a><br>
 <i>Example 2c: Same CPTAC PSM with modifications specified using PSI-MOD names and accession numbers.</i><hr>
 <a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[+144.1021]-LHFFM[+15.9949]PGFAPLTSR/2</a><br>
 <i>Example 2d: Same CPTAC PSM with modifications specified using mass offsets. This notation is generally discouraged when the type of modification is known in advance, but is the only available option to report results of open modification searches returning algorithmically-detected uninterpreted mass offsets.</i>
@@ -225,7 +231,7 @@ h1.title {
 <br><br>
 <span class="dataset-secthead">Case 3: Supporting evidence of translated gene products (i.e., protein existence) as detected in public datasets, including matches to spectra of synthetic peptides as required by the HUPO Human Proteome Project (HPP) guidelines for detection of novel proteins</span>
 <a onclick="pick_box_example(this);">mzspec:PXD022531:j12541_C5orf38:scan:12368:VAATLEILTLK/2</a><br>
-<i>Example 3a: Identification derived from a prey protein in the Huttlin et al.17 BioPlex dataset, pulled down as a binding partner to bait protein C5orf38. With only this single identification, this protein remains an HPP missing protein since a single identification does not meet HPP guidelines.</i><hr>
+<i>Example 3a: Identification derived from a prey protein (Q5VTA0) in the Huttlin et al.17 BioPlex dataset, pulled down as a binding partner to bait protein C5orf38. With only this single identification, this protein remains an HPP missing protein since a single identification does not meet HPP guidelines.</i><hr>
 <a onclick="pick_box_example(this);">mzspec:PXD022531:b11156_PRAMEF17:scan:22140:VAATLEILTLK/2</a><br>
 <i>Example 3b: PSM of the same peptide as above, but derived from a recombinant protein used as a bait in the Huttlin et al. BioPlex dataset. This PSM provides a much higher signal-to-noise ratio synthetic peptide reference spectrum as required by HPP guidelines.</i>
 
@@ -245,7 +251,7 @@ Case 4: Data reanalysis refuting previous claims of novel HLA peptides</span>
 <span class="dataset-secthead">
 Case 5: Reporting spectra of unidentified peptides with the potential to lead to interesting new discoveries</span>
 <a onclick="pick_box_example(this);">mzspec:PXD010154:01284_E04_P013188_B00_N29_R1.mzML:scan:31291</a><br>
-<i>Example 5a: Unidentified peptide detected by clustering as highly abundant only in Small intestine and Duodenum out of 29 human tissues13.</i><hr>
+<i>Example 5a: Unidentified peptide detected by clustering as highly abundant only in Small intestine and Duodenum out of 29 human tissues in PXD010154.</i><hr>
 <a onclick="pick_box_example(this);">mzspec:PXD010154:01284_E04_P013188_B00_N29_R1.mzML:scan:31291:DQNGTWEM[Oxidation]ESNENFEGYM[Oxidation]K/2</a><br>
 <i>Example 5b: Manual annotation of the spectrum from example 5a reveals it to be a multiply-modified version of a peptide previously detected only as unmodified.</i>
 

@@ -512,10 +512,12 @@ function toggle_box_examples() {
     if (document.getElementById("NBTexamples").style.visibility == "visible") {
         document.getElementById("NBTexamples").style.visibility = "hidden";
         document.getElementById("NBTexamples").style.opacity = "0";
+        document.getElementById("NBTexamples_button").classList.remove("on");
     }
     else {
 	document.getElementById("NBTexamples").style.visibility = "visible";
 	document.getElementById("NBTexamples").style.opacity = "1";
+        document.getElementById("NBTexamples_button").classList.add("on");
     }
 }
 
