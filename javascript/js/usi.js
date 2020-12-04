@@ -25,7 +25,7 @@ function init() {
 	document.getElementById("usi_input").value = params.get('usi');
 	check_usi();
     }
-    retrieve_example_usis();
+    //retrieve_example_usis();
 }
 
 async function validate_usi(carryon) {
@@ -501,6 +501,24 @@ function render_tables(usi) {
     document.getElementById("main").appendChild(document.createElement("br"));
 }
 
+function pick_box_example(anchor) {
+    document.getElementById('usi_input').value=anchor.innerHTML;
+    document.getElementById('usi_desc').innerHTML = '';
+    toggle_box_examples();
+    check_usi();
+}
+
+function toggle_box_examples() {
+    if (document.getElementById("NBTexamples").style.visibility == "visible") {
+        document.getElementById("NBTexamples").style.visibility = "hidden";
+        document.getElementById("NBTexamples").style.opacity = "0";
+    }
+    else {
+	document.getElementById("NBTexamples").style.visibility = "visible";
+	document.getElementById("NBTexamples").style.opacity = "1";
+    }
+}
+
 function update_usi_input(sel) {
     document.getElementById('usi_input').value=sel.value;
     if (sel.options[sel.selectedIndex].dataset.desc)
@@ -511,6 +529,7 @@ function update_usi_input(sel) {
     sel.value='';
 }
 
+// not used at the moment...
 function retrieve_example_usis() {
     fetch(examples_url)
         .then(response => response.json())
