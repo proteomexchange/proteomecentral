@@ -50,6 +50,21 @@ a:hover {
   opacity: 0;
   transition: visibility 0.5s, opacity 0.5s linear;
 }
+#whatisusi {
+  position: absolute;
+  top: 190px;
+  left: 230px;
+  max-width: 410px;
+  background-color: #fff;
+  border: 2px solid #000;
+  float: left;
+  border-radius: 15px;
+  box-shadow: 6px 6px 10px 0 #aaa;
+  margin-bottom: 20px;
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0.5s, opacity 0.5s linear;
+}
 td[title$=spectrum]:hover {
  cursor:pointer;
  background-color: #2c99ce;
@@ -140,8 +155,7 @@ h1.title {
 }
 #usi_stat:hover, #usi_valid:hover {
  cursor:pointer;
- background:#fff;
- color:#000;
+ background:#f26722;
 }
 .valid {
  color: #2b2;
@@ -179,7 +193,7 @@ h1.title {
 <!-- BEGIN main content -->
 <h1 style="display:inline-block;">Universal Spectrum Identifier</h1>
 
-<a href="http://psidev.info/usi" target="PSI" style="margin-left:30px;" class="smgr">what's this?</a>
+<a onclick="toggle_box('whatisusi');" style="margin-left:30px;" class="smgr">what's this?</a>
 
 <!-- select id="example_usis" class="examples" onchange="update_usi_input(this);">
 <option value="">Example USIs&nbsp;&nbsp;&nbsp;⇣</option>
@@ -191,7 +205,7 @@ h1.title {
 <option value="mzspec:PXD000561:Adult_Urinarybladder_bRP_Elite_71_f14:scan:1872:FSGSSSGADR/2">mzspec:PXD000561:Adult_Urinarybladder_bRP_Elite_71_f14:scan:1872:FSGSSSGADR/2</option>
 </select -->
 
-<span onclick="toggle_box_examples();" id="NBTexamples_button" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
+<span onclick="toggle_box('NBTexamples');" id="NBTexamples_button" title="Examples from Box 1 of the USI manuscript (submitted)" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
 
 <span style="margin-left:150px;" onclick="check_usi();" id="usi_stat">&nbsp;&nbsp;Look Up USI&nbsp;&nbsp;</span>
 <span style="margin-left:50px;" onclick="validate_usi(false);" id="usi_valid">&nbsp;&nbsp;Validate USI&nbsp;&nbsp;</span>
@@ -206,6 +220,14 @@ h1.title {
 
 <div style="min-height:500px;" id="spec"></div>
 
+<div id="whatisusi" class="site-content">
+<h3 style="background:#000;margin:0;" class="dataset-title">About</h3>
+<div style="text-align: justify;" class="dataset-content">
+<p>The <b>Universal Spectral Identifier</b> (USI) is a proposed standard in the process of being ratified by the Proteomics Standards Initiative (PSI) that enables the identification of a specific spectrum or PSM contained in public ProteomeXchange repositories.</p>
+<p>For more information, including the draft specification, please see <a href="http://psidev.info/usi" target="PSI">http://psidev.info/usi/</a></p>
+<a style="background:#000;float:right" class="dataset-title" onclick="toggle_box('whatisusi');">Dismiss</a>
+</div>
+</div>
 
 <div id="NBTexamples">
 <div id="dataset-primary" class="site-content">
@@ -256,7 +278,7 @@ Case 5: Reporting spectra of unidentified peptides with the potential to lead to
 <i>Example 5b: Manual annotation of the spectrum from example 5a reveals it to be a multiply-modified version of a peptide previously detected only as unmodified.</i>
 
 <br>
-<a style="float:right" class="dataset-title" onclick="toggle_box_examples();">Dismiss</a>
+<a style="float:right" class="dataset-title" onclick="toggle_box('NBTexamples');">Dismiss</a>
 </div>
 </div>
 </div>

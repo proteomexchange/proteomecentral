@@ -504,20 +504,22 @@ function render_tables(usi) {
 function pick_box_example(anchor) {
     document.getElementById('usi_input').value=anchor.innerHTML;
     document.getElementById('usi_desc').innerHTML = '';
-    toggle_box_examples();
+    toggle_box('NBTexamples');
     check_usi();
 }
 
-function toggle_box_examples() {
-    if (document.getElementById("NBTexamples").style.visibility == "visible") {
-        document.getElementById("NBTexamples").style.visibility = "hidden";
-        document.getElementById("NBTexamples").style.opacity = "0";
-        document.getElementById("NBTexamples_button").classList.remove("on");
+function toggle_box(box) {
+    if (document.getElementById(box).style.visibility == "visible") {
+        document.getElementById(box).style.visibility = "hidden";
+        document.getElementById(box).style.opacity = "0";
+        if (document.getElementById(box+"_button"))
+            document.getElementById(box+"_button").classList.remove("on");
     }
     else {
-	document.getElementById("NBTexamples").style.visibility = "visible";
-	document.getElementById("NBTexamples").style.opacity = "1";
-        document.getElementById("NBTexamples_button").classList.add("on");
+	document.getElementById(box).style.visibility = "visible";
+	document.getElementById(box).style.opacity = "1";
+        if (document.getElementById(box+"_button"))
+            document.getElementById(box+"_button").classList.add("on");
     }
 }
 
