@@ -791,19 +791,23 @@ sub checkCvParam {
     if ($self->{cv}->{terms}->{$accession}->{name} eq $name) {
       #print "INFO: $accession = $name matches CV\n";
       if ( $name =~ /deprecated/i ) {
-	$self->addCvError(errorMessage=>"ERROR: $accession:$name is a deprecated term. Deprecated terms should not be used");
-	$self->{cv}->{n_deprecated_terms}++;
+        $self->addCvError(errorMessage=>"ERROR: $accession:$name is a deprecated term. Deprecated terms should not be used");
+        $self->{cv}->{n_deprecated_terms}++;
       } else {
-	$self->{cv}->{n_valid_terms}++;
+        $self->{cv}->{n_valid_terms}++;
       }
     } elsif ($self->{cv}->{terms}->{$accession}->{synonyms}->{$name}) {
       #print "INFO: $accession = $name matches CV\n";
       $self->{cv}->{n_valid_terms}++;
     } else {
-      $self->addCvError(errorMessage=>"ERROR: $accession should be ".
-	"'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'");
-      $self->{cv}->{mislabeled_terms}++;
-      #print "replaceall.pl \"$name\" \"$self->{cv}->{terms}->{$accession}->{name}\" \$file\n";
+      if ( $accession =~ /^MOD:/ ) {
+        #print "WARNING: As of 2021-02-08, strict checking of PSI-MOD is disabled";
+      } else {
+        $self->addCvError(errorMessage=>"ERROR: $accession should be ".
+          "'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'");
+        $self->{cv}->{mislabeled_terms}++;
+        #print "replaceall.pl \"$name\" \"$self->{cv}->{terms}->{$accession}->{name}\" \$file\n";
+      }
     }
 
     #### Assess the correct presence of a value attribute
