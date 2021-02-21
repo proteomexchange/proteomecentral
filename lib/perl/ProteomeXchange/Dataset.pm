@@ -236,7 +236,7 @@ sub updateRecord{
       # good
     } else {
       $response->{result} = "ERROR";
-      $response->{message} = "There was already an announcement for this dataset, and thus, this submission is a revision, which must have a ChangeLogEntry. Yet it does not. Please add a ChangeLogEntry to make it clear how this record has been altered in this revised submission.";
+      $response->{message} = "The revision number specified is $result->{revisionNumber} , which is higher than 1, and thus, this submission is a revision, which under ProteomeXchange rules must have a ChangeLogEntry. Yet it does not. Please add a ChangeLogEntry to make it clear how this record has been altered in this revised submission.";
       return;
     }
   }
@@ -767,6 +767,9 @@ sub validatePXXMLDocument {
   }
 
   #### Open the file or report an error
+  my $partial_file = $filename;
+  $partial_file =~ s/^.+proteomecentral//;
+  push(@{$response->{info}},"Processing incoming file $partial_file");
   unless (open(INFILE,$filename)) {
     $response->{message} = "File '$filename' exists, but cannot be opened for read";
     return($response);
