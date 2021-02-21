@@ -1247,7 +1247,11 @@ sub showDatasetHistory {
 
 	#### Insert a hyperlink in the Revision column
 	if ( $iColumn == 1 && $item ) {
-	  $item = "<a href=\"GetDataset?ID=$datasetIdentifier.$reanalysisNumber-$revisionNumber&test=$test\">$item</a>";
+          my $reanalysisNumberStr = '';
+          if ( defined($reanalysisNumber) and $reanalysisNumber gt '' ) {
+            $reanalysisNumberStr = ".$reanalysisNumber";
+          }
+	  $item = "<a href=\"GetDataset?ID=$datasetIdentifier$reanalysisNumberStr-$revisionNumber&test=$test\">$item</a>";
         }
 
       #### Otherwise, for just a PXD, create a hyperlink for revision only
