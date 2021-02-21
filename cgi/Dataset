@@ -98,6 +98,11 @@ if ($params->{method} eq 'validateXML') {
   handleDataset(params=>$params,response=>$response,method=>$params->{method});
 }
 
+#### Handle setSupplementalFullDatasetLinkList method
+if ($params->{method} eq 'setSupplementalFullDatasetLinkList') {
+  handleDataset(params=>$params,response=>$response,method=>$params->{method});
+}
+
 #### Handle codetest method. Used only for special debugging purposes
 if ($params->{method} eq 'codetest') {
   $response = loadAuthorizations();
@@ -319,18 +324,28 @@ sub handleDataset {
   #### 2015-12-08 EWD: Figured out the problem. Removed again.
   #print "Content-type: text/plain\n\n";
 
+
   #### Configure the location of where the uploaded file will go
   my $path = '/local/wwwspecial/proteomecentral/var/submissions';
+  #### supplementalFullDatasetLinkList has its own subdirectory
+  if ($method eq 'setSupplementalFullDatasetLinkList') {
+    $path .= "/supplementalFullDatasetLinkList";
+  }
+  #### validateXML has its own subdirectory whether testing or not
   if ($method eq 'validateXML') {
     $path .= "/validateOnly";
+  #### Either the main submission or supplementalFullDatasetLinkList have a further testing subdirectory
   } elsif ($test && ($test =~ /yes/i || $test =~ /true/i)) {
     $path .= "/testing";
   }
+  push(@{$response->{info}},"Will store incoming file in $path");
+
 
   #### Verify the authorization
   my $authorization = authorize(params=>$params,response=>$response);
 
-  #### If authorization succeeded, furnish a new identifier
+
+  #### If authorization succeeded, receive and process the xml file
   if ($authorization->{result} eq 'SUCCESS') {
     my $fh = $cgi->upload('ProteomeXchangeXML');
     if ( ! $fh ){
@@ -359,9 +374,13 @@ sub handleDataset {
 	#### Write the XML file to a store and process the result
 	my $attempts = 0;
 	my $uploadFilename;
+        use Time::HiRes qw(time);
+        use POSIX qw(strftime);
+
 	while ($attempts < 5) {
-	  my ($sec,$min,$hour,$mday,$mon,$year) = localtime();
-	  my $datestr = sprintf("%d-%2d-%2d_%2d:%2d:%2d",1900+$year,$mon+1,$mday,$hour,$min,$sec);
+          my $t = time;
+          my $datestr = strftime "%Y-%m-%d_%H:%M:%S", localtime $t;
+          $datestr .= sprintf ".%03d", ($t-int($t))*1000; # without rounding
 	  $datestr =~ s/ /0/g;
 	  my $filename = "Submission_$datestr.xml";
 	  if (-e "$path/$filename") {
@@ -383,16 +402,27 @@ sub handleDataset {
 
 	} # end while
 
-	#### The file was successfully store. Figure out what to do
+	#### The file was successfully stored. Figure out what to do
 	if ($uploadFilename) {
-	  my $dataset = new ProteomeXchange::Dataset;
-	  $response = $dataset->processAnnouncement(
-            method => $method,
-            path => $path,
-            params => $params,
-            response => $response,
-            uploadFilename => $uploadFilename,
-          );
+	  if ( $method eq "setSupplementalFullDatasetLinkList" ) {
+	    my $dataset = new ProteomeXchange::Dataset;
+	    $response = $dataset->processSupplementalFullDatasetLinkList(
+	      method => $method,
+	      path => $path,
+	      params => $params,
+	      response => $response,
+	      uploadFilename => $uploadFilename,
+	    );
+	  } else {
+	    my $dataset = new ProteomeXchange::Dataset;
+	    $response = $dataset->processAnnouncement(
+	      method => $method,
+	      path => $path,
+	      params => $params,
+	      response => $response,
+	      uploadFilename => $uploadFilename,
+	    );
+	  }
 	}
 
       } else {
