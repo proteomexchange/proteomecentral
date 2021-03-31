@@ -210,8 +210,10 @@ h1.title {
 <span style="margin-left:150px;" onclick="check_usi();" id="usi_stat">&nbsp;&nbsp;Look Up USI&nbsp;&nbsp;</span>
 <span style="margin-left:50px;" onclick="validate_usi(false);" id="usi_valid">&nbsp;&nbsp;Validate USI&nbsp;&nbsp;</span>
 
+<a onclick="stripSpaces();" style="margin-left:30px;" class="smgr">strip spaces</a>
+
 <br>
-<input id="usi_input" onchange="document.getElementById('usi_desc').innerHTML = '';" style="min-width:95%;"/><br/>
+<input id="usi_input" oninput="testUSI();" onchange="document.getElementById('usi_desc').innerHTML = '';" style="min-width:95%;"/><br/>
 <span class="smgr" id="usi_desc">&nbsp;</span>
 <br>
 

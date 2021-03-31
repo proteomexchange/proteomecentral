@@ -28,6 +28,38 @@ function init() {
     //retrieve_example_usis();
 }
 
+function stripSpaces() {
+    document.getElementById("usi_input").value = document.getElementById("usi_input").value.replace(/\s+/g, "").trim();
+    testUSI();
+}
+
+
+function testUSI() {
+    clear_element("main");
+
+    var usi = document.getElementById("usi_input").value.trim();
+    if (usi == "") return;
+
+    if (/\s/.test(usi)) {
+        var txt = document.createElement("h2");
+	txt.className = "invalid";
+	txt.style.marginBottom = "0";
+        txt.appendChild(document.createTextNode("WARNING"));
+        document.getElementById("main").appendChild(txt);
+
+        txt = document.createElement("h4");
+	txt.className = "invalid";
+	txt.style.marginTop = "0";
+        txt.appendChild(document.createTextNode("There is a [space] character in your USI! This might possibly be appropriate if the MS Run file name has a space in it, but usually this is the result of a copy-paste problem of a USI that was line wrapped in a document or email."));
+	txt.appendChild(document.createElement("br"));
+        txt.appendChild(document.createTextNode("Click [strip spaces] above to remove all spaces from your USI."));
+        document.getElementById("main").appendChild(txt);
+    }
+
+
+}
+
+
 async function validate_usi(carryon) {
     document.getElementById("usi_input").value = document.getElementById("usi_input").value.trim();
     var usi = document.getElementById("usi_input").value;
