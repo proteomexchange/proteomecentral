@@ -233,7 +233,7 @@ h1.title {
 
 <div id="NBTexamples">
 <div id="dataset-primary" class="site-content">
-<h1 style="margin:0;" class="dataset-title">Box 1. Example use cases for Universal Spectrum Identifiers (USIs)</h1>
+<h1 style="margin:0;" class="dataset-title">Example use cases for Universal Spectrum Identifiers (USIs)</h1>
 
 <div class="dataset-content">
 
