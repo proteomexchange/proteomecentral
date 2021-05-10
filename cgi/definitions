@@ -850,6 +850,7 @@ def send_response(response, output_format="text", mode='CLI'):
 
         #### Start the HTTP output
         if output_format == 'json':
+           print("Access-Control-Allow-Origin: *")
            print("Content-type: application/json\n")
         else:
            print("Content-type: text/plain\n")
