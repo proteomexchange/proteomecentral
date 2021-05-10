@@ -582,13 +582,16 @@ def main():
                                 definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = None
                             if definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] is None:
                                 definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = term['value']
+                                definitions['section_definitions']['study metadata']['row attributes']['publication']['cv'] = f"PMID:{term['value']}"
                                 add_message(response, level='INFO', message=f"Setting publication to '{term['value']}' from ProteomeCentral")
                             else:
                                 if definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] == term['value']:
                                     add_message(response, level='INFO', message=f"Previous publication value '{term['value']}' matches value pulled from ProteomeCentral")
+                                    definitions['section_definitions']['study metadata']['row attributes']['publication']['cv'] = f"PMID:{term['value']}"
                                 else:
-                                    add_message(response, level='INFO', message=f"Updated publication to from previous value '{definitions['section_definitions']['study metadata']['row attributes']['publication']['value']}' to ProteomeCentral value '{term['value']}'")
+                                    add_message(response, level='INFO', message=f"Updated publication from previous value '{definitions['section_definitions']['study metadata']['row attributes']['publication']['value']}' to ProteomeCentral value '{term['value']}'")
                                     definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = term['value']
+                                    definitions['section_definitions']['study metadata']['row attributes']['publication']['cv'] = f"PMID:{term['value']}"
 
         #### Try to extract MS Runs information from the JSON
         if 'datasetFiles' in pxd:
