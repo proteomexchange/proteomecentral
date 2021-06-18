@@ -854,6 +854,8 @@ def send_response(response, output_format="text", mode='CLI'):
         #### Start the HTTP output
         if output_format == 'json':
            print("Access-Control-Allow-Origin: *")
+           print("Access-Control-Allow-Headers: x-requested-with, Content-Type")
+           print("Access-Control-Allow-Methods: POST, GET, OPTIONS")
            print("Content-type: application/json\n")
         else:
            print("Content-type: text/plain\n")
