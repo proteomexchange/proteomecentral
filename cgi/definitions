@@ -661,6 +661,8 @@ def main():
                 name =  ms_run_name['name']
                 if name not in emitted_run_names:
                     max_ordinal += 1
+                    for i in range(len(values)):
+                        values[i] = ''
                     values[0] = str(max_ordinal)
                     values[1] = ms_run_name['name']
                     print("\t".join(values))
