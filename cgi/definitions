@@ -619,7 +619,7 @@ def main():
         merge_msrun_metadata(dataset_id, definitions, reference_definitions, response, loaded_annotation_datetime)
 
     add_message(response, level='INFO', message=f"Processing complete")
-    send_response(response, output_format=params.output_format, mode=mode)
+    send_response(response, output_format=params.output_format, mode=mode, dataset_id=dataset_id)
 
     for key in [ 'state', 'status', 'title', 'detail', 'log' ]:
         definitions[key] = response[key]
@@ -887,7 +887,7 @@ def add_message(response, level=None, state=None, status=None, code=None, messag
 
 
 #### Write our the current status in the correct format
-def send_response(response, output_format="text", mode='CLI'):
+def send_response(response, output_format="text", mode='CLI', dataset_id=None):
 
     if mode == 'HTTP':
         if response['state'] == 'OK':
@@ -902,7 +902,10 @@ def send_response(response, output_format="text", mode='CLI'):
            print("Access-Control-Allow-Methods: POST, GET, OPTIONS")
            print("Content-type: application/json\n")
         else:
-           print("Content-type: text/tab-separated-values\n")
+           print("Content-type: text/tab-separated-values")
+           if dataset_id is not None:
+               print(f'Content-Disposition: attachment; filename="{dataset_id}.tsv"')
+           print("\n")
 
         #### If this is an error, show the error information
         if response['state'] != 'OK':
