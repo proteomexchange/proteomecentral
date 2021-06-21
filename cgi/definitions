@@ -623,7 +623,49 @@ def main():
 
     for key in [ 'state', 'status', 'title', 'detail', 'log' ]:
         definitions[key] = response[key]
-    print(json.dumps(definitions,sort_keys=True,indent=2))
+
+    #### If output is JSON, then dump it
+    if params.output_format.lower() == 'json':
+        print(json.dumps(definitions,sort_keys=True,indent=2))
+    else:
+        row = 0
+        max_ordinal = 0
+        emitted_run_names = {}
+        for section_name in definitions['sections']:
+            if 'MS run metadata' not in section_name:
+                continue
+            section = definitions['section_definitions'][section_name]
+            if row == 0:
+                column_names = section['data rows']
+                print("\t".join(column_names))
+            values = []
+            for column_name in column_names:
+                try:
+                    value = section['row attributes'][column_name]['value']
+                except:
+                    value = ''
+                values.append(value)
+                if column_name == 'MS run name' and value != '':
+                    emitted_run_names[value] = True
+            if values[1] != '':
+                print("\t".join(values))
+            try:
+                ordinal = int(section['row attributes']['MS run ordinal']['value'])
+            except:
+                ordinal = 0
+            if ordinal > max_ordinal:
+                max_ordinal = ordinal
+            row += 1
+        try:
+            for ms_run_name in definitions['dataset_info']['MS run name']:
+                name =  ms_run_name['name']
+                if name not in emitted_run_names:
+                    max_ordinal += 1
+                    values[0] = str(max_ordinal)
+                    values[1] = ms_run_name['name']
+                    print("\t".join(values))
+        except:
+            print("No MS runs available")
 
 
 ############################################################################
@@ -858,7 +900,7 @@ def send_response(response, output_format="text", mode='CLI'):
            print("Access-Control-Allow-Methods: POST, GET, OPTIONS")
            print("Content-type: application/json\n")
         else:
-           print("Content-type: text/plain\n")
+           print("Content-type: text/tab-separated-values\n")
 
         #### If this is an error, show the error information
         if response['state'] != 'OK':
