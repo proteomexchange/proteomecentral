@@ -905,7 +905,7 @@ def send_response(response, output_format="text", mode='CLI', dataset_id=None):
            print("Content-type: text/tab-separated-values")
            if dataset_id is not None:
                print(f'Content-Disposition: attachment; filename="{dataset_id}.tsv"')
-           print("\n")
+           print("")
 
         #### If this is an error, show the error information
         if response['state'] != 'OK':
