@@ -41,6 +41,8 @@ function get_datasets() {
 	    sel.appendChild(opt);
 
 	    for (var dataset of data) {
+		if (!dataset)
+		    continue;
 		opt = document.createElement("option");
 		opt.value = dataset;
 		opt.text  = dataset;
@@ -54,12 +56,10 @@ function get_datasets() {
 
 
 function enter_dataset() {
-    if (document.getElementById("newDatasetId").value.length > 1) {
+    if (document.getElementById("newDatasetId").value.length > 1)
 	get_form_definitions("--DIRECT INPUT--");
-    }
-    else {
+    else
 	get_form_definitions(null);
-    }
 }
 
 
@@ -255,9 +255,8 @@ function get_form_definitions(annot_id) {
 }
 
 function capture_messages(json_resp) {
-    for (var m of json_resp.log) {
+    for (var m of json_resp.log)
 	messages.push(m);
-    }
     show_messages();
 }
 
@@ -385,7 +384,6 @@ function add_section(sect_name, clonable) {
     var num_cols = 6;
     var tr;
     var td;
-    var txt;
 
     // summary for MS Run Data
     if (sect_name.startsWith("MS run metadata")) {
@@ -411,18 +409,41 @@ function add_section(sect_name, clonable) {
 	    td.title = "Show/Hide section values";
 	    td.id = "msms_summary_clop";
 	    td.setAttribute('onclick', 'clop_sect(\"msms_summary\");');
-	    txt = document.createTextNode('\u2013');
-	    td.appendChild(txt);
+	    td.appendChild(document.createTextNode('\u2013'));
 	    tr.appendChild(td);
 
 	    td = document.createElement("td");
-	    td.colSpan = num_cols-1;
+	    td.colSpan = num_cols-2;
 	    //td.style.borderBottom = "0px";
 	    td.style.fontSize = "20px";
 
-	    txt = document.createTextNode("MS Runs Summary");
-	    td.appendChild(txt);
+	    td.appendChild(document.createTextNode("MS Runs Summary"));
 	    tr.appendChild(td);
+
+
+            td = document.createElement("td");
+	    td.style.borderBottom = "0px";
+	    td.style.padding = "0px";
+
+
+	    var tsvlink = null;
+	    if (!document.getElementById("dataset_menu2").value.startsWith("--"))
+		tsvlink = "annotation_id="+document.getElementById("dataset_menu2").value;
+	    else if (!document.getElementById("dataset_menu").value.startsWith("--"))
+		tsvlink = "dataset_id="+document.getElementById("dataset_menu").value;
+
+	    if (tsvlink) {
+		var link = document.createElement("a");
+		link.id = "tsvlink";
+		link.className = "tdplus right_btn sect_id";
+		link.title = "Export TSV table of MS runs (or template) for editing and re-upload";
+		link.href = form_defs_url+"?output_format=tsv&"+tsvlink;
+		link.dataset.url = form_defs_url+"?output_format=tsv&"+tsvlink;
+		link.dataset.txt = "Export TSV table of MS runs (or template) for editing and re-upload";
+		link.appendChild(document.createTextNode("Export TSV"));
+		td.appendChild(link);
+	    }
+            tr.appendChild(td);
 
 	    document.getElementById(form_id+"_table").appendChild(tr);
 	}
@@ -469,8 +490,7 @@ function add_section(sect_name, clonable) {
     td.title = "Show/Hide section values";
     td.id = sect_name + "_clop";
     td.setAttribute('onclick', 'clop_sect(\"'+sect_name+'\");');
-    txt = document.createTextNode('\u2013');
-    td.appendChild(txt);
+    td.appendChild(document.createTextNode('\u2013'));
     tr.appendChild(td);
 
     td = document.createElement("td");
@@ -480,8 +500,7 @@ function add_section(sect_name, clonable) {
 
 
     var sect_text = sect_name.split("___");
-    txt = document.createTextNode(sect_text[0]);
-    td.appendChild(txt);
+    td.appendChild(document.createTextNode(sect_text[0]));
 
     var span = document.createElement("span");
     span.id = sect_name + "_id";
@@ -500,8 +519,7 @@ function add_section(sect_name, clonable) {
 	span.title = "Clone this section";
 	span.setAttribute('onclick', 'clone_section(\"'+sect_name+'\");');
 
-	txt = document.createTextNode("Copy");
-	span.appendChild(txt);
+	span.appendChild(document.createTextNode("Copy"));
     }
     td.appendChild(span);
 
@@ -511,8 +529,7 @@ function add_section(sect_name, clonable) {
 	span.title = "Delete this section";
 	span.setAttribute('onclick', 'delete_section(\"'+sect_name+'\");');
 
-	txt = document.createTextNode("Delete");
-	span.appendChild(txt);
+	span.appendChild(document.createTextNode("Delete"));
     }
     td.appendChild(span);
 
@@ -527,8 +544,7 @@ function add_section(sect_name, clonable) {
 
     for (var x of ['','Value','CV id','Comments','Definition']) {
 	td = document.createElement("th");
-	txt = document.createTextNode(x);
-	td.appendChild(txt);
+	td.appendChild(document.createTextNode(x));
 	tr.appendChild(td);
     }
 
@@ -621,6 +637,8 @@ function submit() {
 		change_cnt = 0;
 		document.getElementById("save_button").value = "Save";
 		document.getElementById("status").style.backgroundColor = "#709525";
+                document.getElementById("tsvlink").href = document.getElementById("tsvlink").dataset.url;
+                document.getElementById("tsvlink").innerHTML = document.getElementById("tsvlink").dataset.txt;
 		get_datasets();
 		document.getElementById("dataset_menu2").selectedIndex = 0;
 	    }
@@ -880,7 +898,8 @@ function add_field(section,field,fieldobj,rownum,rem) {
     i.name  = field+"_COMMENTS";
     i.title = "Curator comments";
     i.cols  = 25;
-    if (fieldobj.comment) { i.value = fieldobj.comment; }
+    if (fieldobj.comment)
+	i.value = fieldobj.comment;
     i.addEventListener('change', valueChanged);
     td.appendChild(i);
     tr.appendChild(td);
@@ -972,6 +991,9 @@ function uploadTable(e) {
 function valueChanged(e) {
     change_cnt++;
     document.getElementById("save_button").value = "Save "+change_cnt+" changes";
+
+    document.getElementById("tsvlink").href = '#';
+    document.getElementById("tsvlink").innerHTML = "Please Save Changes before Exporting";
 
     var col = (change_cnt > 5) ? "#db4314" : "#bfb62f";
     document.getElementById("status").style.backgroundColor = col;
