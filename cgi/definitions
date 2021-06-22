@@ -756,7 +756,7 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
             # #### The first non-empty non-comment line must be the header with the prescribed column titles
             if iline == 0:
                 if len(columns) < len(expected_header_columns):
-                    add_message(response, level='ERROR', status=464, code='MSRunMetadataTooFewColumns', message=f"Expected {len(expected_header_columns)} columns in input file {msrun_metadata_file} but found {len(columns)}.")
+                    add_message(response, level='ERROR', status=464, code='MSRunMetadataTooFewColumns', message=f"Expected {len(expected_header_columns)} columns in input file {filename} but found {len(columns)}.")
                 icolumn = 0
                 for column in columns:
                     if column.lower() != expected_header_columns[icolumn].lower():
