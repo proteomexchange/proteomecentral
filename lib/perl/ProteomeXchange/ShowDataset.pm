@@ -312,7 +312,7 @@ sub printTablePageHeader {
           <option value="greater">Is greater than</option>
          ~;
 	my $str = qq~
-           <div class="wrapper">
+
            <link rel="stylesheet" type="text/css" href="$baseUrl/javascript/css/button.css"/>
  	   <link rel="stylesheet" href="$baseUrl/javascript/css/table.css" type="text/css" media="print, projection, screen" />
            <script type="text/javascript" src="$baseUrl/javascript/js/jquery.js"></script>
@@ -320,22 +320,27 @@ sub printTablePageHeader {
            <script type="text/javascript" src="$baseUrl/javascript/js/tablesorter.js"></script>
            <script type="text/javascript" src="$baseUrl/javascript/js/toggle.js"></script>
            <script type="text/javascript" src="$baseUrl/javascript/js/search.js"></script>
-	 <script type="text/javascript">
-			\$(function() {
-				\$("#datatable")
-					.tablesorter({widthFixed: true, widgets: ['zebra']})
-					.tablesorterPager({container: \$("#pager")});
-			});
-			 </script>
+	   <script type="text/javascript">
+		\$(function() {
+			\$("#datatable")
+			.tablesorter({widthFixed: true, widgets: ['zebra']})
+			.tablesorterPager({container: \$("#pager")});
+		});
+	   </script>
            <br>
-
-           <div class=infotext style="margin: auto; text-align: center"> Below is a listing of publicly accessible ProteomeXchange datasets. You can use the search box or interactive graphics to filter the list. </div>
+           <div id="dataset-primary" style="max-width:1200px; margin-left:50px;" class="site-content">
+           <h1 style="margin:0;" class="dataset-title">ProteomeXchange Datasets Overview</h1>
+           <div style="text-align: center;" class="dataset-content">
+           <div class="dataset-secthead"> Below is a listing of publicly accessible ProteomeXchange datasets. You can use the search box or interactive graphics to filter the list. </div>
         ~;
 
 	$str .= "$args{inject_content}" if $args{inject_content};
 
 	$str .= qq~
-          <font face="Calibri">
+          <div class="dataset-secthead"> Need to access individual spectra from a ProteomeXchange dataset?</div>
+          <a title="Universal Spectrum Identifier facility at ProteomeXchange" href="/usi"><img width="200px;" src="/images/USI.png"></a>
+          </div></div>
+          <br clear="all">
           <div style="color:red;" id='basic_search'
             onclick='toggle_more("basic_search","advanced_search","buildQuery","searchContainer")'>
             &nbsp;&nbsp;&nbsp;&nbsp;[Go to Advanced Search]</div>
@@ -393,7 +398,7 @@ sub printTablePageHeader {
 	}
 	$str .= qq~
 		</table>
-		</div></div></font>
+		</div></div>
 		<div id="searchContainer">
 		<div class=infotext>Search metadata for ProteomeXchange datasets: (e.g. "liver", "musculus", "5600", etc. Not yet possible to search for individual proteins)</div>
         <br>
