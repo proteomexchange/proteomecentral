@@ -253,13 +253,13 @@ h1.title {
 
 <br><br>
 <span class="dataset-secthead">Case 2: Flexible notation for reporting identification of post-translational modifications (one spectrum, interpretation with Unimod names, Unimod identifiers, PSI-MOD names and PSI-MOD identifiers for mass modifications)</span>
-<a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[iTRAQ4plex]-LHFFM[Oxidation]PGFAPLTSR/2</a><br>
+<a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[iTRAQ4plex]-LHFFM[Oxidation]PGFAPLTSR/3</a><br>
 <i>Example 2a: PSM of a iTRAQ4plex-labeled peptide from a CPTAC CompRef dataset16, with modifications specified using Unimod names. Using names rather than accession numbers or mass deltas is the recommended notation since it precisely identifies the modification while also being easily interpretable.</i><hr>
-<a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[UNIMOD:214]-LHFFM[UNIMOD:35]PGFAPLTSR/2</a><br>
+<a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[UNIMOD:214]-LHFFM[UNIMOD:35]PGFAPLTSR/3</a><br>
 <i>Example 2b: Same CPTAC PSM with modifications specified using Unimod accession numbers. This notation is equally precise but not as easily readable as modification names.</i><hr>
-<a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[MOD:01499]-LHFFM[L-methionine sulfoxide]PGFAPLTSR/2</a><br>
+<a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[MOD:01499]-LHFFM[L-methionine sulfoxide]PGFAPLTSR/3</a><br>
 <i>Example 2c: Same CPTAC PSM with modifications specified using PSI-MOD names and accession numbers.</i><hr>
-<a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[+144.1021]-LHFFM[+15.9949]PGFAPLTSR/2</a><br>
+<a onclick="pick_box_example(this);">mzspec:PXD000966:CPTAC_CompRef_00_iTRAQ_05_2Feb12_Cougar_11-10-09.mzML:scan:12298:[+144.1021]-LHFFM[+15.9949]PGFAPLTSR/3</a><br>
 <i>Example 2d: Same CPTAC PSM with modifications specified using mass offsets. This notation is generally discouraged when the type of modification is known in advance, but is the only available option to report results of open modification searches returning algorithmically-detected uninterpreted mass offsets.</i>
 
 <br><br>
