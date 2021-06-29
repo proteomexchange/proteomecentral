@@ -36,6 +36,14 @@ a:hover {
  color:#f26722;
  cursor:pointer;
 }
+#usi_logo {
+ position: absolute;
+ z-index: -1;
+ right: 50px;
+ top: 100px;
+ width: 400px;
+ opacity: 0.4;
+}
 #usi_input {
  margin: 4px;
  padding: 6px;
@@ -190,6 +198,8 @@ h1.title {
 
 <body onload="init();">
 
+<img src="/images/USI.png" id="usi_logo"/>
+
 <!-- BEGIN main content -->
 <h1 style="display:inline-block;">Universal Spectrum Identifier</h1>
 
@@ -213,7 +223,7 @@ h1.title {
 <a onclick="stripSpaces();" style="margin-left:30px;" class="smgr">strip spaces</a>
 
 <br>
-<input id="usi_input" oninput="testUSI();" onchange="document.getElementById('usi_desc').innerHTML = '';" style="min-width:95%;"/><br/>
+<input id="usi_input" oninput="testUSI();" onchange="document.getElementById('usi_desc').innerHTML = '';" style="min-width:95%;opacity:0.85;"/><br/>
 <span class="smgr" id="usi_desc">&nbsp;</span>
 <br>
 
