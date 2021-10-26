@@ -816,9 +816,11 @@ def merge_msrun_metadata(dataset_id, definitions, reference_definitions, respons
                             del expected_msrun_names[real_name]
                             del expected_msrun_names_underscored[fixed_name]
                         else:
-                            add_message(response, level='ERROR', status=464, code='UnexpectedMSRunName', message=f"Row {iline} has an MS run name '{column}' which is not among the expected MS run names from ProteomeXchange")
-                            definitions['section_definitions'][new_section_label]['row attributes'][expected_header_columns[icolumn]]['is_invalid'] = f"Input file row {iline} has an MS run name '{column}' which is not among the expected MS run names from ProteomeXchange"
-                            unexpected_msrun_names[column] = 1
+                            ### Only complain if there are some files to compare with
+                            if len(expected_msrun_names_underscored) > 0:
+                                add_message(response, level='ERROR', status=464, code='UnexpectedMSRunName', message=f"Row {iline} has an MS run name '{column}' which is not among the expected MS run names from ProteomeXchange")
+                                definitions['section_definitions'][new_section_label]['row attributes'][expected_header_columns[icolumn]]['is_invalid'] = f"Input file row {iline} has an MS run name '{column}' which is not among the expected MS run names from ProteomeXchange"
+                                unexpected_msrun_names[column] = 1
 
                 icolumn += 1
 
@@ -862,7 +864,8 @@ def add_message(response, level=None, state=None, status=None, code=None, messag
     elif level == 'WARNING':
         if code is None: code = 'WARNING'
         message_dict = { 'level': level, 'code': code, 'message': message, 'prefix': f"{timestamp} [{level}]: " }
-        response['log'].append(message_dict)
+        if len(response['log']) < 999:
+            response['log'].append(message_dict)
 
     elif level == 'ERROR':
         pass
@@ -878,7 +881,8 @@ def add_message(response, level=None, state=None, status=None, code=None, messag
         if code is None: code = 'ERROR'
         if status is None: status = 469
         message_dict = { 'level': level, 'code': code, 'message': message, 'prefix': f"{timestamp} [{level}]: " }
-        response['log'].append(message_dict)
+        if len(response['log']) < 999:
+            response['log'].append(message_dict)
         response['state'] = level
         response['status'] = status
         response['title'] = code
