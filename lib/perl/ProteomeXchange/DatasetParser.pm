@@ -420,7 +420,8 @@ sub parse {
       } elsif ($cvParam->attr('accession') eq "MS:1002487" || $cvParam->attr('name') eq "MassIVE dataset identifier" ||
                $cvParam->attr('accession') eq "MS:1002872" || $cvParam->attr('name') eq "Panorama Public dataset identifier" ||
                $cvParam->attr('accession') eq "MS:1002836" || $cvParam->attr('name') eq "iProX Public dataset identifier" ||
-               $cvParam->attr('accession') eq "MS:1002632" || $cvParam->attr('name') eq "jPOST Public dataset identifier"
+               $cvParam->attr('accession') eq "MS:1002632" || $cvParam->attr('name') eq "jPOST Public dataset identifier" ||
+               $cvParam->attr('accession') eq "MS:1002032" || $cvParam->attr('name') eq "PeptideAtlas dataset URI"
               ) {
 	$origin{identifier} = $cvParam->attr('value');
       } else {
