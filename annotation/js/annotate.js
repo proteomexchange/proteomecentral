@@ -295,7 +295,14 @@ function process_response(defs_json) {
 	}
     }
 
+    var numsect = 0;
     for (var sect of defs_json.sections) {
+	if (numsect == 200) {
+	    showAlerts("There are "+defs_json.sections.length+" sections in this annotation record!<br><br>Only showing the first 200.");
+	    capture_messages( { log: [ { level: 'WARNING', prefix: 'Too many sections ('+defs_json.sections.length+') in annotation record!', message: 'Only showing the first 200' } ] } );
+	    return;
+	}
+	numsect++;
 	add_section(sect, defs_json.section_definitions[sect]["is clonable"]);
 
 	for (var field of defs_json.section_definitions[sect]["data rows"]) {
