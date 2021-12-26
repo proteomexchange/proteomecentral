@@ -377,7 +377,7 @@ sub parse {
 	$dataset->{reanalysisNumber} = $cvParam->attr('value');
       }
       if ($cvParam->attr('name') =~ /Digital Object Identifier/){
-	$dataset->{DigitalObjectIdentifier} =  "http://dx.doi.org/". $cvParam->attr('value');
+	$dataset->{DigitalObjectIdentifier} =  "https://doi.org/". $cvParam->attr('value');
       }
     }
   }
@@ -615,10 +615,10 @@ sub parse {
          #if ($pubmedid){
          #  my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(PubMedID=>$pubmedid);
          #  $dataset->{publicationList} .= "$sep$pubmed_info";
-         #  $dataset->{publication} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\">$pubname</a>";
+         #  $dataset->{publication} .= "$sep<a href=\"https://doi.org/$lists{$id}{DOI}\">$pubname</a>";
          #}else{
-           $dataset->{publication} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\" target=\"_blank\">$lists{$id}{DOI}</a>";
-           $dataset->{publicationList} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\" target=\"_blank\">$lists{$id}{DOI}</a>;" || '';
+           $dataset->{publication} .= "$sep<a href=\"https://doi.org/$lists{$id}{DOI}\" target=\"_blank\">$lists{$id}{DOI}</a>";
+           $dataset->{publicationList} .= "$sep<a href=\"https://doi.org/$lists{$id}{DOI}\" target=\"_blank\">$lists{$id}{DOI}</a>;" || '';
          #}
          $sep = '; ' if (!$sep);
       }else{
