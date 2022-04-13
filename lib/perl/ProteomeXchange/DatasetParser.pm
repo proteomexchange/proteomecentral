@@ -681,8 +681,13 @@ sub parse {
                                                 ' target="_blank">'.  "PRIDE experiment $1 </a>; ";
 	     }
            } else {
-           $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
-                                              ' target="_blank">'.  $cvParam->attr('name') .'</a>; ';
+             $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
+                                              ' target="_blank">'.  $cvParam->attr('name') .'</a>';
+             if ($cvParam->attr('name') =~ /FTP/i) {
+               $dataset->{fullDatasetLinkList} .= "<BR>\n<b>NOTE:</b> Most web browsers have now discontinued native support for FTP access within the browser window. But you can usually install another FTP app (we recommend FileZilla) and configure your browser to launch the external application when you click on this FTP link. Or otherwise, launch an app that supports FTP (like FileZilla) and use this address: " . $cvParam->attr('value') . "; ";
+	     } else {
+               $dataset->{fullDatasetLinkList} .= "; ";
+	     }
            }
          }else{
            $dataset->{fullDatasetLinkList} .= $cvParam->attr('name') .": ". $cvParam->attr('value') ."; ";
