@@ -927,7 +927,7 @@ sub readControlledVocabularyFile {
       my $unitName = $2;
       $self->{cv}->{terms}->{$id}->{units}->{$unit} = $unitName;
     }
-    if ($line =~ /^xref:\s*value-type:\s*(\S+)\s+\"/) {
+    if ($line =~ /^relationship:\s*has_value_type\s*(\S+)\s+/) {
       my $datatype = $1;
       $datatype =~ s/\\//g;
       $self->{cv}->{terms}->{$id}->{datatypes}->{$datatype} = $datatype;
