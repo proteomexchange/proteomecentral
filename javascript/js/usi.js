@@ -10,7 +10,7 @@ var usi_data = {
 			  "weiv": "\"}" },
     "PeptideAtlas"    : { "url" : "http://www.peptideatlas.org/api/proxi/v0.1/spectra?resultType=full&usi=" ,
 			  "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=" },
-    "PRIDE"           : { "url" : "http://wwwdev.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
+    "PRIDE"           : { "url" : "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
 			  "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=" },
     "ProteomeCentral" : { "url" : "http://proteomecentral.proteomexchange.org/api/proxi/v0.1/spectra?resultType=full&usi=" }
 };
