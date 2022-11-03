@@ -235,8 +235,8 @@ h1.title {
 <div id="whatisusi" class="site-content">
 <h3 style="background:#000;margin:0;" class="dataset-title">About</h3>
 <div style="text-align: justify;" class="dataset-content">
-<p>The <b>Universal Spectral Identifier</b> (USI) is a proposed standard in the process of being ratified by the Proteomics Standards Initiative (PSI) that enables the identification of a specific spectrum or PSM contained in public ProteomeXchange repositories.</p>
-<p>For more information, including the draft specification, please see <a href="http://psidev.info/usi" target="PSI">http://psidev.info/usi/</a></p>
+<p>The <b>Universal Spectral Identifier</b> (USI) is an approved standard by the Proteomics Standards Initiative (PSI) that enables the identification of a specific spectrum or PSM contained in public ProteomeXchange repositories.</p>
+<p>For more information, including the specification and journal article, please see <a href="http://psidev.info/usi" target="PSI">http://psidev.info/usi/</a></p>
 <a style="background:#000;float:right" class="dataset-title" onclick="toggle_box('whatisusi');">Dismiss</a>
 </div>
 </div>
