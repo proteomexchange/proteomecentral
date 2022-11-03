@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------------
 // Peptide sequence and modifications
 // -----------------------------------------------------------------------------
-function Peptide(seq, staticModifications, varModifications, ntermModification, ctermModification, maxNeutralLossCount) {
+function Peptide(seq, staticModifications, varModifications, ntermModification, ctermModification, maxNeutralLossCount, labileModSum) {
 
     var sequence = seq;
     if(!sequence) {
@@ -22,6 +22,7 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
     var nterm_totalLossOptions = [];
     var cterm_totalLossOptions = [];
     var maxNeutralLossCount = maxNeutralLossCount;
+    var labileModSum = labileModSum;
 
     var debug = false;
 
@@ -78,6 +79,8 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         // add C-terminal OH
         mass = mass + Ion.MASS_O_16 + Ion.MASS_H_1;
 
+	mass += labileModSum;
+
         return mass;
     }
 
@@ -100,6 +103,8 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
             mass = mass + Ion.MASS_H;
             // add C-terminal OH
         mass = mass + Ion.MASS_O + Ion.MASS_H;
+
+	mass += labileModSum;
 
         return mass;
     }

@@ -24,6 +24,7 @@
                 variableMods: [],
                 ntermMod: 0, // additional mass to be added to the n-term
                 ctermMod: 0, // additional mass to be added to the c-term
+	        labileModSum: 0,
                 maxNeutralLossCount: 1,
                 peaks: [],
                 showA:[],
@@ -161,7 +162,8 @@
         options.variableMods = parsedVarMods;
 
         var peptide = new Peptide(options.sequence, options.staticMods, options.variableMods,
-                                  options.ntermMod, options.ctermMod, options.maxNeutralLossCount);
+                                  options.ntermMod, options.ctermMod, options.maxNeutralLossCount,
+				  options.labileModSum);
         options.peptide = peptide;
 
         // Calculate a theoretical m/z from the given sequence and charge
@@ -377,7 +379,7 @@
         container.data("ionSeriesLabels", {a: [], b: [], c: [], x: [], y: [], z: []});
         container.data("ionSeriesMatch", {a: [], b: [], c: [], x: [], y: [], z: []});
         container.data("ionSeriesAntic", {a: [], b: [], c: [], x: [], y: [], z: []}); // total annotated ion current
-        container.data("anticPrecursor", 0); // total annotated ion current: precursor peak
+        container.data("anticPrecursor", 0); // total annotated ion current: precursor peaks
         container.data("anticImmonium", 0); // total annotated ion current: immonium ions
         container.data("anticReporter", 0); // total annotated ion current: reporter ions
         container.data("totalIonCurrent", getTotalIonCurrent(options.peaks)); // total ion current
@@ -1151,11 +1153,10 @@
         if(labelPrecursorPeak(container))
         {
             // Recalculate if the following have changed: mass error, peak assignment type, selected neutral loss
-            // Changing mass type only chanages the fragmentMassType not the precursorMassType, so the labeled precursor peaks will not change.
-            if(container.data("massErrorChanged") || container.data("peakAssignmentTypeChanged") || container.data("selectedNeutralLossChanged"))
-            {
-                calculatePrecursorPeak(container);
-            }
+            // Changing mass type only changes the fragmentMassType not the precursorMassType, so the labeled precursor peaks will not change.
+            //if(container.data("massErrorChanged") || container.data("peakAssignmentTypeChanged") || container.data("selectedNeutralLossChanged"))
+            calculatePrecursorPeak(container);
+
             if (container.data("precursorPeak"))
             {
                 data.push(container.data("precursorPeak"));
@@ -1249,35 +1250,47 @@
             var labels = [];
 
             var peaks = options.peaks;
-            var precursorMz = options.theoreticalMz;
             var charge = options.charge ? options.charge : 1;
-            var label = 'M';
 
-            // Label all possible precursor charge states
-            for (var i = 1; i <= charge; i += 1) {
-                label += "+";
-                var pmz = (((precursorMz - MASS_PROTON) * charge) / i) + MASS_PROTON;
-                //console.log("for charge:"+i+" -- m/z:"+pmz);
+	    var precmassdiffs = [0];
+	    if(options.labileModSum || options.labileModSum > 0)
+		precmassdiffs.push(options.labileModSum);
+	    if(options.ntermMod || options.ntermMod > 0)
+		precmassdiffs.push(options.ntermMod);
 
-                var match = getMatchingPeakForMz(container, peaks, pmz);
-                if (match.bestPeak) {
-                    precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
-                    labels.push(label);
-                    antic += match.bestPeak[1];
-                }
+	    for (pmd of precmassdiffs) {
+		var precursorMz = options.theoreticalMz - (pmd / charge);
+		var label = 'M';
+		if (pmd)
+		    label += '(-'+pmd.toFixed(0)+')';
 
-                var neutralLosses = getNeutralLosses(container);
-                for (var lossKey in neutralLosses) {
-                    var loss = neutralLosses[lossKey];
-                    // console.log("Neutral loss:"+lossKey+" -- Label:"+loss.label());
+		// Label all possible precursor charge states
+		for (var i = 1; i <= charge; i += 1) {
+                    label += "+";
+                    var pmz = (((precursorMz - MASS_PROTON) * charge) / i) + MASS_PROTON;
+                     console.log("for charge:"+i+" -- m/z:"+pmz);
 
-                    match = getMatchingPeakForMz(container, peaks, pmz - (loss.monoLossMass / charge));
+                    var match = getMatchingPeakForMz(container, peaks, pmz);
                     if (match.bestPeak) {
-                        precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
-                        labels.push(label + " " + loss.label());
-                        options.antic += match.bestPeak[1];
+			precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
+			labels.push(label);
+			antic += match.bestPeak[1];
                     }
-                }
+
+                    var neutralLosses = getNeutralLosses(container);
+                    for (var lossKey in neutralLosses) {
+			var loss = neutralLosses[lossKey];
+			// console.log("Neutral loss:"+lossKey+" -- Label:"+loss.label());
+
+			match = getMatchingPeakForMz(container, peaks, pmz - (loss.monoLossMass / charge));
+			if (match.bestPeak) {
+                            precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
+                            labels.push(label + " " + loss.label());
+                            antic += match.bestPeak[1];
+			}
+                    }
+		}
+
                 if (precursorMzMatches.length > 0)
                     container.data("precursorPeak", {data: precursorMzMatches, labels: labels, color: "#ffd700"});
             }
@@ -1532,6 +1545,7 @@
 			var ionSeriesData = todoIonSeriesData[j];
 
                         var ion = Ion.getSeriesIon(tion, container.data("options").peptide, i, massType);
+
                         // Put the ion masses in increasing value of m/z, For c-term ions the array will have to be
                         // populated backwards.
 			if(tion.term == "n")
@@ -2401,6 +2415,10 @@
 	    modInfo += '</div>';
 	}
 		
+	if(options.labileModSum || options.labileModSum > 0) {
+	    modInfo += '<div style="margin-top:5px;">Total Labile Mass Loss: <b>'+round(options.labileModSum)+'</b></div>';
+	}
+
 	$(getElementSelector(container, elementIds.modInfo)).append(modInfo);
     }
 	
@@ -2408,8 +2426,12 @@
     // ANTIC INFO
     //---------------------------------------------------------
     function showAnticInfo (container) {
+        var antic = 0;
 
-        var antic = container.data("anticPrecursor");
+	if(labelPrecursorPeak(container))
+	{
+	    antic += container.data("anticPrecursor");
+	}
         if(labelImmoniumIons(container))
         {
             antic += container.data("anticImmonium");
