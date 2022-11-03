@@ -56,7 +56,6 @@ function testUSI() {
         document.getElementById("main").appendChild(txt);
     }
 
-
 }
 
 
@@ -85,7 +84,7 @@ async function validate_usi(carryon) {
 
     if (data.validation_results[usi]["is_valid"] == true) {
 	if (data.validation_results[usi]["peptidoform"]) {
-	    _peptidoform = data.validation_results[usi]["peptidoform"];
+	    _peptidoform = JSON.parse(JSON.stringify(data.validation_results[usi]["peptidoform"])); // cheap dirty clone
 	    _peptidoform._f = data.validation_results[usi]["interpretation"] || '';
 	    _peptidoform._z = data.validation_results[usi]["charge"] || 0;
 	    _peptidoform._s = data.validation_results[usi]["index"] || 0;
@@ -146,24 +145,104 @@ async function validate_usi(carryon) {
     tr.appendChild(td);
     table.appendChild(tr);
 
-    for (var f in data.validation_results[usi]) {
-	if (typeof data.validation_results[usi][f] === 'object') // also skips nulls
-	    continue;
+    add_spec_data(table, '', data.validation_results[usi]);
 
-        tr = document.createElement("tr");
-        td = document.createElement("th");
-        td.appendChild(document.createTextNode(f));
-        tr.appendChild(td);
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.className = "rep";
+    td.colSpan = 2;
+    td.appendChild(document.createTextNode('JSON response'));
+    tr.appendChild(td);
+    table.appendChild(tr);
 
-        td = document.createElement("td");
-        td.appendChild(document.createTextNode(data.validation_results[usi][f]));
-        tr.appendChild(td);
-        table.appendChild(tr);
-    }
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.colSpan = 2;
+    td.style.fontFamily = 'monospace';
+    td.style.whiteSpace = 'pre';
+    td.appendChild(document.createTextNode(JSON.stringify(data.validation_results[usi],null,2)));
+    tr.appendChild(td);
+    table.appendChild(tr);
+
+    show_validation_code(table,usi);
+
     document.getElementById("spec").appendChild(table);
 
     return false;
 }
+
+function show_validation_code(table,usi) {
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.className = "rep";
+    td.colSpan = 2;
+    td.appendChild(document.createTextNode('Linux curl snippet'));
+    tr.appendChild(td);
+    table.appendChild(tr);
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.colSpan = 2;
+    td.style.fontFamily = 'monospace';
+    td.style.whiteSpace = 'pre';
+    td.appendChild(document.createTextNode("curl -X POST -H \"Content-Type: application/json\" http://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator -d '[ \""+usi+"\" ]'"));
+    tr.appendChild(td);
+    table.appendChild(tr);
+
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.className = "rep";
+    td.colSpan = 2;
+    td.appendChild(document.createTextNode('Windows curl snippet'));
+    tr.appendChild(td);
+    table.appendChild(tr);
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.colSpan = 2;
+    td.style.fontFamily = 'monospace';
+    td.style.whiteSpace = 'pre';
+    td.appendChild(document.createTextNode("curl -X POST -H \"Content-Type: application/json\" http://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator -d \"[ \\\""+usi+"\\\" ]\""));
+    tr.appendChild(td);
+    table.appendChild(tr);
+
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.className = "rep";
+    td.colSpan = 2;
+    td.appendChild(document.createTextNode('Python snippet'));
+    tr.appendChild(td);
+    table.appendChild(tr);
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.colSpan = 2;
+    td.style.fontFamily = 'monospace';
+    td.style.whiteSpace = 'pre';
+    td.appendChild(document.createTextNode("import json\nimport requests\n\nusis = [ \""+usi+"\", \"not a USI\" ]\nendpoint_url = \"http://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator\"\nresponse_content = requests.post(endpoint_url, json=usis, headers={'accept': 'application/json'})\nresult = response_content.json()\nprint(json.dumps(result, indent=2))\nfor usi in usis:\n  print(result['validation_results'][usi]['is_valid'],\"\\t\",usi)\n"));
+    tr.appendChild(td);
+    table.appendChild(tr);
+}
+
+function add_spec_data(table,label,vdata) {
+    for (var f in vdata) {
+	if (typeof vdata[f] === 'object') {
+	    add_spec_data(table, label+' { '+f+' } ', vdata[f]);
+	    continue;
+	}
+	if (f.startsWith("_"))
+	    continue;
+
+        var tr = document.createElement("tr");
+        var td = document.createElement("th");
+        td.appendChild(document.createTextNode(label+f));
+        tr.appendChild(td);
+
+        td = document.createElement("td");
+        td.appendChild(document.createTextNode(vdata[f]));
+        tr.appendChild(td);
+        table.appendChild(tr);
+    }
+
+}
+
 
 async function check_usi() {
     document.getElementById("usi_input").value = document.getElementById("usi_input").value.trim();
@@ -237,6 +316,7 @@ async function check_usi() {
                     s.ctermMod = 0;
 		    s.reporterIons = false;
                     s.variableMods = [];
+		    s.labileModSum = 0;
 		    s.maxNeutralLossCount = 1;
                     s.ms2peaks = [];
 
@@ -292,7 +372,20 @@ async function check_usi() {
 				varmod.losses.push(loss);
 				s.maxNeutralLossCount++;
 			    }
+                            else if ((varmod.aminoAcid == "S" || varmod.aminoAcid == "T") && (varmod.modMass-27.9949 < 0.01)) {  //Formyl
+				var loss = {};
+				loss.monoLossMass = 27.9949;
+				loss.avgLossMass  = 28.0101;
+				loss.formula      = 'CO';
+				varmod.losses = [];
+				varmod.losses.push(loss);
+				s.maxNeutralLossCount++;
+			    }
+
 			    s.variableMods.push(varmod);
+			}
+                        for (var mod in _peptidoform["unlocalized_mass_modifications"]) {
+			    s.labileModSum += _peptidoform["unlocalized_mass_modifications"][mod].delta_mass;
 			}
 		    }
 
@@ -447,6 +540,7 @@ function renderLorikeet(divid,src) {
 			   "ntermMod":s.ntermMod,
 			   "ctermMod":s.ctermMod,
 			   "variableMods":s.variableMods,
+			   "labileModSum":s.labileModSum,
 			   "maxNeutralLossCount":s.maxNeutralLossCount,
 			   "labelReporters":s.reporterIons,
 			   "peaks":s.ms2peaks});
