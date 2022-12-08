@@ -62,7 +62,7 @@
                 minDisplayMz: null,
 	        maxDisplayMz: null
         };
-			
+
 	var options = $.extend(true, {}, defaults, opts); // this is a deep copy
 
         return this.each(function() {
@@ -240,7 +240,7 @@
                     if(!diff || d < diff) {
                         x = pk[0];
                         y = pk[1];
-                        diff = d;
+                        diff = d ? d : 0.00001;
                     }
                 }
                 if(diff <= 0.5) {
@@ -384,14 +384,14 @@
         container.data("anticReporter", 0); // total annotated ion current: reporter ions
         container.data("totalIonCurrent", getTotalIonCurrent(options.peaks)); // total ion current
 
-        var maxInt = getMaxIntPeaks(options.peaks);
+        var maxInt = getMaxInt(options.peaks);
         var maxIntUp = maxInt;      //get max peaks value in up peak list
         var maxIntDown = 0;         //for 2nd "butterfly" spectrum
         if(options.peaks2){
-            maxIntDown = getMaxIntPeaks(options.peaks2);   //get max peaks value in down peak list
+            maxIntDown = getMaxInt(options.peaks2);   //get max peaks value in down peak list
         }
 
-        var __xrange = getPlotXRange(options);
+	var __xrange = getPlotXRange(options);
 
 
         var plotOptions =  {
@@ -403,7 +403,7 @@
             grid: { show: true,
                     hoverable: true,
                     clickable: false,
-                    autoHighlight: false,
+                    autoHighlight: true,
                     borderWidth: 1,
                     labelMargin: 1},
             xaxis: { tickLength: 3, tickColor: "#000",
@@ -461,22 +461,9 @@
     }
 
     // extract max from peak list
-    function getMaxIntPeaks(peaks) {
+    function getMaxInt(peaks) {
 	var maxInt = 0;
-	for(var j = 0; j < peaks.length; j += 1) {
-	    var peak = peaks[j];
-	    if(peak[1] > maxInt) {
-		maxInt = peak[1];
-	    }
-	}
-	//alert(maxInt);
-	return maxInt;
-    }
-
-    function getMaxInt(options) {
-	var maxInt = 0;
-	for(var j = 0; j < options.peaks.length; j += 1) {
-	    var peak = options.peaks[j];
+	for(var peak of peaks) {
 	    if(peak[1] > maxInt) {
 		maxInt = peak[1];
 	    }
@@ -488,20 +475,20 @@
     function round(number) {
 	return number.toFixed(4);
     }
-	
+
     function setMassError(container) {
-        var options = container.data("options");
-   	var me = parseFloat($(getElementSelector(container, elementIds.massError)).val());
-        var unit = getMassErrorUnit(container);
+	var options = container.data("options");
+	var me = parseFloat($(getElementSelector(container, elementIds.massError)).val());
+	var unit = getMassErrorUnit(container);
 	if(me !== options.massError) {
 	    options.massError = me;
 	    container.data("massErrorChanged", true);
 	}
-        else if(options.massErrorUnit !== unit)
-        {
+	else if(options.massErrorUnit !== unit)
+	{
 	    options.massErrorUnit = unit;
 	    container.data("massErrorChanged", true);
-        }
+	}
 	else {
 	    container.data("massErrorChanged", false);
 	}
@@ -515,14 +502,14 @@
         var ms1zoomRange = container.data("ms1zoomRange");
         var options = container.data("options");
 
-	var data = [{data: options.ms1peaks, color: "#bbbbbb", labelType: 'none', hoverable: false, clickable: false}];
+	var data = [{data: options.ms1peaks, color: "#bbbbbb", labelType: 'none', hoverable: true, clickable: false}];
 	if(options.precursorPeaks) {
 	    if(options.precursorPeakClickFn)
 		data.push({data: options.precursorPeaks, color: "#ff0000", hoverable: true, clickable: true});
 	    else
-		data.push({data: options.precursorPeaks, color: "#ff0000", hoverable: false, clickable: false});
+		data.push({data: options.precursorPeaks, color: "#ff0000", hoverable: true, clickable: false});
 	}
-		
+
 	// the MS/MS plot should have been created by now.  This is a hack to get the plots aligned.
 	// We will set the y-axis labelWidth to this value.
 	var labelWidth = container.data("plot").getAxes().yaxis.labelWidth;
@@ -534,8 +521,8 @@
         }
 	var ms1plotOptions = {
 	    series: { peaks: {show: true, shadowSize: 0}, shadowSize: 0},
-	    grid: { show: true, 
-		    hoverable: true, 
+	    grid: { show: true,
+		    hoverable: true,
 		    autoHighlight: true,
 		    clickable: true,
                     markings: precursorSelectionWin,
@@ -570,16 +557,16 @@
             ctx.lineTo(o.left-10, o.top-5);
             ctx.fillStyle = "#008800";
             ctx.fill();
-            placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top-4) + 'px;color:#000;font-size:smaller">'+options.precursorMz.toFixed(2)+'</div>');
+            placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top-4) + 'px;color:#000;font-size:smaller">'+options.precursorMz.toFixed(4)+'</div>');
 
 	}
-		
+
 	// mark the scan number if we have it
 	o = ms1plot.getPlotOffset();
 	if(options.ms1scanLabel) {
 	    placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top+4) + 'px;color:#666;font-size:smaller">MS1 scan: '+options.ms1scanLabel+'</div>');
 	}
-		
+
 	// zoom out icon on plot right hand corner if we are not already zoomed in to the precursor.
 	if(container.data("ms1zoomRange")) {
 	    placeholder.append('<div id="'+getElementId(container, elementIds.ms1plot_zoom_out)+'" class="zoom_out_link"  style="position:absolute; left:'
@@ -613,7 +600,7 @@
     // SET UP INTERACTIVE ACTIONS FOR MS1 PLOT
     // -----------------------------------------------
     function setupMs1PlotInteractions(container) {
-		
+
 	var placeholder = $(getElementSelector(container, elementIds.msPlot));
         var options = container.data("options");
 
@@ -628,6 +615,11 @@
 	    });
 	}
 
+        // TOOLTIPS
+        placeholder.bind("plothover", function (event, pos, item) {
+            displayTooltip(item, container, options, "m/z", "intensity");
+        });
+
 	// allow zooming the plot
 	placeholder.bind("plotselected", function (event, ranges) {
             container.data("ms1zoomRange", ranges);
@@ -641,39 +633,39 @@
     // -----------------------------------------------
     function createPlot(container, datasets) {
 
-        var plot;
-    	if(!container.data("zoomRange"))
+	var plot;
+	if(!container.data("zoomRange"))
         {
             plot = $.plot($(getElementSelector(container, elementIds.msmsplot)), datasets,  container.data("plotOptions"));
         }
-    	else {
+	else {
             var zoomRange = container.data("zoomRange");
             var selectOpts = {};
-    	    if($(getElementSelector(container, elementIds.zoom_x)).is(":checked"))
-    		selectOpts.xaxis = { min: zoomRange.xaxis.from, max: zoomRange.xaxis.to };
-    	    if($(getElementSelector(container, elementIds.zoom_y)).is(":checked"))
-    		selectOpts.yaxis = { min: 0, max: zoomRange.yaxis.to };
+	    if($(getElementSelector(container, elementIds.zoom_x)).is(":checked"))
+		selectOpts.xaxis = { min: zoomRange.xaxis.from, max: zoomRange.xaxis.to };
+	    if($(getElementSelector(container, elementIds.zoom_y)).is(":checked"))
+		selectOpts.yaxis = { min: 0, max: zoomRange.yaxis.to };
 
-    	    plot = $.plot(getElementSelector(container, elementIds.msmsplot), datasets,
+	    plot = $.plot(getElementSelector(container, elementIds.msmsplot), datasets,
 			  $.extend(true, {}, container.data("plotOptions"), selectOpts));
 
-    	    // zoom out icon on plot right hand corner
-    	    var o = plot.getPlotOffset();
-    	    $(getElementSelector(container, elementIds.msmsplot)).append('<div id="'+getElementId(container, elementIds.ms2plot_zoom_out)+'" class="zoom_out_link" style="position:absolute; left:'
+	    // zoom out icon on plot right hand corner
+	    var o = plot.getPlotOffset();
+	    $(getElementSelector(container, elementIds.msmsplot)).append('<div id="'+getElementId(container, elementIds.ms2plot_zoom_out)+'" class="zoom_out_link" style="position:absolute; left:'
 									 + (o.left + plot.width() - 20) + 'px;top:' + (o.top+4) + 'px"></div>');
 
 	    $(getElementSelector(container, elementIds.ms2plot_zoom_out)).click( function() {
-                resetZoom(container);
+		resetZoom(container);
 	    });
-    	}
+	}
 
-    	// we have re-calculated and re-drawn everything..
-    	container.data("massTypeChanged", false);
-    	container.data("massErrorChanged",false);
-    	container.data("peakAssignmentTypeChanged", false);
-    	container.data("peakLabelTypeChanged", false);
-    	container.data("selectedNeutralLossChanged", false);
-        container.data("plot", plot);
+	// we have re-calculated and re-drawn everything..
+	container.data("massTypeChanged", false);
+	container.data("massErrorChanged",false);
+	container.data("peakAssignmentTypeChanged", false);
+	container.data("peakLabelTypeChanged", false);
+	container.data("selectedNeutralLossChanged", false);
+	container.data("plot", plot);
 
         // Draw the peak mass error plot
         plotPeakMassErrorPlot(container, datasets);
@@ -748,7 +740,7 @@
             series:{data:data, points:{show:true, fill:true, radius:1}, shadowSize:0},
             grid:{ show:true,
                    hoverable:true,
-                   autoHighlight:false,
+                   autoHighlight:true,
                    clickable:false,
                    borderWidth:1,
                    labelMargin:1,
@@ -805,8 +797,8 @@
                     container.data("previousPoint", item.datapoint);
 
                     $(getElementSelector(container, elementIds.msmstooltip)).remove();
-                    var x = item.datapoint[0].toFixed(2),
-                    y = item.datapoint[1].toFixed(2);
+                    var x = item.datapoint[0].toFixed(4),
+                    y = item.datapoint[1].toFixed(4);
 
                     showTooltip(container, item.pageX, item.pageY,
 				tooltip_xlabel + ": " + x + "<br>" + tooltip_ylabel + ": " + y, options);
@@ -818,7 +810,7 @@
             }
         }
     }
-	
+
     // -----------------------------------------------
     // SET UP INTERACTIVE ACTIONS FOR MS/MS PLOT
     // -----------------------------------------------
@@ -872,7 +864,7 @@
         });
 
 
-	// SHOW / HIDE ION SERIES; UPDATE ON MASS TYPE CHANGE; 
+	// SHOW / HIDE ION SERIES; UPDATE ON MASS TYPE CHANGE;
 	// PEAK ASSIGNMENT TYPE CHANGED; PEAK LABEL TYPE CHANGED
 	var ionChoiceContainer = $(getElementSelector(container, elementIds.ion_choice));
 	ionChoiceContainer.find("input").click(function() {
@@ -941,13 +933,13 @@
 	printPlot(container);
 
     }
-	
+
     function resetZoom(container) {
 	container.data("zoomRange", null);
 	setMassError(container);
 	createPlot(container, getDatasets(container));
     }
-	
+
     function plotAccordingToChoices(container) {
         var data = getDatasets(container);
 
@@ -956,22 +948,21 @@
             makeIonTable(container);
         }
     }
-	
-    function resetAxisZoom(container) {
 
+    function resetAxisZoom(container) {
         var plot = container.data("plot");
         var plotOptions = container.data("plotOptions");
 
-    	var zoom_x = false;
+	var zoom_x = false;
 	var zoom_y = false;
 	if($(getElementSelector(container, elementIds.zoom_x)).is(":checked"))
 	    zoom_x = true;
 	if($(getElementSelector(container, elementIds.zoom_y)).is(":checked"))
 	    zoom_y = true;
-    	if(zoom_x && zoom_y) {
-    	    plotOptions.selection.mode = "xy";
+	if(zoom_x && zoom_y) {
+	    plotOptions.selection.mode = "xy";
 	    if(plot) plot.getOptions().selection.mode = "xy";
-    	}
+	}
 	else if(zoom_x) {
 	    plotOptions.selection.mode = "x";
 	    if(plot) plot.getOptions().selection.mode = "x";
@@ -981,9 +972,8 @@
 	    if(plot) plot.getOptions().selection.mode = "y";
 	}
     }
-	
+
     function showTooltip(container, x, y, contents, options) {
-	
 	var tooltipCSS = {
             position: 'absolute',
             display: 'none',
@@ -993,18 +983,16 @@
             padding: '2px',
             'background-color': '#F0E68C',
             opacity: 0.80 };
-			
+
 	if ( options.tooltipZIndex !== undefined && options.tooltipZIndex !== null ) {
-		
 	    tooltipCSS["z-index"] = options.tooltipZIndex;
 	}
-	
+
         $('<div id="'+getElementId(container, elementIds.msmstooltip)+'">' + contents + '</div>')
 	    .css( tooltipCSS ).appendTo("body").fadeIn(200);
     }
-	
-    function makePlotResizable(container) {
 
+    function makePlotResizable(container) {
         var options = container.data("options");
 
 	$(getElementSelector(container, elementIds.slider_width)).slider({
@@ -1030,7 +1018,7 @@
 		}
 	    }
 	});
-		
+
 	$(getElementSelector(container, elementIds.slider_height)).slider({
 	    value:options.height,
 	    min: 100,
@@ -1049,9 +1037,8 @@
 	    }
 	});
     }
-	
-    function printPlot(container) {
 
+    function printPlot(container) {
 	$(getElementSelector(container, elementIds.printLink)).click(function() {
 
             var parent = container.parent();
@@ -1060,7 +1047,7 @@
 	    $(document.body).append('<div id="tempPrintDiv"></div>');
 	    $("#tempPrintDiv").append(container.detach());
 	    $("#tempPrintDiv").siblings().addClass("noprint");
-			
+
 	    var plotOptions = container.data("plotOptions");
 
 	    container.find(".bar").addClass('noprint');
@@ -1068,13 +1055,13 @@
 	    $(getElementSelector(container, elementIds.ionTableLoc1)).addClass('noprint');
 	    $(getElementSelector(container, elementIds.ionTableLoc2)).addClass('noprint');
 	    $(getElementSelector(container, elementIds.viewOptionsDiv)).addClass('noprint');
-			
+
 	    plotOptions.series.peaks.print = true; // draw the labels in the DOM for sharper print output
 	    plotAccordingToChoices(container);
 	    window.print();
-			
-			
-	    // remove the class after printing so that if the user prints 
+
+
+	    // remove the class after printing so that if the user prints
 	    // via the browser's print menu the whole page is printed
 	    container.find(".bar").removeClass('noprint');
 	    $(getElementSelector(container, elementIds.optionsTable)).removeClass('noprint');
@@ -1082,17 +1069,17 @@
 	    $(getElementSelector(container, elementIds.ionTableLoc2)).removeClass('noprint');
 	    $(getElementSelector(container, elementIds.viewOptionsDiv)).removeClass('noprint');
 	    $("#tempPrintDiv").siblings().removeClass("noprint");
-			
+
 
 
 	    plotOptions.series.peaks.print = false; // draw the labels in the canvas
 	    plotAccordingToChoices(container);
-			
+
 	    // move the plots back to the original location
             parent.append(container.detach());
 	    $("#tempPrintDiv").remove();
-			
-			
+
+
 	    /*var canvas = plot.getCanvas();
 	      var iWidth=3500;
 	      var iHeight = 3050;
@@ -1103,14 +1090,13 @@
 	      oSaveCanvas.style.height = iHeight+"px";
 	      var oSaveCtx = oSaveCanvas.getContext("2d");
 	      oSaveCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, iWidth, iHeight);
-	      
+
 	      var dataURL = oSaveCanvas.toDataURL("image/png");
 	      window.location = dataURL;*/
-			
-			
+
 	});
     }
-	
+
     // -----------------------------------------------
     // SELECTED DATASETS
     // -----------------------------------------------
@@ -1120,7 +1106,7 @@
 
         // selected ions
 	var selectedIonTypes = getSelectedIonTypes(container);
-		
+
 	calculateTheoreticalSeries(container, selectedIonTypes);
 
 	// add the un-annotated peaks
@@ -1268,7 +1254,7 @@
 		for (var i = 1; i <= charge; i += 1) {
                     label += "+";
                     var pmz = (((precursorMz - MASS_PROTON) * charge) / i) + MASS_PROTON;
-                     console.log("for charge:"+i+" -- m/z:"+pmz);
+                    // console.log("for charge:"+i+" -- m/z:"+pmz);
 
                     var match = getMatchingPeakForMz(container, peaks, pmz);
                     if (match.bestPeak) {
@@ -1416,22 +1402,22 @@
 	    ions.push(tokens[0]);
 	    charges.push(tokens[1]);
 	});
-	    
+
 	var selected = [];
         var ion;
         for (var i = 0; i < ions.length; i += 1) {
             selected.push(ion = Ion.get(ions[i], charges[i]));
         }
-	    
+
 	return selected;
     }
-	
+
     function getSelectedNtermIons(selectedIonTypes) {
 	var ntermIons = [];
 
 	for(var i = 0; i < selectedIonTypes.length; i += 1) {
 	    var sion = selectedIonTypes[i];
-	    if(sion.type == "a" || sion.type == "b" || sion.type == "c") 
+	    if(sion.type == "a" || sion.type == "b" || sion.type == "c")
             {
 		ntermIons.push(sion);
 	    }
@@ -1449,10 +1435,10 @@
 
     function getSelectedCtermIons(selectedIonTypes) {
 	var ctermIons = [];
-		
+
 	for(var i = 0; i < selectedIonTypes.length; i += 1) {
 	    var sion = selectedIonTypes[i];
-	    if(sion.type == "x" || sion.type == "y" || sion.type == "z") 
+	    if(sion.type == "x" || sion.type == "y" || sion.type == "z")
 		ctermIons.push(sion);
 	}
 	ctermIons.sort(function(m,n) {
@@ -1465,7 +1451,7 @@
 	});
 	return ctermIons;
     }
-	
+
     // ---------------------------------------------------------
     // CALCULATE THEORETICAL MASSES FOR THE SELECTED ION SERIES
     // ---------------------------------------------------------
@@ -1477,7 +1463,7 @@
             container.data("ionSeries", {a: [], b: [], c: [], x: [], y: [], z: []});
         }
 	if(selectedIons) {
-		
+
 	    var todoIonSeries = [];
 	    var todoIonSeriesData = [];
             var ionSeries = container.data("ionSeries");
@@ -1545,7 +1531,6 @@
 			var ionSeriesData = todoIonSeriesData[j];
 
                         var ion = Ion.getSeriesIon(tion, container.data("options").peptide, i, massType);
-
                         // Put the ion masses in increasing value of m/z, For c-term ions the array will have to be
                         // populated backwards.
 			if(tion.term == "n")
@@ -1580,9 +1565,9 @@
     // -----------------------------------------------
     function recalculateFragmentMatches(container) {
 	return (container.data("massErrorChanged") ||
-	    	container.data("massTypeChanged") ||
-	    	container.data("peakAssignmentTypeChanged") ||
-	    	container.data("selectedNeutralLossChanged"));
+		container.data("massTypeChanged") ||
+		container.data("peakAssignmentTypeChanged") ||
+		container.data("selectedNeutralLossChanged"));
     }
 
     function clearIonSeries(container)
@@ -1593,7 +1578,7 @@
     }
 
     function getSeriesMatches(container, selectedIonTypes) {
-		
+
 	var dataSeries = [];
 
         if(recalculateFragmentMatches(container))
@@ -1616,12 +1601,9 @@
         var peaks = getPeaks(container);
 
 
-
 	for(var j = 0; j < selectedIonTypes.length; j += 1) {
-		
 	    var ion = selectedIonTypes[j];
 
-			
 	    if(ion.type == "a") {
 		if(!ionSeriesMatch.a[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 		    // calculated matching peaks
@@ -1634,7 +1616,7 @@
 		}
 		dataSeries.push({data: ionSeriesMatch.a[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.a[ion.charge]});
 	    }
-			
+
 	    if(ion.type == "b") {
 		if(!ionSeriesMatch.b[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 		    // calculated matching peaks
@@ -1647,7 +1629,7 @@
 		}
 		dataSeries.push({data: ionSeriesMatch.b[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.b[ion.charge]});
 	    }
-			
+
 	    if(ion.type == "c") {
 		if(!ionSeriesMatch.c[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 		    // calculated matching peaks
@@ -1660,7 +1642,7 @@
 		}
 		dataSeries.push({data: ionSeriesMatch.c[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.c[ion.charge]});
 	    }
-			
+
 	    if(ion.type == "x") {
 		if(!ionSeriesMatch.x[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 		    // calculated matching peaks
@@ -1673,7 +1655,7 @@
 		}
 		dataSeries.push({data: ionSeriesMatch.x[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.x[ion.charge]});
 	    }
-			
+
 	    if(ion.type == "y") {
 		if(!ionSeriesMatch.y[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 		    // calculated matching peaks
@@ -1686,7 +1668,7 @@
 		}
 		dataSeries.push({data: ionSeriesMatch.y[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.y[ion.charge]});
 	    }
-			
+
 	    if(ion.type == "z") {
 		if(!ionSeriesMatch.z[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 		    // calculated matching peaks
@@ -1735,7 +1717,7 @@
 
         // console.log("calculating matching peaks");
 	var peakIndex = 0;
-		
+
 	var matchData = [];
 	matchData[0] = []; // peaks
 	matchData[1] = []; // labels -- ions;
@@ -1743,7 +1725,6 @@
 	var peptide = container.data("options").peptide;
 
 	for(var i = 0; i < ionSeries.length; i += 1) {
-			
 	    var sion = ionSeries[i];
 
 	    // get match for water and / or ammonia loss.
@@ -1766,17 +1747,17 @@
 
             peakIndex = minIndex;
 	}
-		
+
 	return matchData;
     }
-	
+
     // sion -- theoretical ion
     // matchData -- array to which we will add a peak if there is a match
     // allPeaks -- array with all the scan peaks
     // peakIndex -- current index in peaks array
     // Returns the index of the matching peak, if one is found
     function getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, massErrorUnit, peakAssignmentType, neutralLosses, massType) {
-		
+
 	if(!neutralLosses)
 	    sion.match = false; // reset;
 	var ionmz = ionMz(sion, neutralLosses, massType);
@@ -1867,7 +1848,6 @@
         return {peakIndex:peakIndex, bestPeak:bestPeak, theoreticalMz:ionmz};
     }
 
-	
 
     function getPeaks(container)
     {
@@ -2072,11 +2052,11 @@
 	parentTable += '</table> ';
 
 	container.append(parentTable);
-		
+
 	return container;
     }
-	
-	
+
+
     //---------------------------------------------------------
     // ION TABLE
     //---------------------------------------------------------
@@ -2088,7 +2068,7 @@
 	var selectedIonTypes = getSelectedIonTypes(container);
 	var ntermIons = getSelectedNtermIons(selectedIonTypes);
 	var ctermIons = getSelectedCtermIons(selectedIonTypes);
-		
+
 	var myTable = '' ;
 	myTable += '<table id="'+getElementId(container, elementIds.ionTable)+'" cellpadding="2" class="font_small '+elementIds.ionTable+'">';
 	myTable +=  "<thead>";
@@ -2096,14 +2076,14 @@
 
 	// nterm ions
 	for(var i = 0; i < ntermIons.length; i += 1) {
-	    myTable +=    "<th>" +ntermIons[i].label+  "</th>";   
+	    myTable +=    "<th>" +ntermIons[i].label+  "</th>";
 	}
-	myTable +=    "<th>" +"#"+  "</th>"; 
-	myTable +=    "<th>" +"Seq"+  "</th>"; 
-	myTable +=    "<th>" +"#"+  "</th>"; 
+	myTable +=    "<th>" +"#"+  "</th>";
+	myTable +=    "<th>" +"Seq"+  "</th>";
+	myTable +=    "<th>" +"#"+  "</th>";
 	// cterm ions
 	for(var i = 0; i < ctermIons.length; i += 1) {
-	    myTable +=    "<th>" +ctermIons[i].label+  "</th>"; 
+	    myTable +=    "<th>" +ctermIons[i].label+  "</th>";
 	}
 	myTable +=   "</tr>";
 	myTable +=  "</thead>";
@@ -2133,8 +2113,8 @@
 		    myTable +=    "<td class='"+cls+"' "+style+" >" +round(seriesData[i].mz)+  "</td>";
 		}
 		else {
-		    myTable +=    "<td>" +"&nbsp;"+  "</td>"; 
-		} 
+		    myTable +=    "<td>" +"&nbsp;"+  "</td>";
+		}
 	    }
 
 	    myTable += "<td class='numCell'>"+(i+1)+"</td>";
@@ -2159,11 +2139,11 @@
                             seriesData[idx].mz > options.peaks[options.peaks.length - 1][0]) {
 			cls="numCell";
                     }
-		    myTable +=    "<td class='"+cls+"' "+style+" >" +round(seriesData[idx].mz)+  "</td>";  
+		    myTable +=    "<td class='"+cls+"' "+style+" >" +round(seriesData[idx].mz)+  "</td>";
 		}
 		else {
-		    myTable +=    "<td>" +"&nbsp;"+  "</td>"; 
-		} 
+		    myTable +=    "<td>" +"&nbsp;"+  "</td>";
+		}
 	    }
 
 	}
@@ -2182,7 +2162,7 @@
 
         showAnticInfo(container); // Total annotated ion current
     }
-	
+
     function getCalculatedSeries(ionSeries, ion) {
         if(ion.type == "a")
 	    return ionSeries.a[ion.charge];
@@ -2218,7 +2198,7 @@
 		ionTableDiv.detach();
 		$(getElementSelector(container, elementIds.ionTableLoc2)).append(ionTableDiv);
 	    }
-			
+
 	    if ( options.sizeChangeCallbackFunction ) {
 		options.sizeChangeCallbackFunction();
 	    }
@@ -2239,12 +2219,12 @@
 	    specinfo += '<span style="font-weight:bold; color:#8B0000;">'+getModifiedSequence(options)+'</span>';
 
 	    var neutralMass = 0;
-			
+
 	    if(options.precursorMassType == 'mono')
 		neutralMass = options.peptide.getNeutralMassMono();
             else
                 neutralMass = options.peptide.getNeutralMassAvg();
-				
+
 	    // console.log(options.precursorMassType + " " + neutralMass);
 	    var mz;
 	    if(options.charge) {
@@ -2253,43 +2233,40 @@
 
             // save the theoretical m/z in the options
             options.theoreticalMz = mz;
-			
+
 	    var mass = neutralMass + Ion.MASS_PROTON;
 	    specinfo += ', MH+ '+mass.toFixed(4);
-	    if(mz) 
+	    if(mz)
 		specinfo += ', m/z '+mz.toFixed(4);
 	    specinfo += '</div>';
 
 	}
-		
+
 	// first clear the div if it has anything
 	$(getElementSelector(container, elementIds.seqinfo)).empty();
 	$(getElementSelector(container, elementIds.seqinfo)).append(specinfo);
     }
-	
+
     function getModifiedSequence(options) {
-		
 	var modSeq = '';
 	for(var i = 0; i < options.sequence.length; i += 1) {
-			
+
 	    if(options.peptide.varMods()[i+1])
 		modSeq += '<span style="background-color:yellow;padding:1px;border:1px dotted #CFCFCF;">'+options.sequence.charAt(i)+"</span>";
 	    else
 		modSeq += options.sequence.charAt(i);
 	}
-		
 	return modSeq;
     }
-	
+
     //---------------------------------------------------------
     // FILE INFO -- filename, scan number, precursor m/z and charge
     //---------------------------------------------------------
     function showFileInfo (container) {
-
         var options = container.data("options");
 
 	var fileinfo = '';
-			
+
 	if(options.fileName || options.scanNum) {
 	    fileinfo += '<div style="margin-top:5px;" class="font_small">';
 	    if(options.fileName) {
@@ -2306,7 +2283,7 @@
 	    }
 	    fileinfo += '</div>';
 	}
-		
+
 	$(getElementSelector(container, elementIds.fileinfo)).append(fileinfo);
     }
 
@@ -2340,7 +2317,7 @@
         var options = container.data("options");
 
 	var modInfo = '';
-			
+
 	modInfo += '<div>';
 	if(options.ntermMod || options.ntermMod > 0) {
 	    modInfo += 'Add to N-term: <b>'+round(options.ntermMod)+'</b>';
@@ -2349,7 +2326,7 @@
 	    modInfo += 'Add to C-term: <b>'+round(options.ctermMod)+'</b>';
 	}
 	modInfo += '</div>';
-		
+
 	if(options.staticMods && options.staticMods.length > 0) {
 	    var sm_modInfo = '<div style="margin-top:5px;">';
 	    sm_modInfo += 'Static Modifications: ';
@@ -2368,9 +2345,9 @@
                 modInfo += sm_modInfo;
             }
 	}
-		
+
 	if(options.variableMods && options.variableMods.length > 0) {
-			
+
 	    var uniqVarMods = {};
 	    for(var i = 0; i < options.variableMods.length; i += 1) {
 		var mod = options.variableMods[i];
@@ -2381,7 +2358,7 @@
                     uniqVarMods[mod.aa.code + ' ' + mod.modMass] = varmods;
                 }
 		varmods.push(mod);
-	    }  
+	    }
 
             var keys = [];
             for(var key in uniqVarMods)
@@ -2414,19 +2391,19 @@
             modInfo += "</table>";
 	    modInfo += '</div>';
 	}
-		
+
 	if(options.labileModSum || options.labileModSum > 0) {
 	    modInfo += '<div style="margin-top:5px;">Total Labile Mass Loss: <b>'+round(options.labileModSum)+'</b></div>';
 	}
 
 	$(getElementSelector(container, elementIds.modInfo)).append(modInfo);
     }
-	
+
     //---------------------------------------------------------
     // ANTIC INFO
     //---------------------------------------------------------
     function showAnticInfo (container) {
-        var antic = 0;
+	var antic = 0;
 
 	if(labelPrecursorPeak(container))
 	{
@@ -2454,7 +2431,7 @@
             antic += container.data("anticUserReporterIons");
         }
 
-	var percent = 100*round(antic / container.data("totalIonCurrent"));
+	var percent = (100*round(antic / container.data("totalIonCurrent"))).toFixed(2);
 
 	var anticInfo = '<div id="'+getElementId(container, elementIds.anticInfo)+'" style="margin-top:5px;">';
 	anticInfo += 'Annotated Ion Current: ';
@@ -2471,7 +2448,7 @@
         var options = container.data("options");
 
 	var myContent = '';
-		
+
 	// reset zoom option
 	myContent += '<nobr> ';
 	myContent += '<span style="width:100%; font-size:8pt; margin-top:5px; color:sienna;">Click and drag in the plot to zoom</span> ';
@@ -2480,9 +2457,9 @@
 	myContent += '&nbsp;<input id="'+getElementId(container, elementIds.resetZoom)+'" type="button" value="Zoom Out" /> ';
 	myContent += '&nbsp;<input id="'+getElementId(container, elementIds.printLink)+'" type="button" value="Print" /> ';
 	myContent += '</nobr> ';
-		
+
 	myContent += '&nbsp;&nbsp;';
-		
+
 	// tooltip option
 	myContent += '<nobr> ';
 	myContent += '<label><input id="'+getElementId(container, elementIds.enableTooltip)+'" type="checkbox">Enable tooltip </label>';
@@ -2497,16 +2474,16 @@
         }
         myContent += '>Plot mass error </label>';
         myContent += '</nobr>';
-		
+
 	myContent += '<br>';
-		
+
 	$(getElementSelector(container, elementIds.viewOptionsDiv)).append(myContent);
 	if(!options.showViewingOptions) {
             $(getElementSelector(container, elementIds.viewOptionsDiv)).hide();
         }
     }
-	
-	
+
+
     //---------------------------------------------------------
     // OPTIONS TABLE
     //---------------------------------------------------------
@@ -2517,10 +2494,10 @@
 	var myTable = '';
 	myTable += '<table cellpadding="2" cellspacing="2"> ';
 	myTable += '<tbody> ';
-		
+
 	// Ions
 	myTable += '<tr><td class="optionCell"> ';
-		
+
 	myTable += '<b>Ions:</b> ';
 	myTable += '<div id="'+getElementId(container, elementIds.ion_choice)+'" style="margin-bottom: 10px"> ';
 	myTable += '<!-- a ions --> ';
@@ -2543,7 +2520,7 @@
 	myTable += '<br/> ';
 	myTable += '<span id="'+getElementId(container, elementIds.deselectIonsLink)+'" style="font-size:8pt;text-decoration: underline; color:sienna;cursor:pointer;">[Deselect All]</span> ';
 	myTable += '</div> ';
-		
+
 	myTable += '<span style="font-weight: bold;">Neutral Loss:</span> ';
 	myTable += '<div id="'+getElementId(container, elementIds.nl_choice)+'"> ';
         var peptide = container.data("options").peptide;
@@ -2597,7 +2574,7 @@
         myTable+= ' id="'+getElementId(container, elementIds.labelPrecursor)+'"/><span style="font-weight:bold;">Precursor ions</span></label>';
 
 	myTable += '</td> </tr> ';
-		
+
 	// mass type
 	myTable += '<tr><td class="optionCell"> ';
 	myTable += '<div> Frag. Mass Type:<br/> ';
@@ -2635,7 +2612,7 @@
 	myTable += '<input id="'+getElementId(container, elementIds.update)+'" type="button" value="Update"/> ';
 	myTable += '</div> ';
 	myTable += '</td> </tr> ';
-		
+
 	// peak assignment method
 	myTable += '<tr><td class="optionCell"> ';
 	myTable+= '<div> Peak Assignment:<br/> ';
@@ -2649,7 +2626,7 @@
         myTable+= ' id="'+getElementId(container, elementIds.peakDetect)+'"/><span style="font-weight:bold;">Peak Detect</span></label>';
 	myTable+= '</div> ';
 	myTable += '</td> </tr> ';
-		
+
 	// peak labels
 	myTable += '<tr><td class="optionCell"> ';
 	myTable+= '<div> Peak Labels:<br/> ';
@@ -2658,7 +2635,7 @@
 	myTable+= '<label><input type="radio" name="'+getRadioName(container, "peakLabelOpt")+'" value="none"/><span style="font-weight: bold;">None</span></label> ';
 	myTable+= '</div> ';
 	myTable += '</td> </tr> ';
-	
+
 	// sliders to change plot size
 	myTable += '<tr><td class="optionCell"> ';
 	myTable += '<div>Width: <span id="'+getElementId(container, elementIds.slider_width_val)+'">'+options.width+'</span></div> ';
