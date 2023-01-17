@@ -1352,7 +1352,7 @@ sub getNotAccessibleMessage {
 
   if ( $PXPartner eq 'PRIDE' ) {
 
-    $url = "https://www.ebi.ac.uk/pride/archive/login";
+    $url = "https://www.ebi.ac.uk/pride/login";
     $contact = "pride-support\@ebi.ac.uk";
 
     $str .= qq~
