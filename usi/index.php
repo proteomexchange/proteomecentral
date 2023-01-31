@@ -9,7 +9,7 @@
 ?>
 <script src="../javascript/js/usi.js"></script>
 <script src="../javascript/js/lorikeet/jquery.min.js"></script>
-<script src="../javascript/js/lorikeet/jquery-ui.min.js"></script>
+<script src="../javascript/js/lorikeet/jquery-ui.slider.min.js"></script>
 <script src="../javascript/js/lorikeet/jquery.flot.js"></script>
 <script src="../javascript/js/lorikeet/jquery.flot.selection.js"></script>
 <script src="../javascript/js/lorikeet/specview.js"></script>
@@ -17,6 +17,7 @@
 <script src="../javascript/js/lorikeet/aminoacid.js"></script>
 <script src="../javascript/js/lorikeet/ion.js"></script>
 <link rel="stylesheet" type="text/css" href="../javascript/css/lorikeet.css">
+<link rel="stylesheet" type="text/css" href="../javascript/css/jquery-ui.slider.min.css">
 <style type="text/css">
 h1 {
   margin-left: 5px;

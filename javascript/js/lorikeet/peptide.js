@@ -200,7 +200,8 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         var phosphoLoss = NeutralLoss.PhosphoLoss();
         potentialLosses_lorikeet[ammoniaLoss.label()] = ammoniaLoss;
         potentialLosses_lorikeet[waterLoss.label()] = waterLoss;
-        potentialLosses_lorikeet[phosphoLoss.label()] = phosphoLoss;
+	// now detecting this via mods in calling code
+        //potentialLosses_lorikeet[phosphoLoss.label()] = phosphoLoss;
 
         for(var i = 0; i < sequence.length; i += 1)
         {
@@ -213,10 +214,10 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
             {
                 potentialLossesAtIndex[i].push(waterLoss);
             }
-            if (aa == 'S' || aa == 'T' || aa == 'Y')
-            {
-                potentialLossesAtIndex[i].push(phosphoLoss);
-            }
+            //if (aa == 'S' || aa == 'T' || aa == 'Y')
+            //{
+            //potentialLossesAtIndex[i].push(phosphoLoss);
+            //}
         }
     }
 

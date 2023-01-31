@@ -15,7 +15,7 @@ var usi_data = {
     "ProteomeCentral" : { "url" : "http://proteomecentral.proteomexchange.org/api/proxi/v0.1/spectra?resultType=full&usi=" }
 };
 
-var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730", "UNIMOD:731", "UNIMOD:737", "UNIMOD:738", "UNIMOD:739", "UNIMOD:889", "UNIMOD:984", "UNIMOD:985", "UNIMOD:1341", "UNIMOD:1342", "UNIMOD:2015", "UNIMOD:2016", "UNIMOD:2017" ];
+var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730", "UNIMOD:731", "UNIMOD:737", "UNIMOD:738", "UNIMOD:739", "UNIMOD:889", "UNIMOD:984", "UNIMOD:985", "UNIMOD:1341", "UNIMOD:1342", "UNIMOD:2015", "UNIMOD:2016", "UNIMOD:2017", "UNIMOD:2050" ];
 
 var _peptidoform = null;
 
@@ -363,21 +363,36 @@ async function check_usi() {
 			    varmod.index     = _peptidoform["residue_modifications"][mod].index;
 			    varmod.modMass   = _peptidoform["residue_modifications"][mod].delta_mass;
 			    varmod.aminoAcid = _peptidoform["residue_modifications"][mod].base_residue;
-			    if (varmod.aminoAcid == "M" && (varmod.modMass-15.9949 < 0.01)) {  //Ox
+			    if (Math.abs(varmod.modMass-79.966331) < 0.01) {  //Phos
+				varmod.losses = [];
+				var loss = {};
+				loss.monoLossMass = 97.976896;
+				loss.avgLossMass  = 97.9952;
+				loss.formula      = 'H3PO4';
+				loss.label        = 'p';
+				varmod.losses.push(loss);
+                                loss = {};
+                                loss.monoLossMass = 79.966331;
+                                loss.avgLossMass  = 79.9799;
+                                loss.formula      = 'HPO3';
+                                varmod.losses.push(loss);
+				s.maxNeutralLossCount++;
+			    }
+			    else if (varmod.aminoAcid == "M" && (Math.abs(varmod.modMass-15.9949) < 0.01)) {  //Ox
+				varmod.losses = [];
 				var loss = {};
 				loss.monoLossMass = 63.998285;
 				loss.avgLossMass  = 64.11;
 				loss.formula      = 'CH3SOH';
-				varmod.losses = [];
 				varmod.losses.push(loss);
 				s.maxNeutralLossCount++;
 			    }
-                            else if ((varmod.aminoAcid == "S" || varmod.aminoAcid == "T") && (varmod.modMass-27.9949 < 0.01)) {  //Formyl
+                            else if ((varmod.aminoAcid == "S" || varmod.aminoAcid == "T") && (Math.abs(varmod.modMass-27.9949) < 0.01)) {  //Formyl
+				varmod.losses = [];
 				var loss = {};
 				loss.monoLossMass = 27.9949;
 				loss.avgLossMass  = 28.0101;
 				loss.formula      = 'CO';
-				varmod.losses = [];
 				varmod.losses.push(loss);
 				s.maxNeutralLossCount++;
 			    }

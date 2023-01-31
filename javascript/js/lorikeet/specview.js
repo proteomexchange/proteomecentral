@@ -557,7 +557,7 @@
             ctx.lineTo(o.left-10, o.top-5);
             ctx.fillStyle = "#008800";
             ctx.fill();
-            placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top-4) + 'px;color:#000;font-size:smaller">'+options.precursorMz.toFixed(4)+'</div>');
+            placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top-4) + 'px;color:#000;font-size:smaller">'+round(options.precursorMz)+'</div>');
 
 	}
 
@@ -797,8 +797,8 @@
                     container.data("previousPoint", item.datapoint);
 
                     $(getElementSelector(container, elementIds.msmstooltip)).remove();
-                    var x = item.datapoint[0].toFixed(4),
-                    y = item.datapoint[1].toFixed(4);
+                    var x = round(item.datapoint[0]),
+                    y = item.datapoint[1].toFixed(2);
 
                     showTooltip(container, item.pageX, item.pageY,
 				tooltip_xlabel + ": " + x + "<br>" + tooltip_ylabel + ": " + y, options);
@@ -1235,8 +1235,8 @@
             var precursorMzMatches = [];
             var labels = [];
 
-            var peaks = options.peaks;
-            var charge = options.charge ? options.charge : 1;
+	    var peaks = options.peaks;
+	    var charge = options.charge ? options.charge : 1;
 
 	    var precmassdiffs = [0];
 	    if(options.labileModSum || options.labileModSum > 0)
@@ -1252,34 +1252,34 @@
 
 		// Label all possible precursor charge states
 		for (var i = 1; i <= charge; i += 1) {
-                    label += "+";
-                    var pmz = (((precursorMz - MASS_PROTON) * charge) / i) + MASS_PROTON;
-                    // console.log("for charge:"+i+" -- m/z:"+pmz);
+		    label += "+";
+		    var pmz = (((precursorMz - MASS_PROTON) * charge) / i) + MASS_PROTON;
+		    // console.log("for charge:"+i+" -- m/z:"+pmz);
 
-                    var match = getMatchingPeakForMz(container, peaks, pmz);
-                    if (match.bestPeak) {
+		    var match = getMatchingPeakForMz(container, peaks, pmz);
+		    if (match.bestPeak) {
 			precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
 			labels.push(label);
 			antic += match.bestPeak[1];
-                    }
+		    }
 
-                    var neutralLosses = getNeutralLosses(container);
-                    for (var lossKey in neutralLosses) {
+		    var neutralLosses = getNeutralLosses(container);
+		    for (var lossKey in neutralLosses) {
 			var loss = neutralLosses[lossKey];
 			// console.log("Neutral loss:"+lossKey+" -- Label:"+loss.label());
 
 			match = getMatchingPeakForMz(container, peaks, pmz - (loss.monoLossMass / charge));
 			if (match.bestPeak) {
-                            precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
-                            labels.push(label + " " + loss.label());
-                            antic += match.bestPeak[1];
+			    precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
+			    labels.push(label + " " + loss.label());
+			    antic += match.bestPeak[1];
 			}
-                    }
+		    }
 		}
 
-                if (precursorMzMatches.length > 0)
-                    container.data("precursorPeak", {data: precursorMzMatches, labels: labels, color: "#ffd700"});
-            }
+		if (precursorMzMatches.length > 0)
+		    container.data("precursorPeak", {data: precursorMzMatches, labels: labels, color: "#ffd700"});
+	    }
         }
         container.data("anticPrecursor", antic);
     }
@@ -2235,9 +2235,9 @@
             options.theoreticalMz = mz;
 
 	    var mass = neutralMass + Ion.MASS_PROTON;
-	    specinfo += ', MH+ '+mass.toFixed(4);
+	    specinfo += ', MH+ '+round(mass);
 	    if(mz)
-		specinfo += ', m/z '+mz.toFixed(4);
+		specinfo += ', m/z '+round(mz);
 	    specinfo += '</div>';
 
 	}
