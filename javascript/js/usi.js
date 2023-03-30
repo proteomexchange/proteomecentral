@@ -5,14 +5,14 @@ var examples_url = api_url + 'usi_examples';
 
 var usi_data = {
     "jPOST"           : { "url" : "https://repository.jpostdb.org/proxi/spectra?resultType=full&usi=" },
-    "MassIVE"         : { "url" : "http://massive.ucsd.edu/ProteoSAFe/proxi/v0.1/spectra?resultType=full&usi=" ,
-			  "view": "http://massive.ucsd.edu/ProteoSAFe/usi.jsp#{\"usi\":\"" ,
+    "MassIVE"         : { "url" : "https://massive.ucsd.edu/ProteoSAFe/proxi/v0.1/spectra?resultType=full&usi=" ,
+			  "view": "https://massive.ucsd.edu/ProteoSAFe/usi.jsp#{\"usi\":\"" ,
 			  "weiv": "\"}" },
     "PeptideAtlas"    : { "url" : "https://peptideatlas.org/api/proxi/v0.1/spectra?resultType=full&usi=" ,
 			  "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=" },
     "PRIDE"           : { "url" : "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
 			  "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=" },
-    "ProteomeCentral" : { "url" : "http://proteomecentral.proteomexchange.org/api/proxi/v0.1/spectra?resultType=full&usi=" }
+    "ProteomeCentral" : { "url" : "https://proteomecentral.proteomexchange.org/api/proxi/v0.1/spectra?resultType=full&usi=" }
 };
 
 var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730", "UNIMOD:731", "UNIMOD:737", "UNIMOD:738", "UNIMOD:739", "UNIMOD:889", "UNIMOD:984", "UNIMOD:985", "UNIMOD:1341", "UNIMOD:1342", "UNIMOD:2015", "UNIMOD:2016", "UNIMOD:2017", "UNIMOD:2050" ];
@@ -184,7 +184,7 @@ function show_validation_code(table,usi) {
     td.colSpan = 2;
     td.style.fontFamily = 'monospace';
     td.style.whiteSpace = 'pre';
-    td.appendChild(document.createTextNode("curl -X POST -H \"Content-Type: application/json\" http://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator -d '[ \""+usi+"\" ]'"));
+    td.appendChild(document.createTextNode("curl -X POST -H \"Content-Type: application/json\" https://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator -d '[ \""+usi+"\" ]'"));
     tr.appendChild(td);
     table.appendChild(tr);
 
@@ -200,7 +200,7 @@ function show_validation_code(table,usi) {
     td.colSpan = 2;
     td.style.fontFamily = 'monospace';
     td.style.whiteSpace = 'pre';
-    td.appendChild(document.createTextNode("curl -X POST -H \"Content-Type: application/json\" http://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator -d \"[ \\\""+usi+"\\\" ]\""));
+    td.appendChild(document.createTextNode("curl -X POST -H \"Content-Type: application/json\" https://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator -d \"[ \\\""+usi+"\\\" ]\""));
     tr.appendChild(td);
     table.appendChild(tr);
 
@@ -216,7 +216,7 @@ function show_validation_code(table,usi) {
     td.colSpan = 2;
     td.style.fontFamily = 'monospace';
     td.style.whiteSpace = 'pre';
-    td.appendChild(document.createTextNode("import json\nimport requests\n\nusis = [ \""+usi+"\", \"not a USI\" ]\nendpoint_url = \"http://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator\"\nresponse_content = requests.post(endpoint_url, json=usis, headers={'accept': 'application/json'})\nresult = response_content.json()\nprint(json.dumps(result, indent=2))\nfor usi in usis:\n  print(result['validation_results'][usi]['is_valid'],\"\\t\",usi)\n"));
+    td.appendChild(document.createTextNode("import json\nimport requests\n\nusis = [ \""+usi+"\", \"not a USI\" ]\nendpoint_url = \"https://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator\"\nresponse_content = requests.post(endpoint_url, json=usis, headers={'accept': 'application/json'})\nresult = response_content.json()\nprint(json.dumps(result, indent=2))\nfor usi in usis:\n  print(result['validation_results'][usi]['is_valid'],\"\\t\",usi)\n"));
     tr.appendChild(td);
     table.appendChild(tr);
 }
