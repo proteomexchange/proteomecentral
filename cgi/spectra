@@ -92,11 +92,11 @@ def main():
             response = { 'state': 'ERROR', 'status': 463, 'title': usi.error_code, 'detail': usi.error_message }
             send_response(response, output_format=params.output_format, mode=mode)
             return()
-        if usi.dataset_identifier.startswith("PXL"):
+        if usi.collection_identifier.startswith("PXL"):
             spec_lib_collection = SpectrumLibraryCollection(basedir + "/spectralLibraries/SpectrumLibraryCollection.sqlite")
-            #print(f"Looking up library for {usi.dataset_identifier}")
+            #print(f"Looking up library for {usi.collection_identifier}")
             try:
-                library = spec_lib_collection.get_library(identifier=usi.dataset_identifier, version=usi.ms_run_name)
+                library = spec_lib_collection.get_library(identifier=usi.collection_identifier, version=usi.ms_run_name)
             except Exception as error:
                 response = { 'state': 'ERROR', 'status': 462, 'title': 'Other Error', 'detail': error }
                 send_response(response, output_format=params.output_format, mode=mode)

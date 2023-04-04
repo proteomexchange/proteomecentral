@@ -46,12 +46,12 @@ foreach my $parameter ( @parameters ) {
   }
 }
 
-my $skinLink = 'http://proteomecentral.proteomexchange.org/template.php';
+my $skinLink = 'https://proteomecentral.proteomexchange.org/template.php';
 $response = $ua->request( HTTP::Request->new( GET => "$skinLink" ) );
 if ( $response -> is_success()){
   @template = split( "\n", $response->content() );
 }else{
-  $response->{message} = "unable to open template http://proteomecentral.proteomexchange.org/template.php\n";
+  $response->{message} = "unable to open template https://proteomecentral.proteomexchange.org/template.php\n";
   exit;
 }
 

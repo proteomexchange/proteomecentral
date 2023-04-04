@@ -512,7 +512,7 @@ def main():
             send_response(response, output_format=params.output_format, mode=mode)
             return
 
-        url_str = f"http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID={dataset_id}&outputMode=json"
+        url_str = f"https://proteomecentral.proteomexchange.org/cgi/GetDataset?ID={dataset_id}&outputMode=json"
         response_content = requests.get(url_str, headers={'accept': 'application/json'})
 
         #### Examine response
