@@ -377,7 +377,7 @@ sub parse {
 	$dataset->{reanalysisNumber} = $cvParam->attr('value');
       }
       if ($cvParam->attr('name') =~ /Digital Object Identifier/){
-	$dataset->{DigitalObjectIdentifier} =  "http://dx.doi.org/". $cvParam->attr('value');
+	$dataset->{DigitalObjectIdentifier} =  "https://dx.doi.org/". $cvParam->attr('value');
       }
     }
   }
@@ -608,17 +608,17 @@ sub parse {
         my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(
           PubMedID=>$lists{$id}{pubmedid});
         $dataset->{publicationList} .= "$sep$pubmed_info";
-        $dataset->{publication} .= "$sep<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$lists{$id}{pubmedid}\" target=\"_blank\">$pubname</a>";;  
+        $dataset->{publication} .= "$sep<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/$lists{$id}{pubmedid}\" target=\"_blank\">$pubname</a>";;  
         $sep = '; ' if (!$sep);
       }elsif(defined $lists{$id}{DOI}){
          #my $pubmedid = $PubMedFetcher->getPubmedID(DOI=>$lists{$id}{DOI});
          #if ($pubmedid){
          #  my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(PubMedID=>$pubmedid);
          #  $dataset->{publicationList} .= "$sep$pubmed_info";
-         #  $dataset->{publication} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\">$pubname</a>";
+         #  $dataset->{publication} .= "$sep<a href=\"https://dx.doi.org/$lists{$id}{DOI}\">$pubname</a>";
          #}else{
-           $dataset->{publication} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\" target=\"_blank\">$lists{$id}{DOI}</a>";
-           $dataset->{publicationList} .= "$sep<a href=\"http://dx.doi.org/$lists{$id}{DOI}\" target=\"_blank\">$lists{$id}{DOI}</a>;" || '';
+           $dataset->{publication} .= "$sep<a href=\"https://dx.doi.org/$lists{$id}{DOI}\" target=\"_blank\">$lists{$id}{DOI}</a>";
+           $dataset->{publicationList} .= "$sep<a href=\"https://dx.doi.org/$lists{$id}{DOI}\" target=\"_blank\">$lists{$id}{DOI}</a>;" || '';
          #}
          $sep = '; ' if (!$sep);
       }else{

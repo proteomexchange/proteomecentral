@@ -396,7 +396,7 @@ sub updateRecord{
   if ($value == 1 ) {
     $response->{result} = "Success";
     $response->{message} = "Database was updated. ";
-    $response->{link} = "http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$dataset_id&test=$test";
+    $response->{link} = "https://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$dataset_id&test=$test";
 
     #### Now add to the history table
 
@@ -719,7 +719,7 @@ sub processAnnouncement {
 				   ccRecipients=>\@ccRecipients,
 				   bccRecipients=>\@bccRecipients,
 				   subject=>"$messageType{titleIntro} ProteomeXchange dataset $identifier$testFlag",
-				   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}HostingRepository: $params->{PXPartner}\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\n\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
+				   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttps://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}HostingRepository: $params->{PXPartner}\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\n\nHTML_URL: https://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: https://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
 				   );
 
 	#### Send a tweet too if this is a new dataset

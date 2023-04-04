@@ -64,7 +64,7 @@ sub prepareTweetContent {
     return \%result;
   }
 
-  my $fullURL = "http://proteomecentral.proteomexchange.org/dataset/$datasetIdentifier";
+  my $fullURL = "https://proteomecentral.proteomexchange.org/dataset/$datasetIdentifier";
 
   my $sourceString = '??';
   if ($datasetLabHead && (length($datasetLabHead) < 30)) {
@@ -86,7 +86,7 @@ sub prepareTweetContent {
   my $announcementType = ucfirst($datasetStatus);
 
   #### For testing, force to 23 characters, which all URLs are remapped to by Twitter
-  #$fullURL = "http://t.co/34567890123";
+  #$fullURL = "https://t.co/34567890123";
 
   #### Create the tweet string
   my $tweetString = "$announcementType $datasetIdentifier $sourceString via $PXPartner: $speciesString ";

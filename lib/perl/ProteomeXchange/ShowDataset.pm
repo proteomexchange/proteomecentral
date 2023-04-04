@@ -18,7 +18,7 @@ use JSON;
 my $log_dir = ( $CONFIG{basePath} ) ? $CONFIG{basePath} . '/logs/' :
                                     '/net/dblocal/wwwspecial/proteomecentral/devDC/logs/';
 my $log =  ProteomeXchange::Log->new( base => $log_dir, log_level => 'debug' );
-my $baseUrl = $CONFIG{baseUrl} || 'http://www.proteomecentral.org';
+my $baseUrl = $CONFIG{baseUrl} || 'https://www.proteomecentral.org';
 
 $| = 1;
 use CGI qw/:standard/;
@@ -193,7 +193,7 @@ sub listDatasets {
     my $writer = new XML::Writer(DATA_MODE => 1, DATA_INDENT => 4,ENCODING=>'UTF-8',);
     $writer->xmlDecl("UTF-8");
     $writer->startTag("ProteomeXchangeDataset",
-		      "xmlns:xsi"=>"http://www.w3.org/2001/XMLSchema-instance",
+		      "xmlns:xsi"=>"https://www.w3.org/2001/XMLSchema-instance",
 		      "xsi:noNamespaceSchemaLocation"=>"proteomeXchange-draft-05.xsd",
 		      "formatVersion"=>"1.0.0",
 	);
@@ -498,7 +498,7 @@ sub printPageFooter {
     if ($line =~ /END main content/) {
       $begin = 1;
       print '';
-      #print '<a href="http://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="50" height="15" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to receive all new ProteomeXchange announcements!</font></a>';
+      #print '<a href="https://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="50" height="15" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to receive all new ProteomeXchange announcements!</font></a>';
     }
     if ($begin) {
       print "$line";
@@ -1382,7 +1382,7 @@ sub getNotAccessibleMessage {
 
   } elsif ( $PXPartner eq 'MassIVE' ) {
 
-    $url = "http://massive.ucsd.edu/ProteoSAFe/QueryPXD?id=$identifier";
+    $url = "https://massive.ucsd.edu/ProteoSAFe/QueryPXD?id=$identifier";
     $contact = "ccms\@proteomics.ucsd.edu";
 
     $str .= qq~

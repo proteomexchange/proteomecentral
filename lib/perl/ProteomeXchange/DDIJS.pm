@@ -20,7 +20,7 @@ use ProteomeXchange::Log;
 my $basePath = $CONFIG{basePath} || '/net/dblocal/wwwspecial/proteomecentral';
 my $log_dir = $basePath . '/logs/';
 my $log =  ProteomeXchange::Log->new( base => $log_dir, log_level => 'debug' );
-my $baseUrl = $CONFIG{baseUrl} || 'http://www.proteomecentral.org';
+my $baseUrl = $CONFIG{baseUrl} || 'https://www.proteomecentral.org';
 
 
 ##### Public Methods ###########################################################
