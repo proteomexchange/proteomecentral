@@ -10,8 +10,23 @@ cd /net/dblocal/wwwspecial/proteomecentral/extern/PSI-MS/GitHub/psi-ms-CV
 git pull
 
 echo " "
+echo "Update SDRF CV from GitHub"
+cd /net/dblocal/wwwspecial/proteomecentral/extern/proteomics-metadata-standard
+git pull
+
+echo " "
 echo "Update PRIDE CV from GitHub"
 cd /net/dblocal/wwwspecial/proteomecentral/extern/PRIDE/pride-ontology
+git pull
+
+echo " "
+echo "Update PO from GitHub"
+cd /net/dblocal/wwwspecial/proteomecentral/extern/PO/plant-ontology
+git pull
+
+echo " "
+echo "Update PECO from GitHub"
+cd /net/dblocal/wwwspecial/proteomecentral/extern/PECO/plant-experimental-conditions-ontology
 git pull
 
 echo " "
