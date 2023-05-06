@@ -42,7 +42,7 @@ class ProxiDatasets:
         url = url_base + dataset_identifier
         self.dataset = None
 
-        connection = http.client.HTTPConnection(server, 80, timeout=10)
+        connection = http.client.HTTPSConnection(server, timeout=10)
         connection.request("GET", url)
         http_response = connection.getresponse()
         status_code = http_response.status
