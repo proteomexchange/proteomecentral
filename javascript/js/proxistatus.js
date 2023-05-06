@@ -1,4 +1,4 @@
-var proxi_status_url = "http://proteomecentral.proteomexchange.org/cgi/PROXI_status";
+var proxi_status_url = "https://proteomecentral.proteomexchange.org/cgi/PROXI_status";
 var tables_rendered = false;
 
 function main() {
