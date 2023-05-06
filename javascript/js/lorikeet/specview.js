@@ -1199,16 +1199,31 @@
 
         var peaks = options.peaks;
 
-        // immonium ions (70 P, 72 V, 86 I/L, 110 H, 120 F, 136 Y, 159 W)
-        var immoniumIonTypes = [{mass:70.0657, aa:'P'},
+        var immoniumIonTypes = [{mass:60.0444, aa:'S'},
+                                {mass:69.0699, aa:'I/L-NH3'},
+                                {mass:70.0651, aa:'P'},
+                                {mass:72.0808, aa:'V'},
+                                {mass:74.0600, aa:'T'},
+                                {mass:84.0444, aa:'Q-NH3'},
+                                {mass:84.0808, aa:'K-NH3'},
+                                {mass:86.0964, aa:'I/L'},
+                                {mass:87.0553, aa:'N'},
+                                {mass:88.0393, aa:'D'},
+                                {mass:101.0709, aa:'Q'},
+                                {mass:101.1073, aa:'K'},
                                 {mass:102.0555, aa:'E'},
-                                {mass:72.0813, aa:'V'},
-                                {mass:86.0970, aa:'I/L'},
-                                {mass:110.0718, aa:'H'},
-                                {mass:120.0813, aa:'F'},
-                                {mass:101.0715, aa:'Q'},
-                                {mass:136.0762, aa:'Y'},
-                                {mass:159.0922, aa:'W'}];
+                                {mass:104.0529, aa:'M'},
+                                {mass:110.0713, aa:'H'},
+                                {mass:112.0869, aa:'R-NH3'},
+                                {mass:120.0808, aa:'F'},
+                                {mass:129.1022, aa:'K+CO'},
+                                {mass:130.0863, aa:'K+CO+H2O-NH3'},
+                                {mass:133.0430, aa:'C[CAM]'},
+                                {mass:136.0757, aa:'Y'},
+                                {mass:159.0917, aa:'W'},
+                                {mass:190.0375, aa:'H[Phospho]'},
+                                {mass:216.0426, aa:'Y[Phospho]'}
+                               ];
 
         var immoniumIonMatches = [];
         var labels = [];
