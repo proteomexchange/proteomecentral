@@ -91,7 +91,7 @@ class ProxiSpectra:
 
     ############################################################################################
     #### Top level method to fetch spectra based on the input provided
-    def fetch_spectra(self,resultType, pageSize = None, pageNumber = None, usi = None, accession = None, msRun = None, fileName = None, scan = None, responseContentType = None):
+    def fetch_spectra(self,resultType, pageSize = None, pageNumber = None, usi = None, accession = None, msRun = None, fileName = None, scan = None, annotate = False, responseContentType = None):
 
         #### At present, only USI-based queries are supported
         if usi is None:
@@ -109,6 +109,8 @@ class ProxiSpectra:
         match = re.search(":PXD",usi)
         if match:
             status_code, message = self.fetch_from_PeptideAtlas_ShowObservedSpectrum(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
+            if annotate is True:
+                eprint("INFO: Annotate is TRUE, but not ready to do it yet")
             return(status_code, message)
 
         #### Or otherwise this USI doesn't seem to have an identifier we can deal with
@@ -130,7 +132,7 @@ class ProxiSpectra:
         url_base = '/cgi/spectra?output_format=json&usi='
         url = url_base + usi
 
-        connection = http.client.HTTPConnection(server, 80, timeout=30)
+        connection = http.client.HTTPSConnection(server, timeout=30)
         connection.request("GET", url)
         http_response = connection.getresponse()
         status_code = http_response.status
@@ -187,7 +189,7 @@ class ProxiSpectra:
         #url = url_base + usi
         url = url_base + urllib.parse.quote_plus(usi)
 
-        connection = http.client.HTTPSConnection(server, 443, timeout=30)
+        connection = http.client.HTTPSConnection(server, timeout=30)
         connection.request("GET", url)
         http_response = connection.getresponse()
         status_code = http_response.status
@@ -231,9 +233,9 @@ def main():
   resultType = 'compact'
   #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2')
   #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2')
-  #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXL000006:02-14-2019:index:1250')
+  result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXL000006:02-14-2019:index:1250')
   #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01283_A02_P013187_S00_N09_R1:scan:30190:ELVISYLPPGM[L-methionine sulfoxide]ASK/2')
-  result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01284_E04_P013188_B00_N29_R1.mzML:scan:31291:DQNGTWEM[Oxidation]ESNENFEGYM[Oxidation]K/2')
+  #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01284_E04_P013188_B00_N29_R1.mzML:scan:31291:DQNGTWEM[Oxidation]ESNENFEGYM[Oxidation]K/2')
   
   if result[0] == 200:
       print(spectra.spectra)
