@@ -52,6 +52,7 @@ class ProxiDatasets:
 
         if status_code == 200:
             try:
+                payload = payload.decode('utf-8', 'replace')
                 self.dataset = json.loads(payload)
                 message = { "status": status_code }
             except Exception as error:
