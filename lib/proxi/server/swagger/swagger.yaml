@@ -46,7 +46,7 @@ paths:
         description: "Current page to be shown paged datasets (default page 1)"
         required: false
         type: "integer"
-        default: 0
+        default: 1
       - name: "resultType"
         in: "query"
         description: "Type of the object to be retrieve Compact or Full dataset"
@@ -94,6 +94,16 @@ paths:
         in: "query"
         description: "Search different keywords into all dataset fields, multiple\
           \ terms search can be performed by [liver, brain]"
+        required: false
+        type: "string"
+      - name: "keywords"
+        in: "query"
+        description: "Search the keywords list for exact matches"
+        required: false
+        type: "string"
+      - name: "year"
+        in: "query"
+        description: "Search the keywords list for exact matches"
         required: false
         type: "string"
       responses:
@@ -526,6 +536,11 @@ paths:
         description: "Scan to be searched"
         required: false
         type: "string"
+      - name: "annotate"
+        in: "query"
+        description: "Set to true to annotate the spectra in mzPAF"
+        required: false
+        type: boolean
       responses:
         200:
           description: "Spectrum and metadata of the requested Universal Spectrum\
