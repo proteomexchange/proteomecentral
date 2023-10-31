@@ -29,8 +29,11 @@ def get_dataset(identifier) -> str:
         return(message,status_code)
 
 
-def list_datasets(resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None) -> str:
-    return( { "status": 501, "title": "Endpoint not implemented", "detail": "Although this is an officially defined PROXI endpoint, it has not yet been implemented at this server", "type": "about:blank" }, 501 )
+def list_datasets(resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None) -> str:
+    #return( { "status": 501, "title": "Endpoint not implemented", "detail": "Although this is an officially defined PROXI endpoint, it has not yet been implemented at this server", "type": "about:blank" }, 501 )
+    datasets = ProxiDatasets()
+    status_code,message = datasets.list_datasets(resultType, pageSize, pageNumber, species, accession, instrument, contact, publication, modification, search, keywords, year)
+    return(message,status_code)
 
 
 def get_libraries(pageSize = None, pageNumber = None, resultType = None) -> str:
@@ -51,9 +54,9 @@ def get_proteins(resultType, pageSize = None, pageNumber = None, passThreshold =
 def get_ps_ms(resultType, pageSize = None, pageNumber = None, usi = None, accession = None, msrun = None, fileName = None, scan = None, passThreshold = None, peptideSequence = None, proteinAccession = None, charge = None, modification = None, peptidoform = None) -> str:
     return( { "status": 501, "title": "Endpoint not implemented", "detail": "Although this is an officially defined PROXI endpoint, it has not yet been implemented at this server", "type": "about:blank" }, 501 )
 
-def get_spectra(resultType, pageSize = None, pageNumber = None, usi = None, accession = None, msRun = None, fileName = None, scan = None, responseContentType = None) -> str:
+def get_spectra(resultType, pageSize = None, pageNumber = None, usi = None, accession = None, msRun = None, fileName = None, scan = None, annotate = False, responseContentType = None) -> str:
     spectra = ProxiSpectra()
-    result = spectra.fetch_spectra(resultType, pageSize = pageSize, pageNumber = pageNumber, usi = usi, accession = accession, msRun = msRun, fileName = fileName, scan = scan, responseContentType = responseContentType)
+    result = spectra.fetch_spectra(resultType, pageSize = pageSize, pageNumber = pageNumber, usi = usi, accession = accession, msRun = msRun, fileName = fileName, scan = scan, annotate = annotate, responseContentType = responseContentType)
     if result[0] == 200:
         return(ast.literal_eval(repr(spectra.spectra)), 200)
     else:
