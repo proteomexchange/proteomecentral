@@ -137,7 +137,7 @@ class ProxiDatasets:
         #        where_clause += f" AND {constraint} = '{value}'"
 
         try:
-            session = pymysql.connect(host="mimas", user="proteomecentral", password="PCewd888", database="ProteomeCentral")
+            session = pymysql.connect(host="mimas", user="proteomecentral", password="xx", database="ProteomeCentral")
         except:
             status_block = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
             message['status'] = status_block
