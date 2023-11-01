@@ -319,6 +319,14 @@ class ProxiDatasets:
             value = value.replace('"','')
             if value.strip() == '':
                 continue
+            values = value.split(',')
+            if len(values) > 1:
+                new_values = []
+                for value in values:
+                    value = value.strip()
+                    new_values.append(value)
+                value = new_values
+
             validated_constraints[constraint] = value
 
         if DEBUG:
@@ -347,8 +355,11 @@ class ProxiDatasets:
             for row in rows:
                 keep = True
                 for constraint, value in validated_constraints.items():
-                    if value not in row_match_index[constraint] or irow not in row_match_index[constraint][value]:
-                        keep = False
+                    if isinstance(value, str):
+                        value = [ value ]
+                    for item in value:
+                        if item not in row_match_index[constraint] or irow not in row_match_index[constraint][item]:
+                            keep = False
                 if keep:
                     new_rows.append(row)
                 irow += 1
