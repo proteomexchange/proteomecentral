@@ -16,6 +16,7 @@ import ast
 import http.client
 import pymysql
 
+DEBUG = True
 
 #### Import the Swagger client libraries
 sys.path.append(os.path.dirname(os.path.abspath(__file__))+"/../client/swagger_client")
@@ -27,12 +28,64 @@ class ProxiDatasets:
 
     #### Constructor
     def __init__(self):
+        self.status = 'OK'
+        self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'UNKNOWN_LD95', 'description': 'An improperly handled error has occurred' }
+        self.config = self.get_config()
+        if self.status != 'OK':
+            return
+
+        self.raw_datasets = None
+        got_fresh_datasets = False
+        self.status = self.get_raw_datasets_from_rdbms()
+        if self.status != 'OK':
+            eprint(f"{self.status_response['status']}: {self.status_response['description']}")
+
+            self.load_raw_datasets()
+            if self.status != 'OK':
+                eprint(f"{self.status_response['status']}: {self.status_response['description']}")
+                return
+        else:
+            got_fresh_datasets = True
+
+        if got_fresh_datasets:
+            self.store_raw_datasets()
+            if self.status != 'OK':
+                eprint(f"{self.status_response['status']}: {self.status_response['description']}")
+                return
+
+
+    #### Destructor
+    def __del__(self):
         pass
 
 
     #### Destructor
     def __del__(self):
         pass
+
+
+    #### Get configs
+    def get_config(self):
+        config = {}
+        config_file = os.path.dirname(os.path.abspath(__file__)) + "/../../conf/system.conf"
+        try:
+            with open (config_file) as infile:
+                for line in infile:
+                    line = line.strip()
+                    if len(line) == 0 or line[0] == '#':
+                        continue
+                    key, value = line.split('=',1)
+                    key = key.strip()
+                    value = value.strip()
+                    config[key] = value
+        except:
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
+            eprint(f"ERROR: Unable to open {config_file}")
+            self.status = 'ERROR'
+            return
+
+        self.status = 'OK'
+        return config
 
 
     #### Set the content to an example
@@ -88,22 +141,9 @@ class ProxiDatasets:
         print(json.dumps(ast.literal_eval(repr(self.dataset)),sort_keys=True,indent=2))
 
 
-    #### List datasets
-    def list_datasets(self, resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None):
+    #### Get the raw list of datasets from the MySQL server
+    def get_raw_datasets_from_rdbms(self):
 
-        #### Set up the response message
-        status_block = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'UNKNOWN_LD95', 'description': 'An improperly handled error has occurred' }
-        query_block = { 'resultType': resultType, 'pageSize': pageSize, 'pageNumber': pageNumber, 'species': species, 'accession': accession, 'instrument': instrument,
-                        'contact': contact, 'publication': publication, 'modification': modification, 'search': search, 'keywords': keywords, 'year': year }
-        result_set_block = { 'page_size': 0, 'page_number': 0, 'n_rows_returned': 0, 'n_available_rows': 0 }
-        message = { 'status': status_block, 'query': query_block, 'result_set': result_set_block, 'facets': {} }
-
-        if pageSize is None or pageSize < 1 or pageSize > 10000000:
-            pageSize = 100
-        if pageNumber is None or pageNumber < 1 or pageNumber > 10000000:
-            pageNumber = 1
-        limit_clause = f"LIMIT {pageSize} OFFSET {(pageNumber-1) * pageSize}"
-        order_by_clause = "ORDER BY submissionDate DESC"
         table_name = 'dataset'
         column_data = [
             [ 'dataset identifier', 'datasetIdentifier' ],
@@ -124,24 +164,16 @@ class ProxiDatasets:
         column_clause = ", ".join(column_sql_list)
 
         where_clause = "WHERE status = 'announced'"
-
-        #constraints = { 'instrument': instrument, 'species': species,  }
-        #for constraint,value in constraints.items():
-        #    if value is None or str(value) == '':
-        #        continue
-        #    value = value.replace("'","")
-        #    value = value.replace('"','')
-        #    if value[0] == '~':
-        #        where_clause += f" AND {constraint} LIKE '%{value[1:]}%'"
-        #    else:
-        #        where_clause += f" AND {constraint} = '{value}'"
+        order_by_clause = "ORDER BY submissionDate DESC"
 
         try:
-            session = pymysql.connect(host="mimas", user="proteomecentral", password="xx", database="ProteomeCentral")
+            session = pymysql.connect(host=self.config['DB_serverName'],
+                                      user=self.config['DB_userName'],
+                                      password=self.config['DB_password'],
+                                      database=self.config['DB_databaseName'])
         except:
-            status_block = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
-            message['status'] = status_block
-            return(status_block['status_code'], message)
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
+            return self.status_response['status']
 
         try:
             cursor = session.cursor()
@@ -149,14 +181,63 @@ class ProxiDatasets:
             rows = cursor.fetchall()
             cursor.close()
         except:
-            status_block = { 'status_code': 400, 'status': 'ERROR', 'error_code': 'INPUTERROR', 'description': 'Improper constraints caused query error' }
-            message['status'] = status_block
-            return(status_block['status_code'], message)
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to get datasets from back-end database' }
+            return self.status_response['status']
 
         new_rows = []
         for row in rows:
             new_rows.append(list(row))
-        rows = new_rows
+        self.raw_datasets = new_rows
+        return 'OK'
+
+
+    #### Store raw datasets as obtained from RDBMS
+    def store_raw_datasets(self):
+        if self.raw_datasets is None:
+            eprint(f"ERROR: [datasets.store_raw_datasets]: No raw datasets are available")
+            return 'OK'
+        raw_datasets_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_raw_datasets.json"
+        try:
+            with open(raw_datasets_filepath, 'w') as outfile:
+                json.dump(self.raw_datasets, outfile)
+        except:
+            eprint(f"ERROR: [datasets.store_raw_datasets]: Unable to write raw_datasets to file")
+            return 'OK'
+        return 'OK'
+
+
+    #### Store raw datasets as obtained from RDBMS
+    def load_raw_datasets(self):
+        raw_datasets_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_raw_datasets.json"
+        if not os.path.exists(raw_datasets_filepath):
+            eprint(f"ERROR: [datasets.load_raw_datasets]: No raw datasets file '{raw_datasets_filepath}'")
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Missing raw datasets file' }
+            return self.status_response['status']
+        try:
+            with open(raw_datasets_filepath, 'w') as outfile:
+                json.dump(self.raw_datasets, outfile)
+        except:
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to load raw datasets from file' }
+            return self.status_response['status']
+        return 'OK'
+
+
+    #### List datasets
+    def list_datasets(self, resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None):
+
+        #### Set up the response message
+        self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'UNKNOWN_LD95', 'description': 'An improperly handled error has occurred' }
+        query_block = { 'resultType': resultType, 'pageSize': pageSize, 'pageNumber': pageNumber, 'species': species, 'accession': accession, 'instrument': instrument,
+                        'contact': contact, 'publication': publication, 'modification': modification, 'search': search, 'keywords': keywords, 'year': year }
+        result_set_block = { 'page_size': 0, 'page_number': 0, 'n_rows_returned': 0, 'n_available_rows': 0 }
+        message = { 'status': self.status_response, 'query': query_block, 'result_set': result_set_block, 'facets': {} }
+
+        if pageSize is None or pageSize < 1 or pageSize > 10000000:
+            pageSize = 100
+        if pageNumber is None or pageNumber < 1 or pageNumber > 10000000:
+            pageNumber = 1
+
+        rows = self.raw_datasets
 
         match_count = len(rows)
         facets, row_match_index = self.compute_facets(rows, column_data)
@@ -205,9 +286,9 @@ class ProxiDatasets:
                                   'datasets_title_list': column_title_list }
         message['facets'] = facets
 
-        status_block = { 'status_code': 200, 'status': 'OK', 'error_code': None, 'description': f"Sent {n_rows} datasets" }
-        message['status'] = status_block
-        return(status_block['status_code'], message)
+        self.status_response = { 'status_code': 200, 'status': 'OK', 'error_code': None, 'description': f"Sent {n_rows} datasets" }
+        message['status'] = self.status_response
+        return(self.status_response['status_code'], message)
 
 
     #### Compute the available facets
@@ -303,6 +384,9 @@ def main():
         verbose = 1
 
     proxi_datasets = ProxiDatasets()
+    if proxi_datasets.status != 'OK':
+        eprint("ERROR: Failed to initialize")
+        return
 
     #### Flag for listing all datasets
     if params.list is not None:
