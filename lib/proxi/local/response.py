@@ -82,7 +82,7 @@ class Response:
         :param error_code: A terse, unique string identifying the error (e.g. 'FileNotFound').
         :type error_code: str
         :param http_status: Integer HTTP status code to return (e.g. 400, 404, 500, 200).
-        :type error_code: str
+        :type http_status: str
         """
         self.__add_message( message, self.ERROR )
         self.n_errors += 1
@@ -131,6 +131,7 @@ class Response:
         if response_to_merge.status != 'OK':
             self.status = response_to_merge.status
             self.error_code = response_to_merge.error_code
+            self.http_status = response_to_merge.http_status
             self.message = response_to_merge.message
 
 
