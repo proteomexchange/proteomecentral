@@ -15,6 +15,10 @@ import json
 import ast
 import http.client
 import pymysql
+import socket
+import copy
+from datetime import datetime, timezone
+import timeit
 
 DEBUG = True
 
@@ -33,6 +37,18 @@ class ProxiDatasets:
         self.config = self.get_config()
         if self.status != 'OK':
             return
+
+        self.column_data = [
+            [ 'dataset identifier', 'datasetIdentifier' ],
+            [ 'title', 'title' ],
+            [ 'repository', 'PXPartner' ],
+            [ 'species', 'species' ],
+            [ 'instrument', 'instrument' ],
+            [ 'publication', 'publication' ],
+            [ 'lab head', 'labHead' ],
+            [ 'announce date', "DATE_FORMAT(submissionDate,'%Y-%m-%d')" ],
+            [ 'keywords', 'keywordList' ]
+        ]
 
         self.raw_datasets = None
         got_fresh_datasets = False
@@ -53,6 +69,11 @@ class ProxiDatasets:
                 eprint(f"{self.status_response['status']}: {self.status_response['description']}")
                 return
 
+        self.scrubbed_rows = None
+        self.scrub_data(self.raw_datasets)
+
+        self.default_facets, self.default_row_match_index = self.compute_facets(self.scrubbed_rows)
+
 
     #### Destructor
     def __del__(self):
@@ -62,12 +83,16 @@ class ProxiDatasets:
     #### Destructor
     def __del__(self):
         pass
+
+
 
 
     #### Get configs
     def get_config(self):
         config = {}
         config_file = os.path.dirname(os.path.abspath(__file__)) + "/../../conf/system.conf"
+        if DEBUG:
+            eprint(f"DEBUG: Loading configs from '{config_file}'")
         try:
             with open (config_file) as infile:
                 for line in infile:
@@ -86,6 +111,8 @@ class ProxiDatasets:
 
         self.status = 'OK'
         return config
+
+
 
 
     #### Set the content to an example
@@ -135,27 +162,26 @@ class ProxiDatasets:
         return(status_code, { "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" } )
 
 
+
+
     #### Print the contents of the dataset object
     def show(self):
         print("Dataset:")
         print(json.dumps(ast.literal_eval(repr(self.dataset)),sort_keys=True,indent=2))
 
 
+
+
     #### Get the raw list of datasets from the MySQL server
     def get_raw_datasets_from_rdbms(self):
 
+        if socket.gethostname() == 'WALDORF':
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
+            return self.status_response['status']
+
         table_name = 'dataset'
-        column_data = [
-            [ 'dataset identifier', 'datasetIdentifier' ],
-            [ 'title', 'title' ],
-            [ 'repository', 'PXPartner' ],
-            [ 'species', 'species' ],
-            [ 'instrument', 'instrument' ],
-            [ 'publication', 'publication' ],
-            [ 'lab head', 'labHead' ],
-            [ 'announce date', "DATE_FORMAT(submissionDate,'%Y-%m-%d')" ],
-            [ 'keywords', 'keywordList' ]
-        ]
+        column_data = self.column_data
+
         column_sql_list = []
         column_title_list = []
         for column in column_data:
@@ -166,6 +192,8 @@ class ProxiDatasets:
         where_clause = "WHERE status = 'announced'"
         order_by_clause = "ORDER BY submissionDate DESC"
 
+        if DEBUG:
+            eprint(f"DEBUG: Connecting to MySQL RDBMS on {self.config['DB_serverName']}")
         try:
             session = pymysql.connect(host=self.config['DB_serverName'],
                                       user=self.config['DB_userName'],
@@ -188,7 +216,11 @@ class ProxiDatasets:
         for row in rows:
             new_rows.append(list(row))
         self.raw_datasets = new_rows
-        return 'OK'
+
+        self.status = 'OK'
+        return self.status
+
+
 
 
     #### Store raw datasets as obtained from RDBMS
@@ -197,13 +229,19 @@ class ProxiDatasets:
             eprint(f"ERROR: [datasets.store_raw_datasets]: No raw datasets are available")
             return 'OK'
         raw_datasets_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_raw_datasets.json"
+        if DEBUG:
+            eprint(f"DEBUG: Storing raw datasets to '{raw_datasets_filepath}'")
         try:
             with open(raw_datasets_filepath, 'w') as outfile:
                 json.dump(self.raw_datasets, outfile)
         except:
             eprint(f"ERROR: [datasets.store_raw_datasets]: Unable to write raw_datasets to file")
             return 'OK'
-        return 'OK'
+
+        self.status = 'OK'
+        return self.status
+
+
 
 
     #### Store raw datasets as obtained from RDBMS
@@ -213,17 +251,30 @@ class ProxiDatasets:
             eprint(f"ERROR: [datasets.load_raw_datasets]: No raw datasets file '{raw_datasets_filepath}'")
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Missing raw datasets file' }
             return self.status_response['status']
+
+        if DEBUG:
+            eprint(f"DEBUG: Loading raw datasets from '{raw_datasets_filepath}'")
         try:
-            with open(raw_datasets_filepath, 'w') as outfile:
-                json.dump(self.raw_datasets, outfile)
+            with open(raw_datasets_filepath,) as infile:
+                self.raw_datasets = json.load(infile)
         except:
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to load raw datasets from file' }
             return self.status_response['status']
-        return 'OK'
+
+        self.status = 'OK'
+        return self.status
+
+
 
 
     #### List datasets
     def list_datasets(self, resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None):
+
+        DEBUG = True
+
+        if DEBUG:
+            t0 = timeit.default_timer()
+            eprint(f"({(t0-t0):.4f}): Start list_datasets()")
 
         #### Set up the response message
         self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'UNKNOWN_LD95', 'description': 'An improperly handled error has occurred' }
@@ -237,41 +288,82 @@ class ProxiDatasets:
         if pageNumber is None or pageNumber < 1 or pageNumber > 10000000:
             pageNumber = 1
 
-        rows = self.raw_datasets
+        #### Prepare column information
+        column_data = self.column_data
+        column_title_list = []
+        for column in column_data:
+            column_title_list.append(column[0])
 
-        match_count = len(rows)
-        facets, row_match_index = self.compute_facets(rows, column_data)
+        #### Check the constraints for validity
+        handled_constraints = { 'instrument': instrument, 'species': species, 'keywords': keywords, 'year': year }
+        validated_constraints = {}
+        for constraint, value in handled_constraints.items():
+            if value is None or str(value).strip() == '':
+                continue
+            value = value.replace("'","")
+            value = value.replace('"','')
+            if value.strip() == '':
+                continue
+            validated_constraints[constraint] = value
 
-        irow = 0
-        new_rows = []
-        constraints = { 'instrument': instrument, 'species': species, 'keywords': keywords, 'year': year }
-        for row in rows:
-            keep = True
-            for constraint,value in constraints.items():
-                if value is None or str(value) == '':
-                    continue
-                value = value.replace("'","")
-                value = value.replace('"','')
-                if value not in row_match_index[constraint] or irow not in row_match_index[constraint][value]:
-                    keep = False
-            if keep:
-                new_rows.append(row)
-            irow += 1
-        rows = new_rows
+        if DEBUG:
+            t1 = timeit.default_timer()
+            eprint(f"({(t1-t0):.4f}): Setup complete")
+            t0 = t1
 
-        match_count = len(rows)
-        facets, row_match_index = self.compute_facets(rows, column_data)
+        #### Use the cached scrubbed rows as the starter
+        rows = self.scrubbed_rows
+
+        if DEBUG:
+            t1 = timeit.default_timer()
+            eprint(f"({(t1-t0):.4f}): rows copied")
+            t0 = t1
+
+        #### If there are no usable constraints, they just use the cached facets and row_match_index data, no need to do it again
+        if len(validated_constraints) == 0:
+            facets = self.default_facets
+            row_match_index = self.default_row_match_index
+        else:
+            facets, row_match_index = self.compute_facets(rows)
+
+            #### Apply the supplied constraints
+            irow = 0
+            new_rows = []
+            for row in rows:
+                keep = True
+                for constraint, value in validated_constraints.items():
+                    if value not in row_match_index[constraint] or irow not in row_match_index[constraint][value]:
+                        keep = False
+                if keep:
+                    new_rows.append(row)
+                irow += 1
+            rows = new_rows
+
+            #### Recompute the facets on the filtered rows
+            facets, row_match_index = self.compute_facets(rows)
+
+        if DEBUG:
+            t1 = timeit.default_timer()
+            eprint(f"({(t1-t0):.4f}): facets and row_match_index obtained")
+            t0 = t1
 
         #### Filter for the page size and page that the client requested
-        datasets = []
+        #### FIXME This could be more efficient. don't loop over all rows
+        match_count = len(rows)
+        new_rows = []
         irow = 1
         start_row = (pageNumber - 1) * pageSize + 1
         n_rows = 0
         for row in rows:
             if irow >= start_row and n_rows < pageSize:
-                datasets.append(row)
+                new_rows.append(row)
                 n_rows += 1
             irow += 1
+
+        if DEBUG:
+            t1 = timeit.default_timer()
+            eprint(f"({(t1-t0):.4f}): Filtered rows")
+            t0 = t1
 
         #### Compute the number of available pages
         n_available_pages = match_count * 1.0 / pageSize
@@ -280,19 +372,70 @@ class ProxiDatasets:
         else:
             n_available_pages = int(n_available_pages) +1
 
-        message['datasets'] = datasets
+        message['datasets'] = new_rows
         message['result_set'] = { 'page_size': pageSize, 'page_number': pageNumber, 'n_rows_returned': n_rows,
                                   'n_available_rows': match_count, 'n_available_pages': n_available_pages,
                                   'datasets_title_list': column_title_list }
         message['facets'] = facets
+
+        if DEBUG:
+            t1 = timeit.default_timer()
+            eprint(f"({(t1-t0):.4f}): Done")
+            t0 = t1
 
         self.status_response = { 'status_code': 200, 'status': 'OK', 'error_code': None, 'description': f"Sent {n_rows} datasets" }
         message['status'] = self.status_response
         return(self.status_response['status_code'], message)
 
 
+
+
+    #### Scrub the data of known problems to create a clean dataset to work with
+    def scrub_data(self, rows):
+
+        if DEBUG:
+            eprint(f"DEBUG: Scrubbing {len(rows)} rows")
+
+        columns_to_scrub = { 'species': 3, 'instrument': 4, 'keywords': 8 }
+        scrubbed_rows = []
+
+        #### Iterate through all rows and scrub the known problems
+        irow = 0
+        for row in rows:
+            for column_name, icolumn in columns_to_scrub.items():
+
+                values_str = row[icolumn]
+                if column_name == 'keywords':
+                    values_str = values_str.replace('submitter keyword:','')
+                    values_str = values_str.replace('curator keyword:','')
+                if column_name == 'instrument model:':
+                    values_str = values_str.replace('instrument model:','')
+                values_str = values_str.replace("'",'')
+                values_str = values_str.replace(';',',')
+                values = values_str.split(',')
+
+                cell_items = {}
+                for value in values:
+                    value = value.strip()
+                    if value == '':
+                        continue
+                    cell_items[value] = True
+
+            scrubbed_row = row.copy()
+            scrubbed_row[icolumn] = ", ".join(sorted(list(cell_items.keys())))
+            scrubbed_rows.append(scrubbed_row)
+            irow += 1
+
+        if DEBUG:
+            eprint(f"DEBUG: Scrubbed {irow} rows")
+        self.scrubbed_rows = scrubbed_rows
+        return
+    
+
+
+
     #### Compute the available facets
-    def compute_facets(self, rows, column_data):
+    def compute_facets(self, rows):
 
         facet_data = { 'species': {}, 'instrument': {}, 'keywords': {}, 'year': {} }
         facets_to_extract = { 'species': 3, 'instrument': 4, 'keywords': 8, 'year': 7 }
@@ -313,25 +456,11 @@ class ProxiDatasets:
             for facet_name, icolumn in facets_to_extract.items():
 
                 values_str = row[icolumn]
-                if facet_name == 'keywords':
-                    values_str = values_str.replace('submitter keyword:','')
-                    values_str = values_str.replace('curator keyword:','')
-                if facet_name == 'instrument model:':
-                    values_str = values_str.replace('instrument model:','')
-                if facet_name == 'year':
-                    values_str = values_str[0:4]
-                values_str = values_str.replace("'",'')
-                values_str = values_str.replace(';',',')
                 values = values_str.split(',')
-                suffix = ''
-                if len(values) > 1 and facet_name != 'keywords':
-                    #suffix = '+'
-                    suffix = ''
 
                 cell_items = {}
                 for value in values:
-                    value = value.strip() + suffix
-                    #value = value.strip(';') + suffix
+                    value = value.strip()
                     if value == '':
                         continue
                     if value.lower() in useless_keywords:
@@ -383,6 +512,11 @@ def main():
     if verbose is None:
         verbose = 1
 
+    if verbose > 0:
+        timestamp = str(datetime.now().isoformat())
+        t0 = timeit.default_timer()
+        eprint(f"{timestamp} ({(t0-t0):.4f}): Create ProxiDatasets object")
+
     proxi_datasets = ProxiDatasets()
     if proxi_datasets.status != 'OK':
         eprint("ERROR: Failed to initialize")
@@ -390,8 +524,23 @@ def main():
 
     #### Flag for listing all datasets
     if params.list is not None:
-        status_code, message = proxi_datasets.list_datasets('compact', pageSize=2)
-        print(json.dumps(message, indent=2))
+        if verbose > 0:
+            timestamp = str(datetime.now().isoformat())
+            t1 = timeit.default_timer()
+            eprint(f"{timestamp} ({(t1-t0):.4f}): Call list_datasets()")
+            t0 = t1
+        status_code, message = proxi_datasets.list_datasets('compact', pageSize=2, keywords='TMT')
+
+        if verbose > 0:
+            timestamp = str(datetime.now().isoformat())
+            t1 = timeit.default_timer()
+            eprint(f"{timestamp} ({(t1-t0):.4f}): list_datasets() is done")
+            t0 = t1
+
+        eprint(f"{timestamp}: INFO: {len(message['datasets'])} datasets returned")
+
+        if verbose > 1:
+            print(json.dumps(message, indent=2))
         return
 
     id = 'PXD011825'
