@@ -253,6 +253,7 @@ class ProxiDatasets:
 
     #### Store raw datasets as obtained from RDBMS
     def load_raw_datasets(self):
+
         raw_datasets_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_raw_datasets.json"
         if not os.path.exists(raw_datasets_filepath):
             eprint(f"ERROR: [datasets.load_raw_datasets]: No raw datasets file '{raw_datasets_filepath}'")
@@ -262,12 +263,18 @@ class ProxiDatasets:
         if DEBUG:
             timestamp = str(datetime.now().isoformat())
             eprint(f"{timestamp}: DEBUG: Loading raw datasets from '{raw_datasets_filepath}'")
+            t0 = timeit.default_timer()
         try:
             with open(raw_datasets_filepath,) as infile:
                 self.raw_datasets = json.load(infile)
         except:
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to load raw datasets from file' }
             return self.status_response['status']
+
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            t1 = timeit.default_timer()
+            eprint(f"{timestamp}: DEBUG: Loaded raw datasets in {(t1-t0):.4f} seconds")
 
         self.status = 'OK'
         return self.status
@@ -464,6 +471,9 @@ class ProxiDatasets:
             for facet_name, icolumn in facets_to_extract.items():
 
                 values_str = row[icolumn]
+                if facet_name == 'year':
+                    values_str = values_str[0:4]
+ 
                 values = values_str.split(',')
 
                 cell_items = {}
