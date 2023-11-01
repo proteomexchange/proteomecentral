@@ -6,6 +6,7 @@ def eprint(*args, **kwargs):
 import os
 import sys
 import ast
+import copy
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__))+"/../../local")
 sys.path.append(os.path.dirname(os.path.abspath(__file__))+"/../../client/swagger_client")
@@ -19,6 +20,8 @@ from proxi_libraries import ProxiLibraries
 from usi_validator import UsiValidator
 from usi_examples import UsiExamples
 
+master_datasets = ProxiDatasets()
+
 
 def get_dataset(identifier) -> str:
     datasets = ProxiDatasets()
@@ -31,7 +34,7 @@ def get_dataset(identifier) -> str:
 
 def list_datasets(resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None) -> str:
     #return( { "status": 501, "title": "Endpoint not implemented", "detail": "Although this is an officially defined PROXI endpoint, it has not yet been implemented at this server", "type": "about:blank" }, 501 )
-    datasets = ProxiDatasets()
+    datasets = copy.deepcopy(master_datasets)
     status_code,message = datasets.list_datasets(resultType, pageSize, pageNumber, species, accession, instrument, contact, publication, modification, search, keywords, year)
     return(message,status_code)
 
