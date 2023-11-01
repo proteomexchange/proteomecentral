@@ -32,10 +32,10 @@ def get_dataset(identifier) -> str:
         return(message,status_code)
 
 
-def list_datasets(resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None) -> str:
+def list_datasets(resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None, outputFormat = None) -> str:
     #return( { "status": 501, "title": "Endpoint not implemented", "detail": "Although this is an officially defined PROXI endpoint, it has not yet been implemented at this server", "type": "about:blank" }, 501 )
     datasets = copy.deepcopy(master_datasets)
-    status_code,message = datasets.list_datasets(resultType, pageSize, pageNumber, species, accession, instrument, contact, publication, modification, search, keywords, year)
+    status_code,message = datasets.list_datasets(resultType, pageSize, pageNumber, species, accession, instrument, contact, publication, modification, search, keywords, year, outputFormat)
     return(message,status_code)
 
 
