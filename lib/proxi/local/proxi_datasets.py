@@ -283,7 +283,7 @@ class ProxiDatasets:
 
 
     #### List datasets
-    def list_datasets(self, resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None):
+    def list_datasets(self, resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None, outputFormat = None):
 
         DEBUG = True
 
@@ -423,7 +423,7 @@ class ProxiDatasets:
                 if column_name == 'keywords':
                     values_str = values_str.replace('submitter keyword:','')
                     values_str = values_str.replace('curator keyword:','')
-                if column_name == 'instrument model:':
+                if column_name == 'instrument':
                     values_str = values_str.replace('instrument model:','')
                 values_str = values_str.replace("'",'')
                 values_str = values_str.replace(';',',')
