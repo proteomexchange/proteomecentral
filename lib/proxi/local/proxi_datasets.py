@@ -92,7 +92,9 @@ class ProxiDatasets:
         config = {}
         config_file = os.path.dirname(os.path.abspath(__file__)) + "/../../conf/system.conf"
         if DEBUG:
-            eprint(f"DEBUG: Loading configs from '{config_file}'")
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: DEBUG: Loading configs from '{config_file}'")
+
         try:
             with open (config_file) as infile:
                 for line in infile:
@@ -193,7 +195,8 @@ class ProxiDatasets:
         order_by_clause = "ORDER BY submissionDate DESC"
 
         if DEBUG:
-            eprint(f"DEBUG: Connecting to MySQL RDBMS on {self.config['DB_serverName']}")
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: DEBUG: Connecting to MySQL RDBMS on {self.config['DB_serverName']}")
         try:
             session = pymysql.connect(host=self.config['DB_serverName'],
                                       user=self.config['DB_userName'],
@@ -203,6 +206,9 @@ class ProxiDatasets:
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
             return self.status_response['status']
 
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: DEBUG: Fetching all announced datasets from RDBMS")
         try:
             cursor = session.cursor()
             cursor.execute(f"SELECT {column_clause} FROM {table_name} {where_clause} {order_by_clause}")
@@ -230,7 +236,8 @@ class ProxiDatasets:
             return 'OK'
         raw_datasets_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_raw_datasets.json"
         if DEBUG:
-            eprint(f"DEBUG: Storing raw datasets to '{raw_datasets_filepath}'")
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: DEBUG: Storing raw datasets to '{raw_datasets_filepath}'")
         try:
             with open(raw_datasets_filepath, 'w') as outfile:
                 json.dump(self.raw_datasets, outfile)
@@ -253,7 +260,8 @@ class ProxiDatasets:
             return self.status_response['status']
 
         if DEBUG:
-            eprint(f"DEBUG: Loading raw datasets from '{raw_datasets_filepath}'")
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: DEBUG: Loading raw datasets from '{raw_datasets_filepath}'")
         try:
             with open(raw_datasets_filepath,) as infile:
                 self.raw_datasets = json.load(infile)
