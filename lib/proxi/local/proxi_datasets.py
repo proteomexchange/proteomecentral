@@ -417,9 +417,10 @@ class ProxiDatasets:
         #### Iterate through all rows and scrub the known problems
         irow = 0
         for row in rows:
+            scrubbed_row = row.copy()
             for column_name, icolumn in columns_to_scrub.items():
 
-                values_str = row[icolumn]
+                values_str = scrubbed_row[icolumn]
                 if column_name == 'keywords':
                     values_str = values_str.replace('submitter keyword:','')
                     values_str = values_str.replace('curator keyword:','')
@@ -436,8 +437,8 @@ class ProxiDatasets:
                         continue
                     cell_items[value] = True
 
-            scrubbed_row = row.copy()
-            scrubbed_row[icolumn] = ", ".join(sorted(list(cell_items.keys())))
+                scrubbed_row[icolumn] = ", ".join(sorted(list(cell_items.keys())))
+
             scrubbed_rows.append(scrubbed_row)
             irow += 1
 
