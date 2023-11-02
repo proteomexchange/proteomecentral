@@ -425,7 +425,7 @@ class ProxiDatasets:
         message['status'] = self.status_response
 
         mimetype = 'application/json'
-        if outputFormat.lower() == 'tsv':
+        if outputFormat is not None and outputFormat.lower() == 'tsv':
             mimetype = 'text/tab-separated-values'
             message = message['datasets']
         return(self.status_response['status_code'], message, mimetype)
