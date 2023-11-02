@@ -70,6 +70,7 @@ class ProxiDatasets:
                 return
 
         self.scrubbed_rows = None
+        self.scrubbed_lower_string_rows = None
         self.scrub_data(self.raw_datasets)
 
         self.default_facets, self.default_row_match_index = self.compute_facets(self.scrubbed_rows)
@@ -310,7 +311,7 @@ class ProxiDatasets:
             column_title_list.append(column[0])
 
         #### Check the constraints for validity
-        handled_constraints = { 'instrument': instrument, 'species': species, 'keywords': keywords, 'year': year }
+        handled_constraints = { 'instrument': instrument, 'species': species, 'keywords': keywords, 'year': year, 'search': search }
         validated_constraints = {}
         for constraint, value in handled_constraints.items():
             if value is None or str(value).strip() == '':
@@ -355,11 +356,22 @@ class ProxiDatasets:
             for row in rows:
                 keep = True
                 for constraint, value in validated_constraints.items():
+                    if not keep:
+                        break
                     if isinstance(value, str):
                         value = [ value ]
-                    for item in value:
-                        if item not in row_match_index[constraint] or irow not in row_match_index[constraint][item]:
-                            keep = False
+                    if constraint != 'search':
+                        for item in value:
+                            if item not in row_match_index[constraint] or irow not in row_match_index[constraint][item]:
+                                keep = False
+                                break
+
+                    else:
+                        for item in value:
+                            if item.lower() not in self.scrubbed_lower_string_rows[irow]:
+                                keep = False
+                                break
+
                 if keep:
                     new_rows.append(row)
                 irow += 1
@@ -424,11 +436,18 @@ class ProxiDatasets:
 
         columns_to_scrub = { 'species': 3, 'instrument': 4, 'keywords': 8 }
         scrubbed_rows = []
+        scrubbed_lower_string_rows = []
 
         #### Iterate through all rows and scrub the known problems
         irow = 0
         for row in rows:
             scrubbed_row = row.copy()
+
+            #### Replace Nones with empty strings
+            for i in range(len(scrubbed_row)):
+                if scrubbed_row[i] is None:
+                    scrubbed_row[i] = ''
+
             for column_name, icolumn in columns_to_scrub.items():
 
                 values_str = scrubbed_row[icolumn]
@@ -451,11 +470,14 @@ class ProxiDatasets:
                 scrubbed_row[icolumn] = ", ".join(sorted(list(cell_items.keys())))
 
             scrubbed_rows.append(scrubbed_row)
+            lower_string_row = "\t".join(scrubbed_row).lower()
+            scrubbed_lower_string_rows.append(lower_string_row)
             irow += 1
 
         if DEBUG:
             eprint(f"DEBUG: Scrubbed {irow} rows")
         self.scrubbed_rows = scrubbed_rows
+        self.scrubbed_lower_string_rows = scrubbed_lower_string_rows
         return
     
 
@@ -559,7 +581,7 @@ def main():
             t1 = timeit.default_timer()
             eprint(f"{timestamp} ({(t1-t0):.4f}): Call list_datasets()")
             t0 = t1
-        status_code, message = proxi_datasets.list_datasets('compact', pageSize=2, keywords='TMT')
+        status_code, message = proxi_datasets.list_datasets('compact', pageSize=2, keywords='TMT', search='prod,christ')
 
         if verbose > 0:
             timestamp = str(datetime.now().isoformat())
