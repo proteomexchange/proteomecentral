@@ -423,7 +423,12 @@ class ProxiDatasets:
 
         self.status_response = { 'status_code': 200, 'status': 'OK', 'error_code': None, 'description': f"Sent {n_rows} datasets" }
         message['status'] = self.status_response
-        return(self.status_response['status_code'], message)
+
+        mimetype = 'application/json'
+        if outputFormat.lower() == 'tsv':
+            mimetype = 'text/tab-separated-values'
+            message = message['datasets']
+        return(self.status_response['status_code'], message, mimetype)
 
 
 
