@@ -155,6 +155,20 @@ class ProxiDatasets:
 
 
 
+    #### Refresh the in-memory datasets if they are sufficiently stale
+    def refresh_data_if_stale(self):
+
+        refresh_interval = 600
+        current_timestamp = datetime.now().timestamp()
+        if DEBUG:
+            eprint(f"INFO: {int(current_timestamp - self.last_refresh_timestamp)} seconds since last refresh")
+        if current_timestamp - self.last_refresh_timestamp > refresh_interval:
+            eprint(f"INFO: After more than {refresh_interval} seconds, it is time to refresh the data from the RDBMS")
+            self.refresh_data()
+
+
+
+
     #### Refresh the in-memory datasets
     def refresh_data(self):
 
@@ -188,7 +202,9 @@ class ProxiDatasets:
         #### Compute and store the default set of facet data
         self.default_facets, self.default_row_match_index = self.compute_facets(self.scrubbed_rows)
 
-        self.last_refresh_timestamp = datetime.now().timestamp()
+        current_timestamp = datetime.now().timestamp()
+        eprint(f"INFO: Storing new last_refresh_timestamp {current_timestamp}")
+        self.last_refresh_timestamp = current_timestamp
 
 
 
@@ -320,14 +336,6 @@ class ProxiDatasets:
             pageSize = 100
         if pageNumber is None or pageNumber < 1 or pageNumber > 10000000:
             pageNumber = 1
-
-        #### Refresh if the data are a little stale
-        current_timestemp = datetime.now().timestamp()
-        if DEBUG:
-            eprint(f"INFO: {int(current_timestemp - self.last_refresh_timestamp)} seconds since last refresh")
-        if current_timestemp - self.last_refresh_timestamp > 60:
-            eprint(f"INFO: Time to refresh the data from RDBMS")
-            self.refresh_data()
 
         #### Prepare column information
         column_data = self.column_data
