@@ -51,34 +51,14 @@ class ProxiDatasets:
         ]
 
         self.raw_datasets = None
-        got_fresh_datasets = False
-        self.status = self.get_raw_datasets_from_rdbms()
-        if self.status != 'OK':
-            eprint(f"{self.status_response['status']}: {self.status_response['description']}")
-
-            self.load_raw_datasets()
-            if self.status != 'OK':
-                eprint(f"{self.status_response['status']}: {self.status_response['description']}")
-                return
-        else:
-            got_fresh_datasets = True
-
-        if got_fresh_datasets:
-            self.store_raw_datasets()
-            if self.status != 'OK':
-                eprint(f"{self.status_response['status']}: {self.status_response['description']}")
-                return
-
         self.scrubbed_rows = None
         self.scrubbed_lower_string_rows = None
-        self.scrub_data(self.raw_datasets)
+        self.default_facets = None
+        self.default_row_match_index = None
+        self.last_refresh_timestamp = None
 
-        self.default_facets, self.default_row_match_index = self.compute_facets(self.scrubbed_rows)
+        self.refresh_data()
 
-
-    #### Destructor
-    def __del__(self):
-        pass
 
 
     #### Destructor
@@ -172,6 +152,43 @@ class ProxiDatasets:
         print("Dataset:")
         print(json.dumps(ast.literal_eval(repr(self.dataset)),sort_keys=True,indent=2))
 
+
+
+
+    #### Refresh the in-memory datasets
+    def refresh_data(self):
+
+        #### Get a fresh set of datasets from the RDBMS
+        got_fresh_datasets = False
+        self.status = self.get_raw_datasets_from_rdbms()
+
+        #### If this didn't work, then try to load our previous cache
+        if self.status != 'OK':
+            eprint(f"{self.status_response['status']}: {self.status_response['description']}")
+
+            self.load_raw_datasets()
+            if self.status != 'OK':
+                eprint(f"{self.status_response['status']}: {self.status_response['description']}")
+                return
+        else:
+            got_fresh_datasets = True
+
+        #### If we just got new results from the RDBMS, then store a copy in case we need it later
+        if got_fresh_datasets:
+            self.store_raw_datasets()
+            if self.status != 'OK':
+                eprint(f"{self.status_response['status']}: {self.status_response['description']}")
+                return
+
+        #### Scrub the data
+        self.scrubbed_rows = None
+        self.scrubbed_lower_string_rows = None
+        self.scrub_data(self.raw_datasets)
+
+        #### Compute and store the default set of facet data
+        self.default_facets, self.default_row_match_index = self.compute_facets(self.scrubbed_rows)
+
+        self.last_refresh_timestamp = datetime.now().timestamp()
 
 
 
@@ -303,6 +320,14 @@ class ProxiDatasets:
             pageSize = 100
         if pageNumber is None or pageNumber < 1 or pageNumber > 10000000:
             pageNumber = 1
+
+        #### Refresh if the data are a little stale
+        current_timestemp = datetime.now().timestamp()
+        if DEBUG:
+            eprint(f"INFO: {int(current_timestemp - self.last_refresh_timestamp)} seconds since last refresh")
+        if current_timestemp - self.last_refresh_timestamp > 60:
+            eprint(f"INFO: Time to refresh the data from RDBMS")
+            self.refresh_data()
 
         #### Prepare column information
         column_data = self.column_data
@@ -586,7 +611,7 @@ def main():
             t1 = timeit.default_timer()
             eprint(f"{timestamp} ({(t1-t0):.4f}): Call list_datasets()")
             t0 = t1
-        status_code, message = proxi_datasets.list_datasets('compact', pageSize=2, keywords='TMT', search='prod,christ')
+        status_code, message, mimetype = proxi_datasets.list_datasets('compact', pageSize=2, keywords='TMT', search='prod,christ')
 
         if verbose > 0:
             timestamp = str(datetime.now().isoformat())
