@@ -475,6 +475,19 @@ class ProxiDatasets:
         columns_to_scrub = { 'species': 3, 'instrument': 4, 'keywords': 8 }
         scrubbed_rows = []
         scrubbed_lower_string_rows = []
+        corrections = { 'species':
+            { 'human': 'Homo sapiens',
+              'saccharomyces cerevisiae': 'Saccharomyces cerevisiae (Bakers yeast)',
+              'arabidopsis thaliana': 'Arabidopsis thaliana (Mouse-ear cress)'
+            },
+            'instrument':
+            { 'qexactive plus (thermo)': 'Q Exactive Plus',
+              'q-exactive': 'Q Exactive',
+              'q-exactive plus': 'Q Exactive Plus',
+              'q-exactive hf': 'Q Exactive HF',
+              'qexactive': 'Q Exactive',
+            }
+        }
 
         #### Iterate through all rows and scrub the known problems
         irow = 0
@@ -503,6 +516,13 @@ class ProxiDatasets:
                     value = value.strip()
                     if value == '':
                         continue
+
+                    #### Apply corrections
+                    value_lower = value.lower()
+                    if column_name in corrections and value_lower in corrections[column_name]:
+                        value = corrections[column_name][value_lower]
+                        eprint(f"-- Correct {value_lower} to {corrections[column_name][value_lower]}")
+
                     cell_items[value] = True
 
                 scrubbed_row[icolumn] = ", ".join(sorted(list(cell_items.keys())))
@@ -529,6 +549,7 @@ class ProxiDatasets:
         useless_keyword_list = [ 'proteomics', 'LC-MS/MS', 'LC-MSMS', 'Biological', 'human','mouse', 'mass spectrometry',
                                  'proteome', 'Arabidopsis', 'Arabidopsis thaliana', 'Biomedical', 'Biomedical;  Human',
                                  'proteomic', 'Yeast' ]
+
         useless_keywords = {}
         for word in useless_keyword_list:
             useless_keywords[word.lower()] = True
@@ -553,7 +574,7 @@ class ProxiDatasets:
                     value = value.strip()
                     if value == '':
                         continue
-                    if value.lower() in useless_keywords:
+                    if facet_name == 'keywords' and value.lower() in useless_keywords:
                         continue
                     if value not in facet_data[facet_name]:
                         facet_data[facet_name][value] = 0
