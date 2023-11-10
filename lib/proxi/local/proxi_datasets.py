@@ -478,7 +478,12 @@ class ProxiDatasets:
         corrections = { 'species':
             { 'human': 'Homo sapiens',
               'saccharomyces cerevisiae': 'Saccharomyces cerevisiae (Bakers yeast)',
-              'arabidopsis thaliana': 'Arabidopsis thaliana (Mouse-ear cress)'
+              'arabidopsis thaliana': 'Arabidopsis thaliana (Mouse-ear cress)',
+              'drosophila melanogaster': 'Drosophila melanogaster (Fruit fly)',
+              'sus scrofa': 'Sus scrofa domesticus (domestic pig)',
+              'sus scrofa domesticus': 'Sus scrofa domesticus (domestic pig)',
+              'mus <mouse genus>': 'Mus musculus',
+              'mus <genus>': 'Mus musculus',
             },
             'instrument':
             { 'qexactive plus (thermo)': 'Q Exactive Plus',
@@ -509,6 +514,7 @@ class ProxiDatasets:
                     values_str = values_str.replace('instrument model:','')
                 values_str = values_str.replace("'",'')
                 values_str = values_str.replace(';',',')
+                values_str = values_str.replace(', genus',' genus')
                 values = values_str.split(',')
 
                 cell_items = {}
