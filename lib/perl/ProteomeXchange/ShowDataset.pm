@@ -1090,7 +1090,7 @@ sub showDataset {
     #### Show the dataset information window
     print qq~
        <div id="main">
-       <a class="linkback" href="$CGI_BASE_DIR/GetDataset$teststr"> &lt;&lt;&lt; Full experiment listing </a>
+       <a class="linkback" href="../$teststr"> &lt;&lt;&lt; Full experiment listing </a>
        <div id="dataset-primary" class="site-content">
        <h1 class="dataset-title">$fullDatasetIDstr</h1>
     ~;

@@ -1,5 +1,5 @@
 var _api = {};
-_api['datasets'] = "/devED/api/proxi/v0.1/datasets";
+_api['datasets'] = "/api/proxi/v0.1/datasets";
 _api['query'] = {};
 var _ordered_facets = ['search','species','keywords','instrument','year'];
 var _render_overview = true;
@@ -412,7 +412,7 @@ function add_resultset_table(data) {
 	    if (fnum == 1) {
 		span = document.createElement("a");
 		span.target = 'pxdetail';
-		span.href = "/cgi/GetDataset?ID="+value;
+		span.href = "cgi/GetDataset?ID="+value;
 		span.appendChild(document.createTextNode(value));
                 span.title = 'view full details for this dataset';
 		td.appendChild(span);
