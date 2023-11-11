@@ -401,9 +401,14 @@ class ProxiDatasets:
 
                     else:
                         for item in value:
-                            if item.lower() not in self.scrubbed_lower_string_rows[irow]:
-                                keep = False
-                                break
+                            if item == 'PRIDEbug':
+                                if 'pubmed/0' not in row[5] and 'PXD0' not in row[5] and 'dx.doi.org/http' not in row[5]:
+                                    keep = False
+                                    break
+                            else:
+                                if item.lower() not in self.scrubbed_lower_string_rows[irow]:
+                                    keep = False
+                                    break
 
                 if keep:
                     new_rows.append(row)
