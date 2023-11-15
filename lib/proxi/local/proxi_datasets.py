@@ -559,7 +559,7 @@ class ProxiDatasets:
         facets_to_extract = { 'species': 3, 'instrument': 4, 'keywords': 8, 'year': 7 }
         useless_keyword_list = [ 'proteomics', 'LC-MS/MS', 'LC-MSMS', 'Biological', 'human','mouse', 'mass spectrometry',
                                  'proteome', 'Arabidopsis', 'Arabidopsis thaliana', 'Biomedical', 'Biomedical;  Human',
-                                 'proteomic', 'Yeast' ]
+                                 'proteomic', 'Yeast', 'Technical' ]
 
         useless_keywords = {}
         for word in useless_keyword_list:
