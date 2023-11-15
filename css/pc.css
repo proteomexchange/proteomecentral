@@ -5,8 +5,8 @@
 }
 
 .sectbox {
-    margin-left: 20px;
-    margin-bottom: 20px;
+    margin-right: 5px;
+    margin-bottom: 15px;
     width: 300px;
     border-radius: 10px;
     border: 2px solid #444;
@@ -143,6 +143,7 @@ a:hover, .filterlink:hover {
 }
 
 .pagecontrols {
+    min-width: 1000px;
     position: absolute;
     left: 210px;
     border: 2px solid #444;
@@ -169,7 +170,22 @@ tr:nth-child(even) {
     background: #ddd;
 }
 
+
 .loading_cell {
+    display: inline-block;
+    overflow: hidden;
+    height: 29px;
+    width: 100%;
+}
+.loading_bar {
+    display: inline-block;
+    background-color: #aaa;
+    width: 50%;
+    height: 100%;
+    animation: 1.4s left-right linear infinite;
+}
+
+.loading_cell_pc {
     display: inline-block;
     overflow: hidden;
     padding: 0;
@@ -179,7 +195,7 @@ tr:nth-child(even) {
     border: 1px solid #000;
     background-color: #2c99ce;
 }
-.loading_bar {
+.loading_bar_pc {
     display: inline-block;
     background-color: #f26722;
     border: 1px solid #3d6d98;
@@ -187,6 +203,7 @@ tr:nth-child(even) {
     height: 100%;
     animation: 1s left-right linear infinite;
 }
+
 @keyframes left-right {
     0%   { transform:translateX(-100%); }
     100% { transform:translateX(300%); }

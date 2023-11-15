@@ -1,24 +1,43 @@
 var _api = {};
 _api['datasets'] = "/api/proxi/v0.1/datasets";
 _api['query'] = {};
-var _ordered_facets = ['search','species','keywords','instrument','year'];
+var _ordered_facets = ['search','species','year','instrument','keywords'];
 var _render_overview = true;
 
 function main() {
-    get_datasets(null,null,null);
+    var f = parse_querystring();
+    get_datasets(f,null,null);
+}
+
+
+function parse_querystring() {
+    var had_params = false;
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.forEach((value, key) => {
+	_api['query'][key] = value;
+	had_params = true;
+    });
+    return had_params;
 }
 
 
 function get_datasets(filter,value,action) {
+    var barwidth = document.getElementById('toppagecontrolbar') ? document.getElementById('toppagecontrolbar').clientWidth : "1063px";
+
     var results_node = document.getElementById("results");
     results_node.innerHTML = '';
     results_node.className = '';
 
-    var wait = getAnimatedWaitBar("100px");
-    wait.style.marginLeft = "50px";
-    wait.style.marginRight = "10px";
+    var wait = getAnimatedWaitBar(barwidth);
+    wait.style.padding = 0;
+    var span = document.createElement("h3");
+    span.style.position = "relative";
+    span.style.top = "-8px";
+    span.style.display = "inline";
+    span.appendChild(document.createTextNode("Loading..."));
+    wait.appendChild(span);
     results_node.appendChild(wait);
-    results_node.appendChild(document.createTextNode('Loading...'));
+
 
     if (value && value.startsWith('fromPCUI:')) {
 	var htmlid = value.replace('fromPCUI:','');
@@ -67,9 +86,22 @@ function get_datasets(filter,value,action) {
 	    else throw new Error('Unable to fetch data '+apiurl);
 	})
         .then(data => {
+	    var newurl = window.location.href.split('?')[0];
+	    var delim = '?';
 	    for (var q in data['query']) {
-		if (data.query[q])
+		if (data.query[q]) {
 		    _api['query'][q] = data.query[q];
+		    if (q == 'resultType')
+			continue;
+		    if (q == 'pageNumber' && data.query[q] == 1)
+			continue;
+		    if (q == 'pageSize' && data.query[q] == 100)
+			continue;
+
+		    newurl += delim + q + '=' + data.query[q];
+		    delim = "&";
+
+		}
 		else
 		    _api['query'][q] = null;
 	    }
@@ -82,8 +114,9 @@ function get_datasets(filter,value,action) {
 	    add_resultset_table(data);
 	    if (_render_overview) {
 		render_overview_wheels(data);
-		_render_overview = false;  // uncomment to run only once
+		//_render_overview = false;  // uncomment to run only once
 	    }
+	    window.history.pushState({ html: document.documentElement.outerHTML }, 'ProteomeCentral Datasets query', newurl);
 
         })
         .catch(error => {
@@ -115,6 +148,19 @@ function render_overview_wheels(data) {
 	    total += item['count'];
             if (num++ == 9)
                 break;
+	}
+
+	if (total == 0) {
+            var txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            txt.setAttribute('x', 150);
+            txt.setAttribute('y', 80);
+            txt.setAttribute('text-anchor', 'middle');
+            txt.setAttribute('font-size', '32');
+            txt.setAttribute('fill', '#aaa');
+	    txt.innerHTML = "No Data";
+            container.appendChild(txt);
+            svg.appendChild(container);
+	    continue;
 	}
 
 	num = 0;
@@ -325,7 +371,7 @@ function add_filter_controls(data) {
     span.style.position = "absolute";
     span.title = 'search!';
     span.setAttribute('onclick', 'get_datasets("search","fromPCUI:textsearch","add");');
-    span.appendChild(document.createTextNode('\u{1F50E}'));
+    span.appendChild(document.createTextNode('\u{1F50E}\u{FE0E}'));
     div.appendChild(span);
 
     div.appendChild(document.createElement("br"));
@@ -384,7 +430,7 @@ function add_resultset_table(data) {
         return;
     }
 
-    results_node.appendChild(add_page_controls(data));
+    results_node.appendChild(add_page_controls(data,'toppagecontrolbar'));
     results_node.appendChild(document.createElement("br"));
     results_node.appendChild(document.createElement("br"));
     results_node.appendChild(document.createElement("br"));
@@ -445,16 +491,18 @@ function add_resultset_table(data) {
     results_node.appendChild(table);
     results_node.appendChild(document.createElement("br"));
     if (data['result_set']['n_rows_returned'] > 10)
-	results_node.appendChild(add_page_controls(data));
+	results_node.appendChild(add_page_controls(data,null));
     results_node.appendChild(document.createElement("br"));
     results_node.appendChild(document.createElement("br"));
 
 }
 
 
-function add_page_controls(data) {
+function add_page_controls(data,htmlid) {
     var div = document.createElement("div");
     div.className = 'pagecontrols';
+    if (htmlid)
+	div.id = htmlid;
     var span;
 
     var pages = [1];
@@ -463,7 +511,6 @@ function add_page_controls(data) {
     pages.push(Number(data['result_set']['n_available_pages']));
 
     span = document.createElement("h3");
-    span.style.marginLeft = "10px";
     span.style.display = "inline";
     span.appendChild(document.createTextNode("Viewing "+data['result_set']['n_rows_returned']+" out of "+data['result_set']['n_available_rows']+" datasets"));
     div.appendChild(span);
@@ -588,7 +635,7 @@ function mas_o_menos(name) {
 
 function getAnimatedWaitBar(width) {
     var wait = document.createElement("span");
-    wait.className = 'loading_cell';
+    wait.className = 'pagecontrols loading_cell';
     if (width)
 	wait.style.width = width;
     var waitbar = document.createElement("span");
@@ -596,3 +643,8 @@ function getAnimatedWaitBar(width) {
     wait.appendChild(waitbar);
     return wait;
 }
+
+window.onpopstate = function(e){
+    if(e.state)
+	document.documentElement.innerHTML = e.state.html;
+};
