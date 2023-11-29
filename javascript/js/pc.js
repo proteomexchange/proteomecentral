@@ -1,7 +1,7 @@
 var _api = {};
 _api['datasets'] = "/api/proxi/v0.1/datasets";
 _api['query'] = {};
-var _ordered_facets = ['search','species','year','instrument','keywords'];
+var _ordered_facets = ['search','species','year','instrument','keywords','repository'];
 var _render_overview = true;
 
 function main() {
@@ -22,6 +22,11 @@ function parse_querystring() {
 
 
 function get_datasets(filter,value,action) {
+    if (value && value.startsWith('fromPCUI:'))
+	value = document.getElementById(value.replace('fromPCUI:','')).value;
+    if (filter == 'search' && value.length < 3)
+	return;
+
     var barwidth = document.getElementById('toppagecontrolbar') ? document.getElementById('toppagecontrolbar').clientWidth : "1063px";
 
     var results_node = document.getElementById("results");
@@ -38,11 +43,6 @@ function get_datasets(filter,value,action) {
     wait.appendChild(span);
     results_node.appendChild(wait);
 
-
-    if (value && value.startsWith('fromPCUI:')) {
-	var htmlid = value.replace('fromPCUI:','');
-	value = document.getElementById(htmlid).value;
-    }
 
     var apiurl = _api.datasets + '?src=PCUI';
     if (filter) {
@@ -182,7 +182,7 @@ function render_overview_wheels(data) {
 	    arc.setAttribute('stroke-dasharray', [strokeDasharray,circumference - strokeDasharray]);
 	    arc.setAttribute('stroke-dashoffset', strokeOffset);
 	    arc.setAttribute('fill', 'transparent');
-            arc.setAttribute('onmouseover', 'showstats("'+thing+'","'+item['count']+'","'+item['name']+'","'+palette[num]+'")');
+            arc.setAttribute('onmouseover', 'showstats("'+thing+'","'+item['count']+'","'+data['result_set']['n_available_rows']+'","'+item['name']+'","'+palette[num]+'")');
 	    link.appendChild(arc);
 	    container.appendChild(link);
 
@@ -224,14 +224,17 @@ function render_overview_wheels(data) {
 	svg.appendChild(container);
 
         if (_render_overview)  // first time
-	    showstats(thing,data.facets[thing][0]['count'],data.facets[thing][0]['name'],palette[0]);
+	    showstats(thing,data.facets[thing][0]['count'],data['result_set']['n_available_rows'],data.facets[thing][0]['name'],palette[0]);
 
     }
 }
 
-function showstats(type,amount,value,color) {
+function showstats(type,amount,nrows,value,color) {
+    var pct = amount/nrows;
+    pct = (100 * pct).toFixed((pct<0.1?1:0));
+
     document.getElementById("center_"+type).setAttribute('fill', color);
-    document.getElementById("stats1_"+type).innerHTML = amount+" datasets";
+    document.getElementById("stats1_"+type).innerHTML = amount+" datasets ("+pct+"%)";
     document.getElementById("stats2_"+type).innerHTML = value;
 }
 
@@ -363,11 +366,13 @@ function add_filter_controls(data) {
     div.appendChild(span);
     var i = document.createElement('input');
     i.id = "textsearch";
+    i.title = "term must be at least 3 characters in length";
     i.setAttribute('onkeydown', "submit_on_enter(this);");
     i.style.width = "95%";
     div.appendChild(i);
     span = document.createElement("span");
-    span.className = "filtertag";
+    span.className = "buttonlike";
+    span.style.padding = "2px 5px";
     span.style.position = "absolute";
     span.title = 'search!';
     span.setAttribute('onclick', 'get_datasets("search","fromPCUI:textsearch","add");');
@@ -398,7 +403,9 @@ function add_filter_controls(data) {
 	span.id = facet + '_head';
 	span.className = "dataset-secthead";
 	span.style.textTransform = 'capitalize';
-	span.appendChild(document.createTextNode('Top '+facet));
+
+	var adj = facet == "year" ? 'Announce ' : facet == "repository" ? '' : 'Top ';
+	span.appendChild(document.createTextNode(adj+facet));
 	if (div2.scrollHeight > 200) {
             span.className = "dataset-secthead filterlink mas";
             span.setAttribute('onclick', 'mas_o_menos("'+facet+'");');
@@ -455,34 +462,33 @@ function add_resultset_table(data) {
 	    fnum++;
             td = document.createElement("td");
 	    // MEH!
+            var span = document.createElement("span");
 	    if (fnum == 1) {
 		span = document.createElement("a");
 		span.target = 'pxdetail';
 		span.href = "cgi/GetDataset?ID="+value;
-		span.appendChild(document.createTextNode(value));
                 span.title = 'view full details for this dataset';
-		td.appendChild(span);
 	    }
             else if (fnum == 4) {
 		span = document.createElement("a");
 		span.style.fontWeight = "normal";
 		span.setAttribute('onclick', 'get_datasets("species","'+value+'","set");');
 		span.title = 'filter table by species = '+value;
-		span.appendChild(document.createTextNode(value));
-		td.appendChild(span);
 	    }
             else if (fnum == 5) {
 		span = document.createElement("a");
 		span.style.fontWeight = "normal";
 		span.setAttribute('onclick', 'get_datasets("instrument","'+value+'","set");');
 		span.title = 'filter table by instrument = '+value;
-		span.appendChild(document.createTextNode(value));
+	    }
+
+	    if (fnum == 6)
+		td.innerHTML = value;
+	    else {
+		span.innerHTML = hightlight(value);
 		td.appendChild(span);
 	    }
-	    else if (fnum == 6)
-		td.innerHTML = value;
-	    else
-		td.appendChild(document.createTextNode(value));
+
             tr.appendChild(td);
 	}
 	table.appendChild(tr);
@@ -495,6 +501,17 @@ function add_resultset_table(data) {
     results_node.appendChild(document.createElement("br"));
     results_node.appendChild(document.createElement("br"));
 
+}
+
+
+function hightlight(string) {
+    if (_api.query['search']) {
+	for (var val of _api.query['search'].split(',')) {
+	    var reg = new RegExp('('+val+')', 'gi');
+	    string = string.replace(reg,'<span title="matches search term: '+val+'" class="highlight">$1</span>');
+	}
+    }
+    return string;
 }
 
 
@@ -580,7 +597,7 @@ function add_page_controls(data,htmlid) {
 
     var separator = '';
     for (var format of ['tsv','json']) {
-	var url = _api.datasets + '?src=pyjamasdown';
+	var url = _api.datasets + '?src=PCUIdownload&outputFormat=' + format;
 	for (var q in _api.query) {
 	    value = _api.query[q];
             if (q =='pageNumber')
@@ -592,7 +609,6 @@ function add_page_controls(data,htmlid) {
 
 	    if (value)
 		url += "&" + q + '=' + value;
-	    url += "&outputFormat=" + format;
 	}
 
 	var span = document.createElement("a");

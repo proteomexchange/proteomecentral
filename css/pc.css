@@ -7,7 +7,7 @@
 .sectbox {
     margin-right: 5px;
     margin-bottom: 15px;
-    width: 300px;
+    width: 308px;
     border-radius: 10px;
     border: 2px solid #444;
     display: inline-block;
@@ -143,7 +143,7 @@ a:hover, .filterlink:hover {
 }
 
 .pagecontrols {
-    min-width: 1000px;
+    min-width: 998px;
     position: absolute;
     left: 210px;
     border: 2px solid #444;
@@ -168,6 +168,10 @@ td:nth-child(8) {
 }
 tr:nth-child(even) {
     background: #ddd;
+}
+
+.highlight {
+    background: #ff5;
 }
 
 
