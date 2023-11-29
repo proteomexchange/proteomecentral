@@ -39,10 +39,12 @@ def get_dataset(identifier) -> str:
         return(message,status_code)
 
 
-def list_datasets(resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None, outputFormat = None) -> str:
-    #return( { "status": 501, "title": "Endpoint not implemented", "detail": "Although this is an officially defined PROXI endpoint, it has not yet been implemented at this server", "type": "about:blank" }, 501 )
+def list_datasets(resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None, repository = None, outputFormat = None) -> str:
+
+    master_datasets.refresh_data_if_stale()
+
     datasets = copy.deepcopy(master_datasets)
-    status_code, message, mimetype = datasets.list_datasets(resultType, pageSize, pageNumber, species, accession, instrument, contact, publication, modification, search, keywords, year, outputFormat)
+    status_code, message, mimetype = datasets.list_datasets(resultType, pageSize, pageNumber, species, accession, instrument, contact, publication, modification, search, keywords, year, repository, outputFormat)
 
     if outputFormat is not None and outputFormat.lower() == 'tsv':
         

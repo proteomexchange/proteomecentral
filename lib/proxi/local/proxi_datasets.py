@@ -317,7 +317,7 @@ class ProxiDatasets:
 
 
     #### List datasets
-    def list_datasets(self, resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None, outputFormat = None):
+    def list_datasets(self, resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None, repository = None, outputFormat = None):
 
         DEBUG = True
 
@@ -328,7 +328,7 @@ class ProxiDatasets:
         #### Set up the response message
         self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'UNKNOWN_LD95', 'description': 'An improperly handled error has occurred' }
         query_block = { 'resultType': resultType, 'pageSize': pageSize, 'pageNumber': pageNumber, 'species': species, 'accession': accession, 'instrument': instrument,
-                        'contact': contact, 'publication': publication, 'modification': modification, 'search': search, 'keywords': keywords, 'year': year }
+                        'contact': contact, 'publication': publication, 'modification': modification, 'search': search, 'keywords': keywords, 'year': year, 'repository': repository }
         result_set_block = { 'page_size': 0, 'page_number': 0, 'n_rows_returned': 0, 'n_available_rows': 0 }
         message = { 'status': self.status_response, 'query': query_block, 'result_set': result_set_block, 'facets': {} }
 
@@ -344,7 +344,7 @@ class ProxiDatasets:
             column_title_list.append(column[0])
 
         #### Check the constraints for validity
-        handled_constraints = { 'instrument': instrument, 'species': species, 'keywords': keywords, 'year': year, 'search': search }
+        handled_constraints = { 'instrument': instrument, 'species': species, 'keywords': keywords, 'year': year, 'repository': repository, 'search': search }
         validated_constraints = {}
         for constraint, value in handled_constraints.items():
             if value is None or str(value).strip() == '':
@@ -555,8 +555,8 @@ class ProxiDatasets:
     #### Compute the available facets
     def compute_facets(self, rows):
 
-        facet_data = { 'species': {}, 'instrument': {}, 'keywords': {}, 'year': {} }
-        facets_to_extract = { 'species': 3, 'instrument': 4, 'keywords': 8, 'year': 7 }
+        facet_data = { 'species': {}, 'instrument': {}, 'keywords': {}, 'year': {}, 'repository': {} }
+        facets_to_extract = { 'repository': 2, 'species': 3, 'instrument': 4, 'keywords': 8, 'year': 7, }
         useless_keyword_list = [ 'proteomics', 'LC-MS/MS', 'LC-MSMS', 'Biological', 'human','mouse', 'mass spectrometry',
                                  'proteome', 'Arabidopsis', 'Arabidopsis thaliana', 'Biomedical', 'Biomedical;  Human',
                                  'proteomic', 'Yeast', 'Technical' ]
