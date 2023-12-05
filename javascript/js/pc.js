@@ -1,12 +1,21 @@
 var _api = {};
-_api['datasets'] = "/api/proxi/v0.1/datasets";
-_api['query'] = {};
 var _ordered_facets = ['search','species','year','instrument','keywords','repository'];
 var _render_overview = true;
 
 function main() {
+    _api['query'] = {};
     var f = parse_querystring();
-    get_datasets(f,null,null);
+
+    fetch("./proxi_config.json")
+	.then(response => response.json())
+	.then(config => {
+	    _api['datasets'] = config.API_URL +"datasets";
+	    get_datasets(f,null,null);
+	})
+        .catch(error => {
+            _api['datasets'] = "/api/proxi/v0.1/datasets";
+	    get_datasets(f,null,null);
+	});
 }
 
 
