@@ -17,6 +17,8 @@ import ast
 import http.client
 import urllib.parse
 
+from ms2pip import predict_single
+
 #### Import the Swagger client libraries
 sys.path.append(os.path.dirname(os.path.abspath(__file__))+"/../client/swagger_client")
 from models.spectrum import Spectrum
@@ -224,23 +226,83 @@ class ProxiSpectra:
         return({ "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" }, status_code )
 
 
+    ############################################################################################
+    #### Fetch an individual spectrum from PeptideAtlas's ShowObservedSpectrum system
+    def fetch_from_MS2PIP(self,resultType, pageSize = None, pageNumber = None, usi = None, accession = None, msRun = None, fileName = None, scan = None, responseContentType = None):
+
+        if usi is None:
+            status_code = 400
+            message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string as input", "type": "about:blank" }
+            return(status_code, message)
+
+        components = usi.split(':')
+
+        if len(components) < 6:
+            status_code = 400
+            message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string with a peptidoform component", "type": "about:blank" }
+            return(status_code, message)
+
+        peptidoform = components[5]
+        model = "HCD"
+
+        processing_result = predict_single(peptidoform, model=model)
+        predicted_spectrum = processing_result.as_spectra()[0]  # index 0 is the predicted spectrum (observed is None)
+
+        spectrum = Spectrum()
+        spectrum.usi = usi
+        spectrum.id = "0"
+        spectrum.attributes = [
+            OntologyTerm("MS:1000744","selected ion m/z","473.1234"),
+            OntologyTerm("MS:1000041","charge state","2"),
+            OntologyTerm("MS:1009007","scan number","17555"),
+            OntologyTerm("MS:1000586","contact name","Ralf Gabriels","11"),
+            OntologyTerm("MS:1000590","contact affiliation","VIB","11")
+        ]
+
+        spectrum.mzs = list(predicted_spectrum.mz)
+        for i in range(len(spectrum.mzs)):
+            spectrum.mzs[i] = float(spectrum.mzs[i])
+        spectrum.intensities = list(predicted_spectrum.intensity)
+        for i in range(len(spectrum.intensities)):
+            spectrum.intensities[i] = float(spectrum.intensities[i])
+        spectrum.interpretations = list(predicted_spectrum.annotations)
+        print(spectrum)
+
+        self.spectra = [ spectrum.to_dict() ]
+        status_code = 200
+        message = { "status": status_code, "title": "Data fetched", "detail": "MS2PIP prediction successful", "type": "about:blank" }
+        return(status_code, message)
+
+
+
 ################################################################################################
 #### If this class is run from the command line, perform a short little test to see if it is working correctly
 def main():
 
-  spectra = ProxiSpectra()
-  #spectra.set_to_example()
-  resultType = 'compact'
-  #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2')
-  #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2')
-  result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXL000006:02-14-2019:index:1250')
-  #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01283_A02_P013187_S00_N09_R1:scan:30190:ELVISYLPPGM[L-methionine sulfoxide]ASK/2')
-  #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01284_E04_P013188_B00_N29_R1.mzML:scan:31291:DQNGTWEM[Oxidation]ESNENFEGYM[Oxidation]K/2')
-  
-  if result[0] == 200:
-      print(spectra.spectra)
-  else:
-      print(result)
+    spectra = ProxiSpectra()
+    example = 2
+
+    if example == 0:
+        spectra.set_to_example()
+        result = [ 200 ]
+
+    elif example == 1:
+        resultType = 'compact'
+        #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2')
+        #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2')
+        result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXL000006:02-14-2019:index:1250')
+        #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01283_A02_P013187_S00_N09_R1:scan:30190:ELVISYLPPGM[L-methionine sulfoxide]ASK/2')
+        #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01284_E04_P013188_B00_N29_R1.mzML:scan:31291:DQNGTWEM[Oxidation]ESNENFEGYM[Oxidation]K/2')
+    
+    elif example == 2:
+        resultType = 'compact'
+        result = spectra.fetch_from_MS2PIP(resultType, usi = 'mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2')
+
+    if result[0] == 200:
+        #print(spectra.spectra)
+        print(json.dumps(spectra.spectra,sort_keys=True,indent=2))
+    else:
+        print(result)
 
 if __name__ == "__main__": main()
 
