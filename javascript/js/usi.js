@@ -11,8 +11,8 @@ var usi_data = {
 			  "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=INSERT_USI_HERE" },
     "PRIDE"           : { "url" : "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
 			  "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=INSERT_USI_HERE" },
-    "ProteomeCentral" : { "url" : "../../devED/api/proxi/v0.1/spectra?resultType=full&usi=" },
-    "MS2PIP"          : { "url" : "../../devED/api/proxi/v0.1/spectra?resultType=full&accession=MS2PIP&usi=",
+    "ProteomeCentral" : { "url" : "../api/proxi/v0.1/spectra?resultType=full&usi=" },
+    "MS2PIP"          : { "url" : "../api/proxi/v0.1/spectra?resultType=full&accession=MS2PIP&usi=",
                           "view": "https://compomics.github.io/projects/ms2pip_c" }
 };
 
