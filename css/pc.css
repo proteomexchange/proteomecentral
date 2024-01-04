@@ -35,13 +35,20 @@ a:hover, .filterlink:hover {
 }
 
 .pcdatatable {
-    border-collapse: collapse;
+    border-spacing: 0px;
+    border-bottom: 2px solid #444;
 }
 .pcdatatable th {
     border-bottom: 2px solid #444;
 }
 .pcdatatable td {
     padding: 2px;
+}
+
+.stickyrow th {
+    background-color: #f4f6f8;
+    position: sticky;
+    top: 0px;
 }
 
 .buttonfake {

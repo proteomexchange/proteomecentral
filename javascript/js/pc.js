@@ -1,5 +1,5 @@
 var _api = {};
-var _ordered_facets = ['search','species','year','instrument','keywords','repository'];
+const _ordered_facets = ['search','species','year','instrument','keywords','repository'];
 var _render_overview = true;
 
 function main() {
@@ -53,7 +53,7 @@ function get_datasets(filter,value,action) {
     results_node.appendChild(wait);
 
 
-    var apiurl = _api.datasets + '?src=PCUI';
+    var apiurl = _api.datasets + '?src=PCUI&resultType=compact';
     if (filter) {
 	for (var q in _api.query) {
 	    if (filter == q) {
@@ -454,6 +454,7 @@ function add_resultset_table(data) {
     var table = document.createElement("table");
     table.className = "pcdatatable coursetext";
     var tr = document.createElement("tr");
+    tr.className = "stickyrow";
     var td;
 
     for (var f of data['result_set']['datasets_title_list']) {
