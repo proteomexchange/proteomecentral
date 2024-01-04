@@ -1,19 +1,19 @@
-var api_url = '../api/proxi/v0.1/';
-
-var validate_url = api_url + 'usi_validator';
-var examples_url = api_url + 'usi_examples';
+var _api = {};
+var _done = 0;
+var _dispec = false;
 
 var usi_data = {
+    "iProX"           : { "url" : "https://www.iprox.cn/proxi/spectra?resultType=full&usi=" },
     "jPOST"           : { "url" : "https://repository.jpostdb.org/proxi/spectra?resultType=full&usi=" },
     "MassIVE"         : { "url" : "https://massive.ucsd.edu/ProteoSAFe/proxi/v0.1/spectra?resultType=full&usi=" ,
-			  "view": "https://massive.ucsd.edu/ProteoSAFe/usi.jsp#{\"usi\":\"" ,
-			  "weiv": "\"}" },
+			  "view": "https://massive.ucsd.edu/ProteoSAFe/usi.jsp#{\"usi\":\"INSERT_USI_HERE\"}" },
     "PeptideAtlas"    : { "url" : "https://peptideatlas.org/api/proxi/v0.1/spectra?resultType=full&usi=" ,
-			  "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=" },
+			  "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=INSERT_USI_HERE" },
     "PRIDE"           : { "url" : "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
-			  "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=" },
-    "ProteomeCentral" : { "url" : "https://proteomecentral.proteomexchange.org/devED/api/proxi/v0.1/spectra?resultType=full&usi=" },
-    "MS2PIP"          : { "url" : "https://proteomecentral.proteomexchange.org/devED/api/proxi/v0.1/spectra?resultType=full&accession=MS2PIP&usi=" }
+			  "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=INSERT_USI_HERE" },
+    "ProteomeCentral" : { "url" : "../../devED/api/proxi/v0.1/spectra?resultType=full&usi=" },
+    "MS2PIP"          : { "url" : "../../devED/api/proxi/v0.1/spectra?resultType=full&accession=MS2PIP&usi=",
+                          "view": "https://compomics.github.io/projects/ms2pip_c" }
 };
 
 var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730", "UNIMOD:731", "UNIMOD:737", "UNIMOD:738", "UNIMOD:739", "UNIMOD:889", "UNIMOD:984", "UNIMOD:985", "UNIMOD:1341", "UNIMOD:1342", "UNIMOD:2015", "UNIMOD:2016", "UNIMOD:2017", "UNIMOD:2050" ];
@@ -21,6 +21,21 @@ var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730",
 var _peptidoform = null;
 
 function init() {
+    fetch("./proxi_config.json")
+        .then(response => response.json())
+        .then(config => {
+            _api['validate'] = config.API_URL +"usi_validator";
+            _api['examples'] = config.API_URL +"usi_examples";
+	    init2();
+        })
+        .catch(error => {
+            _api['validate'] = "/api/proxi/v0.1/usi_validator";
+            _api['examples'] = "/api/proxi/v0.1/usi_examples";
+            init2();
+        });
+}
+
+function init2() {
     const params = new URLSearchParams(window.location.search);
     if (params.has('usi')) {
 	document.getElementById("usi_input").value = params.get('usi');
@@ -68,7 +83,7 @@ async function validate_usi(carryon) {
     clear_element("main");
     clear_element("spec");
 
-    var response = await fetch(validate_url, {
+    var response = await fetch(_api['validate'], {
 	method: 'post',
 	headers: {
 	    'Accept': 'application/json',
@@ -258,10 +273,24 @@ async function check_usi() {
     clear_element("spec");
     document.getElementById("usi_stat").classList.add("running");
 
-    var done = 0;
-    var dispec = false;
-    for (let p in usi_data) {
+    _done = 0;
+    _dispec = false;
+    get_usi_from(null);
+}
+
+function get_usi_from(where) {
+    if (!where) {
+	where = Object.keys(usi_data);
+	const i = where.indexOf("MS2PIP");
+	if (i > -1)
+	    where.splice(i, 1);
+    }
+
+    const usi = document.getElementById("usi_input").value;
+    for (let p of where) {
 	var url = usi_data[p].url + encodeURIComponent(usi);
+	if (p == "MS2PIP" && document.getElementById("MS2PIP_model"))
+	    url += "&msRun=" + document.getElementById("MS2PIP_model").value;
 
         var ccell = document.getElementById(p+"_msg");
         ccell.title = "view raw response from API";
@@ -278,11 +307,13 @@ async function check_usi() {
             })
             .then(response => response.json())
             .then(alldata => {
+		if (p == "ProteomeCentral")
+		    get_usi_from(["MS2PIP"]);
 		try {
-		    done++;
-		    if (done == Object.keys(usi_data).length) {
+		    _done++;
+		    if (_done == Object.keys(usi_data).length) {
 			document.getElementById("usi_stat").classList.remove("running");
-			if (!dispec)
+			if (!_dispec)
 			    displayMsg("spec","USI not found at any of the repositories!");
 		    }
                     var cell = document.getElementById(p+"_msg");
@@ -414,7 +445,8 @@ async function check_usi() {
                             if (att.accession == "MS:1003061") s.fileName    = att.value;
 			}
 		    }
-
+		    if (p == "MS2PIP")
+			s.fileName = "PREDICTED SPECTRUM FOR: "+s.fileName;
 
 		    if (has_spectrum) {
 			usi_data[p].lori_data = s;
@@ -425,8 +457,8 @@ async function check_usi() {
 			cell.setAttribute('onclick', 'renderLorikeet("spec","'+p+'");');
 			cell.innerHTML = s.fileName;
 
-			if(!dispec) {
-			    dispec = true;
+			if(!_dispec) {
+			    _dispec = true;
 			    renderLorikeet("spec",p);
 			}
 		    }
@@ -442,10 +474,10 @@ async function check_usi() {
 		}
             })
             .catch(error => {
-		done++;
-		if (done == Object.keys(usi_data).length) {
+		_done++;
+		if (_done == Object.keys(usi_data).length) {
 		    document.getElementById("usi_stat").classList.remove("running");
-                    if (!dispec)
+                    if (!_dispec)
                         displayMsg("spec","USI not found at any of the repositories!");
 		}
 
@@ -537,6 +569,7 @@ function renderLorikeet(divid,src) {
     document.getElementById(src+"_current").innerHTML = "&#128202;";
     document.getElementById(src+"_current").title = "This spectrum/PSM is currently being displayed below";
 
+
     $('#'+divid).specview({"sequence":s.sequence,
 			   "scanNum":s.scanNum,
 			   "charge":s.charge,
@@ -560,6 +593,19 @@ function renderLorikeet(divid,src) {
 			   "maxNeutralLossCount":s.maxNeutralLossCount,
 			   "labelReporters":s.reporterIons,
 			   "peaks":s.ms2peaks});
+
+    const title = document.createElement("h1");
+    title.style.marginLeft = "280px";
+    if (src == "MS2PIP") {
+	title.className = "title invalid";
+	title.innerHTML = "PREDICTED spectrum from "+src;
+    }
+    else {
+	title.className = "title valid";
+	title.innerHTML = "Observed spectrum from "+src;
+    }
+    const sdiv = document.getElementById(divid);
+    sdiv.insertBefore(title, sdiv.children[0]);
 }
 
 
@@ -604,13 +650,30 @@ function render_tables(usi) {
 
 	if (usi_data[rname].view) {
 	    var link = document.createElement("a");
-	    link.href = usi_data[rname].view + usi;
-            if (usi_data[rname].weiv)
-		link.href += usi_data[rname].weiv;
-	    link.title = "View in "+rname;
+	    link.href = usi_data[rname].view.replace("INSERT_USI_HERE", usi);
+	    if (link.href == usi_data[rname].view)
+		link.title = "Visit "+rname;
+	    else
+		link.title = "View in "+rname;
 	    link.target = rname+"_spec";
             link.appendChild(document.createTextNode(rname));
             td.appendChild(link);
+
+            if (rname == "MS2PIP") {
+		var sel = document.createElement('select');
+		sel.id = "MS2PIP_model";
+		sel.style.marginLeft = "10px";
+		sel.title = "Select prediction model";
+		sel.setAttribute('onchange', 'reload("MS2PIP");');
+		for (var model of [ 'HCD', 'HCD2019', 'HCD2021', 'CID', 'iTRAQ', 'iTRAQphospho', 'TMT', 'TTOF5600', 'HCDch2', 'CIDch2', 'Immuno-HCD', 'CID-TMT' ]) {
+		    var opt = document.createElement('option');
+		    opt.value = model;
+		    opt.innerText = model;
+		    sel.appendChild(opt);
+		}
+		td.appendChild(sel);
+	    }
+
 	}
 	else
             td.appendChild(document.createTextNode(rname));
@@ -642,6 +705,18 @@ function render_tables(usi) {
     document.getElementById("main").appendChild(document.createElement("br"));
     document.getElementById("main").appendChild(document.createElement("br"));
 }
+
+function reload(provider) {
+    for (var thing of ["_msg","_spectrum","_json"]) {
+	document.getElementById(provider+thing).innerText = '-- processing request --';
+	document.getElementById(provider+thing).className = '';
+    }
+    _dispec = false;
+    _done--;
+    document.getElementById("usi_stat").classList.add("running");
+    get_usi_from([provider]);
+}
+
 
 function pick_box_example(anchor) {
     document.getElementById('usi_input').value=anchor.innerHTML;
@@ -677,7 +752,7 @@ function update_usi_input(sel) {
 
 // not used at the moment...
 function retrieve_example_usis() {
-    fetch(examples_url)
+    fetch(_api['examples'])
         .then(response => response.json())
         .then(data => {
             try {
