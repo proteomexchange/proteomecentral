@@ -12,7 +12,8 @@ var usi_data = {
 			  "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=" },
     "PRIDE"           : { "url" : "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
 			  "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=" },
-    "ProteomeCentral" : { "url" : "https://proteomecentral.proteomexchange.org/api/proxi/v0.1/spectra?resultType=full&usi=" }
+    "ProteomeCentral" : { "url" : "https://proteomecentral.proteomexchange.org/devED/api/proxi/v0.1/spectra?resultType=full&usi=" },
+    "MS2PIP"          : { "url" : "https://proteomecentral.proteomexchange.org/devED/api/proxi/v0.1/spectra?resultType=full&accession=MS2PIP&usi=" }
 };
 
 var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730", "UNIMOD:731", "UNIMOD:737", "UNIMOD:738", "UNIMOD:739", "UNIMOD:889", "UNIMOD:984", "UNIMOD:985", "UNIMOD:1341", "UNIMOD:1342", "UNIMOD:2015", "UNIMOD:2016", "UNIMOD:2017", "UNIMOD:2050" ];
