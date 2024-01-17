@@ -20,6 +20,7 @@ from proxi_datasets import ProxiDatasets
 from proxi_libraries import ProxiLibraries
 from usi_validator import UsiValidator
 from usi_examples import UsiExamples
+from proxi_annotator import ProxiAnnotator
 
 master_datasets = ProxiDatasets()
 
@@ -88,5 +89,9 @@ def usi_validator(body) -> str:
 def usi_examples() -> str:
     usi_examples = UsiExamples()
     return(usi_examples.examples,200)
+
+def annotator(body) -> str:
+    annotator = ProxiAnnotator()
+    return annotator.annotate(body)
 
 

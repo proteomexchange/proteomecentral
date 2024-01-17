@@ -32,6 +32,8 @@ tags:
     description: A batch validator for Universal Spectrum Identifiers (USIs)
   - name: usi_examples
     description: Access a list of example USIs
+  - name: annotator
+    description: Annotate a list of input spectra
 consumes:
   - application/json
 produces:
@@ -221,6 +223,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+
   /psms:
      get:
       summary: Get a collection of peptide spectrum matches  
@@ -542,6 +545,40 @@ paths:
           description: List of examples is returned
           schema:
             type: object
+
+  /annotate:
+    post:
+      summary: Annotate an input list of spectra
+      operationId: annotator
+      description: An endpoint to annotate a POSTed JSON list of spectra
+      tags:
+      - annotator
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "JSON list of spectra"
+        required: true
+        schema:
+          type: array
+          items:
+            $ref: "#/definitions/Spectrum"
+      responses:
+        "200":
+          description: Annotation results
+          schema:
+            type: object
+        '400':
+          description: Bad request. The requested parameters are not supported.
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
 
 definitions:
   
