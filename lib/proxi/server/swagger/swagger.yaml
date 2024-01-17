@@ -743,9 +743,6 @@ definitions:
         items:
           $ref: "#/definitions/OntologyTerm"
   Spectrum:
-    required:
-    - "status"
-    - "usi"
     properties:
       usi:
         type: "string"
