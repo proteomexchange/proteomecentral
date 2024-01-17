@@ -61,7 +61,7 @@ def update_response(response, status=None, status_code=None, error_code=None, de
 class ProxiAnnotator:
 
     #### Annotate the input list of spectra
-    def annotate(self, input_list, tolerance=None):
+    def annotate(self, input_list, resultType='compact', tolerance=None):
         #eprint("======= Received input spectra =========")
         #eprint(json.dumps(input_list, indent=2, sort_keys=True))
         #eprint("============================")
@@ -129,7 +129,7 @@ class ProxiAnnotator:
                 annotated_spectrum = Spectrum()
                 annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None)
                 annotator = SpectrumAnnotator()
-                annotator.annotate(annotated_spectrum, peptidoform=peptidoform, charge=precursor_charge)
+                annotator.annotate(annotated_spectrum, peptidoform=peptidoform, charge=precursor_charge, tolerance=tolerance)
 
             except:
                 update_response(response, log_entry=f"Attempt to annotate spectrum {i_spectrum - 1} resulted in an error")
@@ -140,6 +140,9 @@ class ProxiAnnotator:
             spectrum['mzs'] = mzs
             spectrum['intensities'] = intensities
             spectrum['interpretations'] = interpretations
+            if resultType == 'full':
+                spectrum['extended_data'] = {}
+                spectrum['extended_data']['metrics'] = annotated_spectrum.metrics
             response['annotated_spectra'].append(spectrum)
             n_annotated_spectra += 1
 

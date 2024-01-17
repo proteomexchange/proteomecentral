@@ -88,10 +88,10 @@ def usi_validator(body) -> str:
 
 def usi_examples() -> str:
     usi_examples = UsiExamples()
-    return(usi_examples.examples,200)
+    return(usi_examples.examples, 200)
 
-def annotator(body, tolerance=None) -> str:
+def annotator(body, resultType='compact', tolerance=None) -> str:
     annotator = ProxiAnnotator()
-    return annotator.annotate(body, tolerance=tolerance)
+    return annotator.annotate(body, resultType=resultType, tolerance=tolerance)
 
 

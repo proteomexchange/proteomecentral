@@ -650,6 +650,15 @@ paths:
           type: array
           items:
             $ref: "#/definitions/Spectrum"
+      - name: "resultType"
+        in: "query"
+        description: "Type of the object to be retrieved 'compact' (just the spectrum and interpretations) or 'full' (includes extensive metrics and other learned information about the spectra)"
+        required: false
+        type: "string"
+        default: "compact"
+        enum:
+        - "compact"
+        - "full"
       - name: "tolerance"
         in: "query"
         description: "Annotation tolerance in ppm"
