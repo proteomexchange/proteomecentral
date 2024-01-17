@@ -90,8 +90,8 @@ def usi_examples() -> str:
     usi_examples = UsiExamples()
     return(usi_examples.examples,200)
 
-def annotator(body) -> str:
+def annotator(body, tolerance=None) -> str:
     annotator = ProxiAnnotator()
-    return annotator.annotate(body)
+    return annotator.annotate(body, tolerance=tolerance)
 
 

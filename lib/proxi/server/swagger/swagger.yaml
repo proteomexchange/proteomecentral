@@ -650,6 +650,12 @@ paths:
           type: array
           items:
             $ref: "#/definitions/Spectrum"
+      - name: "tolerance"
+        in: "query"
+        description: "Annotation tolerance in ppm"
+        required: false
+        type: "number"
+        default: 20
       responses:
         "200":
           description: Annotation results

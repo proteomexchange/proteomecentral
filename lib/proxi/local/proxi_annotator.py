@@ -3,8 +3,10 @@
 import sys
 import os.path
 import json
-import copy
+from datetime import datetime
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
+
+test_mode = False
 
 try:
     from proforma_peptidoform import ProformaPeptidoform
@@ -13,9 +15,11 @@ except:
     if proxi_instance:
         sys.path.append(f"/net/dblocal/data/SpectralLibraries/python/{proxi_instance}/SpectralLibraries/lib")
     else:
-        #sys.path.append("C:\local\Repositories\GitHub\SpectralLibraries\lib")
-        print("ERROR: Environment variable PROXI_INSTANCE must be set")
-        exit()
+        if test_mode:
+            sys.path.append("C:\local\Repositories\GitHub\SpectralLibraries\lib")
+        else:
+            print("ERROR: Environment variable PROXI_INSTANCE must be set")
+            exit()
     from proforma_peptidoform import ProformaPeptidoform
 
 
@@ -27,51 +31,64 @@ except:
     if proxi_instance:
         sys.path.append(f"/proteomics/sw/python/apps/RunAssessor/lib")
     else:
-        #sys.path.append("C:\local\Repositories\GitHub\RunAssessor\lib")
-        print("ERROR: Environment variable PROXI_INSTANCE must be set")
-        exit()
+        if test_mode:
+            sys.path.append("C:\local\Repositories\GitHub\RunAssessor\lib")
+        else:
+            print("ERROR: Environment variable PROXI_INSTANCE must be set")
+            exit()
     from spectrum_annotator import SpectrumAnnotator
     from spectrum import Spectrum
+
+
+
+def update_response(response, status=None, status_code=None, error_code=None, description=None, log_entry=None):
+    if status is not None:
+        response['status']['status'] = status
+    if status_code is not None:
+        response['status']['status_code'] = status_code
+    if error_code is not None:
+        response['status']['error_code'] = error_code
+    if description is not None:
+        response['status']['description'] = description
+    if log_entry is not None:
+        if 'log' not in response['status']:
+            response['status']['log'] = []
+        datetime_now = str(datetime.now())
+        response['status']['log'].append(f"{datetime_now}: {log_entry}")
 
 
 #### ProxiDatasets class
 class ProxiAnnotator:
 
     #### Annotate the input list of spectra
-    def annotate(self, input_list):
+    def annotate(self, input_list, tolerance=None):
         #eprint("======= Received input spectra =========")
         #eprint(json.dumps(input_list, indent=2, sort_keys=True))
         #eprint("============================")
 
-        response = {
-            "annotated_spectra": [],
-            "status": {
-                "description": "Unknown error",
-                "error_code": 'Unknown',
-                "status": "ERROR",
-                "status_code": 200,
-                "log": []
-                }
-            }
+        response = { 'status': {}, "annotated_spectra": [] }
 
-        if not isinstance(input_list,list):
-            response['status'] = {
-                "description": "Input payload is not a list",
-                "error_code": 'InputNotList',
-                "status": "ERROR",
-                "status_code": 400,
-                "log": [ "Tested input payload and it appears to be type {type(input_list)}" ]
-                }
+        if tolerance is None:
+            tolerance = 20.0
 
+        if not isinstance(input_list, list):
+            update_response(response, status='ERROR', status_code=400, error_code='InputNotList', description='Input payload is not a list',
+                            log_entry=f"Tested input payload and it appears not to be the desired list, but rather of type {type(input_list)}")
+            return(response, response['status']['status_code'])
+        update_response(response, log_entry=f"Received input payload list of {len(input_list)} elements")
+
+        update_response(response, log_entry=f"Starting annotation process with tolerance {tolerance} ppm")
         i_spectrum = 0
+        n_spectra = len(input_list)
+        n_annotated_spectra = 0
         for spectrum in input_list:
             i_spectrum += 1
             if not isinstance(spectrum, dict):
-                response['log'].append(f"Entry {i_spectrum - 1} is not an object containing a spectrum")
+                update_response(response, log_entry=f"Entry {i_spectrum - 1} is not an object containing a spectrum")
                 response['annotated_spectra'].append(None)
                 continue
             if 'attributes' not in spectrum or 'mzs' not in spectrum or 'intensities' not in spectrum or spectrum['attributes'] is None or spectrum['mzs'] is None or spectrum['intensities'] is None:
-                response['log'].append(f"Entry {i_spectrum - 1} does not have required (non-null) items 'attributes', 'mzs', 'intensities'")
+                update_response(response, log_entry=f"Entry {i_spectrum - 1} does not have required (non-null) items 'attributes', 'mzs', 'intensities'")
                 response['annotated_spectra'].append(None)
                 continue
 
@@ -87,12 +104,12 @@ class ProxiAnnotator:
                     precursor_mz = float(attribute['value'])
 
             if peptidoform_string is None:
-                response['log'].append(f"Entry {i_spectrum - 1} does not have required attribute MS:1003169 - 'proforma peptidoform sequence'")
+                update_response(response, log_entry=f"Entry {i_spectrum - 1} does not have required attribute MS:1003169 - 'proforma peptidoform sequence'")
                 response['annotated_spectra'].append(None)
                 continue
 
             if precursor_charge is None:
-                response['log'].append(f"Entry {i_spectrum - 1} does not have required attribute MS:1000041 - 'charge state'")
+                update_response(response, log_entry=f"Entry {i_spectrum - 1} does not have required attribute MS:1000041 - 'charge state'")
                 response['annotated_spectra'].append(None)
                 continue
 
@@ -101,15 +118,22 @@ class ProxiAnnotator:
             #    response['annotated_spectra'].append(None)
             #    continue
 
+            update_response(response, log_entry=f"Parsing ProForma peptidoform '{peptidoform_string}' for spectrum {i_spectrum - 1}")
             peptidoform = ProformaPeptidoform(peptidoform_string)
             #eprint("======= Interpreted peptidoform string =========")
             #eprint(json.dumps(peptidoform.to_dict(),indent=2))
             #eprint("============================")
 
-            annotated_spectrum = Spectrum()
-            annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None)
-            annotator = SpectrumAnnotator()
-            annotator.annotate(annotated_spectrum, peptidoform=peptidoform, charge=precursor_charge)
+            update_response(response, log_entry=f"Annotating spectrum {i_spectrum - 1}")
+            try:
+                annotated_spectrum = Spectrum()
+                annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None)
+                annotator = SpectrumAnnotator()
+                annotator.annotate(annotated_spectrum, peptidoform=peptidoform, charge=precursor_charge)
+
+            except:
+                update_response(response, log_entry=f"Attempt to annotate spectrum {i_spectrum - 1} resulted in an error")
+
 
             #print(annotated_spectrum.show())
             mzs, intensities, interpretations = annotated_spectrum.get_peaks()
@@ -117,17 +141,16 @@ class ProxiAnnotator:
             spectrum['intensities'] = intensities
             spectrum['interpretations'] = interpretations
             response['annotated_spectra'].append(spectrum)
+            n_annotated_spectra += 1
 
-        response['status'] = {
-            "description": f"Attempted to annotate {i_spectrum} input spectra",
-            "error_code": None,
-            "status": "OK",
-            "status_code": 200,
-            "log": response['status']['log']
-            }
+        if n_annotated_spectra > 0:
+            update_response(response, status='OK', status_code=200, error_code=None, description=f"Successfully annotated {n_annotated_spectra} of {n_spectra} input spectra",
+                            log_entry=f"Completed annotation process")
+        else:
+            update_response(response, status='ERROR', status_code=400, error_code='NoValidSpectra', description=f"Unable to annotate any of the {n_spectra} input spectra",
+                            log_entry=f"Completed annotation process")
 
-        status_code = 200
-        return(response, status_code)
+        return(response, response['status']['status_code'])
 
 
 #### If this class is run from the command line, perform a short little test to see if it is working correctly
@@ -180,7 +203,7 @@ def main():
     ]
 
     annotator = ProxiAnnotator()
-    response = annotator.annotate( input_list )
+    response = annotator.annotate(input_list)
     print(f"==== Response with status code {response[1]} =====")
     print(json.dumps(response[0],sort_keys=True,indent=2))
     print(f"===================================")
