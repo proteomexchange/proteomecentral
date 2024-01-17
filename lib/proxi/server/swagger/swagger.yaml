@@ -633,7 +633,7 @@ paths:
   /annotate:
     post:
       summary: Annotate an input list of spectra
-      operationId: annotator
+      operationId: "controllers.default_controller.annotator"
       description: An endpoint to annotate a POSTed JSON list of spectra
       tags:
       - annotator
