@@ -689,7 +689,9 @@ definitions:
       name:
         type: "string"
       value:
-        type: "string"
+        type:
+          - string
+          - number
       cv_param_group:
         type: "string"
       value_accession:
