@@ -42,19 +42,27 @@ except:
 
 
 def update_response(response, status=None, status_code=None, error_code=None, description=None, log_entry=None):
+    buffer = ''
     if status is not None:
         response['status']['status'] = status
+        buffer += f"- status={status}"
     if status_code is not None:
         response['status']['status_code'] = status_code
+        buffer += f"  - status_code={status_code}"
     if error_code is not None:
         response['status']['error_code'] = error_code
+        buffer += f"  - error_code={error_code}"
     if description is not None:
         response['status']['description'] = description
+        buffer += f"  - description={description}"
+    if buffer != '':
+        eprint(buffer)
     if log_entry is not None:
         if 'log' not in response['status']:
             response['status']['log'] = []
         datetime_now = str(datetime.now())
         response['status']['log'].append(f"{datetime_now}: {log_entry}")
+        eprint(f"{datetime_now}: {log_entry}")
 
 
 #### ProxiDatasets class
