@@ -127,8 +127,13 @@ class ProxiAnnotator:
             #    response['annotated_spectra'].append(None)
             #    continue
 
-            update_response(response, log_entry=f"Parsing ProForma peptidoform '{peptidoform_string}' for spectrum {i_spectrum - 1}")
-            peptidoform = ProformaPeptidoform(peptidoform_string)
+            if peptidoform_string == '':
+                update_response(response, log_entry=f"WARNING: The 'proforma peptidoform sequence' for spectrum {i_spectrum - 1} is EMPTY. This is permitted and will result in a 'blind annotation', just labeling peaks that can be inferred in the absence of a know analyte. If this was not the intent, please provide a valid ProForma peptidoform")
+                peptidoform = None
+            else:
+                update_response(response, log_entry=f"Parsing ProForma peptidoform '{peptidoform_string}' for spectrum {i_spectrum - 1}")
+                peptidoform = ProformaPeptidoform(peptidoform_string)
+
             #eprint("======= Interpreted peptidoform string =========")
             #eprint(json.dumps(peptidoform.to_dict(),indent=2))
             #eprint("============================")
