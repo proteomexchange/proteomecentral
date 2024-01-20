@@ -4,6 +4,7 @@ import sys
 import os.path
 import json
 from datetime import datetime
+import traceback
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 test_mode = False
@@ -70,9 +71,9 @@ class ProxiAnnotator:
 
     #### Annotate the input list of spectra
     def annotate(self, input_list, resultType='compact', tolerance=None):
-        #eprint("======= Received input spectra =========")
-        #eprint(json.dumps(input_list, indent=2, sort_keys=True))
-        #eprint("============================")
+        eprint("======= Received input spectra =========")
+        eprint(json.dumps(input_list, indent=2, sort_keys=True))
+        eprint("============================")
 
         response = { 'status': {}, "annotated_spectra": [] }
 
@@ -138,10 +139,11 @@ class ProxiAnnotator:
                 annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None)
                 annotator = SpectrumAnnotator()
                 annotator.annotate(annotated_spectrum, peptidoform=peptidoform, charge=precursor_charge, tolerance=tolerance)
+                n_annotated_spectra += 1
 
-            except:
-                update_response(response, log_entry=f"Attempt to annotate spectrum {i_spectrum - 1} resulted in an error")
-
+            except Exception as error:
+                exception_type, exception_value, exception_traceback = sys.exc_info()
+                update_response(response, log_entry=f"Attempt to annotate spectrum {i_spectrum - 1} resulted in an error: {error}: {repr(traceback.format_exception(exception_type, exception_value, exception_traceback))}")
 
             #print(annotated_spectrum.show())
             mzs, intensities, interpretations = annotated_spectrum.get_peaks()
@@ -152,7 +154,6 @@ class ProxiAnnotator:
                 spectrum['extended_data'] = {}
                 spectrum['extended_data']['metrics'] = annotated_spectrum.metrics
             response['annotated_spectra'].append(spectrum)
-            n_annotated_spectra += 1
 
         if n_annotated_spectra > 0:
             update_response(response, status='OK', status_code=200, error_code=None, description=f"Successfully annotated {n_annotated_spectra} of {n_spectra} input spectra",
