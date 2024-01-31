@@ -361,11 +361,11 @@ class ProxiSpectra:
         if msRun is not None and msRun != '':
             model = msRun
         if model not in [ 'pretrained', 'retrained' ]:
-            model = "pretrained"
+            model = "retrained"
 
         charge = usi_obj.charge
 
-        url = f"https://regis-web.systemsbiology.net/tpp-dev/cgi-bin/Seq2MS_json.pl?maxrt=0&model={model_paths[model]}&pep={peptidoform}&z={charge}&mass=500"
+        url = f"https://regis-web.systemsbiology.net/tpp-dev/cgi-bin/Seq2MS_json.pl?maxrt=0&model={model_paths[model]}&pep={peptidoform}&z={charge}&mass=2000"
         eprint(f"INFO: Sending to: {url}")
         with open(os.path.dirname(os.path.abspath(__file__))+'/auth.txt') as infile:
             for line in infile:
