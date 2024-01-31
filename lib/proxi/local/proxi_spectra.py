@@ -16,6 +16,7 @@ import json
 import ast
 import http.client
 import urllib.parse
+import requests
 
 from ms2pip import predict_single
 
@@ -121,6 +122,12 @@ class ProxiSpectra:
         match = re.search(":MS2PIP",usi)
         if match or ( accession is not None and accession == 'MS2PIP'):
             status_code, message = self.fetch_from_MS2PIP(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
+            return(status_code, message)
+
+        #### If it is a MS2PIP, route it appropriately
+        match = re.search(":SEQ2MS",usi)
+        if match or ( accession is not None and accession == 'SEQ2MS'):
+            status_code, message = self.fetch_from_SEQ2MS(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
             return(status_code, message)
 
         #### If it has a PXD, route it appropriately
@@ -308,6 +315,75 @@ class ProxiSpectra:
         self.spectra = [ spectrum.to_dict() ]
         status_code = 200
         message = { "status": status_code, "title": "Data fetched", "detail": "MS2PIP prediction successful", "type": "about:blank" }
+        return(status_code, message)
+
+
+    ############################################################################################
+    #### Fetch an individual spectrum from PeptideAtlas's ShowObservedSpectrum system
+    def fetch_from_SEQ2MS(self,resultType, pageSize = None, pageNumber = None, usi = None, accession = None, msRun = None, fileName = None, scan = None, responseContentType = None):
+
+        if usi is None:
+            status_code = 400
+            message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string as input", "type": "about:blank" }
+            return(status_code, message)
+
+        components = usi.split(':')
+
+        if len(components) < 6:
+            status_code = 400
+            message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string with a peptidoform component", "type": "about:blank" }
+            return(status_code, message)
+
+        peptidoform = components[5]
+        model = components[2]
+        model_paths = { 'original': '/proteomics/dshteynb/data/Seq2MS/pretrained_model'}
+        if msRun is not None and msRun != '':
+            model = msRun
+        if model not in [ 'original' ]:
+            model = "original"
+
+        charge = "2"
+        match = re.search(r'/(\d+)$', peptidoform)
+        if match:
+            charge = match.group(1)
+
+
+
+        url = f"https://regis-web.systemsbiology.net/tpp-dev/cgi-bin/Seq2MS_json.pl?maxrt=0&model={model_paths[model]}&pep={peptidoform}&z={charge}&mass=500"
+        response_content = requests.get(url, headers={'accept': 'application/json'})
+        status_code = response_content.status_code
+        if status_code != 200:
+            print("ERROR returned with status "+str(status_code))
+            response_dict = response_content.json()
+            print(json.dumps(response_dict, indent=2, sort_keys=True))
+            return
+
+        try:
+            response_dict = response_content.json()
+        except:
+            eprint("ERROR: Unable to parse response into json:")
+            eprint(response_content.text())
+            return
+
+        spectrum = Spectrum()
+        spectrum.usi = usi
+        spectrum.id = "0"
+        spectrum.attributes = [
+            #OntologyTerm("MS:1000744","selected ion m/z","473.1234"),
+            OntologyTerm("MS:1000041","charge state", charge),
+            #OntologyTerm("MS:1009007","scan number","17555"),
+            OntologyTerm("MS:1000586","contact name","MS2PIP","11"),
+            OntologyTerm("MS:1000590","contact affiliation","VIB","11")
+        ]
+
+        spectrum.mzs = list(response_dict['mzs'])
+ 
+        spectrum.intensities = list(response_dict['intensities'])
+        eprint(spectrum)
+
+        self.spectra = [ spectrum.to_dict() ]
+        status_code = 200
+        message = { "status": status_code, "title": "Data fetched", "detail": "MS2SEQ prediction successful", "type": "about:blank" }
         return(status_code, message)
 
 
