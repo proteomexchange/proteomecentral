@@ -17,8 +17,27 @@ import ast
 import http.client
 import urllib.parse
 import requests
+from requests.auth import HTTPBasicAuth
 
 from ms2pip import predict_single
+
+test_mode = False
+
+try:
+    from proforma_peptidoform import ProformaPeptidoform
+    from universal_spectrum_identifier import UniversalSpectrumIdentifier
+except:
+    proxi_instance = os.environ.get('PROXI_INSTANCE')
+    if proxi_instance:
+        sys.path.append(f"/net/dblocal/data/SpectralLibraries/python/{proxi_instance}/SpectralLibraries/lib")
+    else:
+        if test_mode:
+            sys.path.append("C:\local\Repositories\GitHub\SpectralLibraries\lib")
+        else:
+            print("ERROR: Environment variable PROXI_INSTANCE must be set")
+            exit()
+    from proforma_peptidoform import ProformaPeptidoform
+    from universal_spectrum_identifier import UniversalSpectrumIdentifier
 
 
 #### A workaround from Joshua to compensate for threading problems with SQLAlchemy and SQLite
@@ -327,43 +346,49 @@ class ProxiSpectra:
             message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string as input", "type": "about:blank" }
             return(status_code, message)
 
-        components = usi.split(':')
+        usi_obj = UniversalSpectrumIdentifier()
+        usi_obj.parse(usi)
 
-        if len(components) < 6:
+        if usi_obj.peptidoform_string is None or usi_obj.peptidoform_string == '':
             status_code = 400
             message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string with a peptidoform component", "type": "about:blank" }
             return(status_code, message)
 
-        peptidoform = components[5]
-        model = components[2]
+        peptidoform = usi_obj.peptidoform_string
+        model = usi_obj.collection_identifier
         model_paths = { 'original': '/proteomics/dshteynb/data/Seq2MS/pretrained_model'}
         if msRun is not None and msRun != '':
             model = msRun
         if model not in [ 'original' ]:
             model = "original"
 
-        charge = "2"
-        match = re.search(r'/(\d+)$', peptidoform)
-        if match:
-            charge = match.group(1)
-
-
+        charge = usi_obj.charge
 
         url = f"https://regis-web.systemsbiology.net/tpp-dev/cgi-bin/Seq2MS_json.pl?maxrt=0&model={model_paths[model]}&pep={peptidoform}&z={charge}&mass=500"
         eprint(f"INFO: Sending to: {url}")
-        response_content = requests.get(url, headers={'accept': 'application/json'})
+        with open(os.path.dirname(os.path.abspath(__file__))+'/auth.txt') as infile:
+            for line in infile:
+                line = line.strip()
+                regis_username, regis_password = line.split("\t")
+        credentials = HTTPBasicAuth(regis_username, regis_password)
+        response_content = requests.get(url, headers={'accept': 'application/json'}, auth=credentials)
         status_code = response_content.status_code
+        eprint(f"INFO: Returned status code={status_code}")
         if status_code != 200:
             eprint("ERROR returned with status "+str(status_code))
-            eprint(response_content.text())
-            return
+            eprint(response_content.text)
+            status_code = 400
+            message = { "status": status_code, "title": "Unable to predict", "detail": "MS2SEQ was not able to predict a spectrum", "type": "about:blank" }
+            return(status_code, message)
 
         try:
             response_dict = response_content.json()
         except:
             eprint("ERROR: Unable to parse response into json:")
-            eprint(response_content.text())
-            return
+            eprint(response_content.text)
+            status_code = 400
+            message = { "status": status_code, "title": "Unable to predict", "detail": "MS2SEQ was not able to predict a spectrum", "type": "about:blank" }
+            return(status_code, message)
 
         spectrum = Spectrum()
         spectrum.usi = usi
@@ -372,8 +397,8 @@ class ProxiSpectra:
             #OntologyTerm("MS:1000744","selected ion m/z","473.1234"),
             OntologyTerm("MS:1000041","charge state", charge),
             #OntologyTerm("MS:1009007","scan number","17555"),
-            OntologyTerm("MS:1000586","contact name","MS2PIP","11"),
-            OntologyTerm("MS:1000590","contact affiliation","VIB","11")
+            OntologyTerm("MS:1000586","contact name","SEQ2MS","11"),
+            OntologyTerm("MS:1000590","contact affiliation","ISB","11")
         ]
 
         spectrum.mzs = list(response_dict['mzs'])
