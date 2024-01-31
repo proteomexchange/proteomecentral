@@ -350,12 +350,12 @@ class ProxiSpectra:
 
 
         url = f"https://regis-web.systemsbiology.net/tpp-dev/cgi-bin/Seq2MS_json.pl?maxrt=0&model={model_paths[model]}&pep={peptidoform}&z={charge}&mass=500"
+        eprint(f"INFO: Sending to: {url}")
         response_content = requests.get(url, headers={'accept': 'application/json'})
         status_code = response_content.status_code
         if status_code != 200:
-            print("ERROR returned with status "+str(status_code))
-            response_dict = response_content.json()
-            print(json.dumps(response_dict, indent=2, sort_keys=True))
+            eprint("ERROR returned with status "+str(status_code))
+            eprint(response_content.text())
             return
 
         try:
