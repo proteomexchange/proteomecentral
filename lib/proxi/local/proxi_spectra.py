@@ -19,6 +19,16 @@ import urllib.parse
 
 from ms2pip import predict_single
 
+
+#### A workaround from Joshua to compensate for threading problems with SQLAlchemy and SQLite
+cv_cache_path = os.path.dirname(os.path.abspath(__file__))+"/tmp"
+from pyteomics import proforma
+proforma.obo_cache.enabled = True
+proforma.obo_cache.cache_path = cv_cache_path
+# Force the database to open, which will in turn download it and cache it if it doesn't already exist in the cache directory
+proforma.UnimodModification.resolver.resolve("Phospho")
+
+
 #### Import the Swagger client libraries
 sys.path.append(os.path.dirname(os.path.abspath(__file__))+"/../client/swagger_client")
 from models.spectrum import Spectrum
@@ -107,10 +117,17 @@ class ProxiSpectra:
             status_code, message = self.fetch_from_local_spectra_cgi(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
             return(status_code, message)
 
+        #### If it is a MS2PIP, route it appropriately
+        match = re.search(":MS2PIP",usi)
+        if match or ( accession is not None and accession == 'MS2PIP'):
+            status_code, message = self.fetch_from_MS2PIP(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
+            return(status_code, message)
+
         #### If it has a PXD, route it appropriately
         match = re.search(":PXD",usi)
         if match:
             status_code, message = self.fetch_from_PeptideAtlas_ShowObservedSpectrum(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
+            #status_code, message = self.fetch_from_MS2PIP(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
             if annotate is True:
                 eprint("INFO: Annotate is TRUE, but not ready to do it yet")
             return(status_code, message)
@@ -243,7 +260,16 @@ class ProxiSpectra:
             return(status_code, message)
 
         peptidoform = components[5]
-        model = "HCD"
+        model = components[2]
+        if msRun is not None and msRun != '':
+            model = msRun
+        if model not in [ 'HCD', 'HCD2019', 'HCD2021', 'CID', 'iTRAQ', 'iTRAQphospho', 'TMT', 'TTOF5600', 'HCDch2', 'CIDch2', 'Immuno-HCD', 'CID-TMT' ]:
+            model = "HCD"
+
+        charge = "2"
+        match = re.search(r'/(\d+)$', peptidoform)
+        if match:
+            charge = match.group(1)
 
         processing_result = predict_single(peptidoform, model=model)
         predicted_spectrum = processing_result.as_spectra()[0]  # index 0 is the predicted spectrum (observed is None)
@@ -252,19 +278,30 @@ class ProxiSpectra:
         spectrum.usi = usi
         spectrum.id = "0"
         spectrum.attributes = [
-            OntologyTerm("MS:1000744","selected ion m/z","473.1234"),
-            OntologyTerm("MS:1000041","charge state","2"),
-            OntologyTerm("MS:1009007","scan number","17555"),
-            OntologyTerm("MS:1000586","contact name","Ralf Gabriels","11"),
+            #OntologyTerm("MS:1000744","selected ion m/z","473.1234"),
+            OntologyTerm("MS:1000041","charge state", charge),
+            #OntologyTerm("MS:1009007","scan number","17555"),
+            OntologyTerm("MS:1000586","contact name","MS2PIP","11"),
             OntologyTerm("MS:1000590","contact affiliation","VIB","11")
         ]
 
         spectrum.mzs = list(predicted_spectrum.mz)
         for i in range(len(spectrum.mzs)):
             spectrum.mzs[i] = float(spectrum.mzs[i])
+
         spectrum.intensities = list(predicted_spectrum.intensity)
+        max_intensity = 0.0
         for i in range(len(spectrum.intensities)):
-            spectrum.intensities[i] = float(spectrum.intensities[i])
+            intensity = abs(float(spectrum.intensities[i]))
+            if intensity > max_intensity:
+                max_intensity = intensity
+            spectrum.intensities[i] = intensity
+        if max_intensity == 0.0:
+            max_intensity = 1.0
+        scaling_factor = 10000.0 / max_intensity
+        for i in range(len(spectrum.intensities)):
+            spectrum.intensities[i] = abs(float(spectrum.intensities[i])) * scaling_factor
+
         spectrum.interpretations = list(predicted_spectrum.annotations)
         print(spectrum)
 
