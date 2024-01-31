@@ -11,9 +11,10 @@ var usi_data = {
 			  "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=INSERT_USI_HERE" },
     "PRIDE"           : { "url" : "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
 			  "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=INSERT_USI_HERE" },
-    "ProteomeCentral" : { "url" : "../api/proxi/v0.1/spectra?resultType=full&usi=" },
-    "MS2PIP"          : { "url" : "../api/proxi/v0.1/spectra?resultType=full&accession=MS2PIP&usi=",
-                          "view": "https://compomics.github.io/projects/ms2pip_c" }
+    "ProteomeCentral" : { "url" : "/api/proxi/v0.1/spectra?resultType=full&usi=" },
+    "MS2PIP"          : { "url" : "/api/proxi/v0.1/spectra?resultType=full&accession=MS2PIP&usi=",
+                          "view": "https://compomics.github.io/projects/ms2pip_c" },
+    "SEQ2MS"          : { "url" : "/api/proxi/v0.1/spectra?resultType=full&accession=SEQ2MS&usi="}
 };
 
 var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730", "UNIMOD:731", "UNIMOD:737", "UNIMOD:738", "UNIMOD:739", "UNIMOD:889", "UNIMOD:984", "UNIMOD:985", "UNIMOD:1341", "UNIMOD:1342", "UNIMOD:2015", "UNIMOD:2016", "UNIMOD:2017", "UNIMOD:2050" ];
@@ -281,9 +282,12 @@ async function check_usi() {
 function get_usi_from(where) {
     if (!where) {
 	where = Object.keys(usi_data);
-	const i = where.indexOf("MS2PIP");
+	var i = where.indexOf("MS2PIP");
 	if (i > -1)
 	    where.splice(i, 1);
+	i = where.indexOf("SEQ2MS");
+        if (i > -1)
+            where.splice(i, 1);
     }
 
     const usi = document.getElementById("usi_input").value;
@@ -291,6 +295,8 @@ function get_usi_from(where) {
 	var url = usi_data[p].url + encodeURIComponent(usi);
 	if (p == "MS2PIP" && document.getElementById("MS2PIP_model"))
 	    url += "&msRun=" + document.getElementById("MS2PIP_model").value;
+	if (p == "SEQ2MS" && document.getElementById("SEQ2MS_model"))
+	    url += "&msRun=" + document.getElementById("SEQ2MS_model").value;
 
         var ccell = document.getElementById(p+"_msg");
         ccell.title = "view raw response from API";
@@ -307,14 +313,16 @@ function get_usi_from(where) {
             })
             .then(response => response.json())
             .then(alldata => {
-		if (p == "ProteomeCentral")
+		if (p == "ProteomeCentral") {
 		    get_usi_from(["MS2PIP"]);
+		    get_usi_from(["SEQ2MS"]);
+		}
 		try {
 		    _done++;
 		    if (_done == Object.keys(usi_data).length) {
 			document.getElementById("usi_stat").classList.remove("running");
 			if (!_dispec)
-			    displayMsg("spec","USI not found at any of the repositories!");
+			    displayMsg("spec","USI not found at the requested repositories!");
 		    }
                     var cell = document.getElementById(p+"_msg");
                     cell.title += " (Code:"+rcode+")";
@@ -445,7 +453,7 @@ function get_usi_from(where) {
                             if (att.accession == "MS:1003061") s.fileName    = att.value;
 			}
 		    }
-		    if (p == "MS2PIP")
+		    if (p == "MS2PIP" || p == "SEQ2MS")
 			s.fileName = "PREDICTED SPECTRUM FOR: "+s.fileName;
 
 		    if (has_spectrum) {
@@ -469,6 +477,7 @@ function get_usi_from(where) {
 
 		} catch(err) {
                     document.getElementById(p+"_msg").innerHTML = err;
+                    document.getElementById(p+"_msg").classList.add("code400");
                     document.getElementById(p+"_spectrum").innerHTML = "-n/a-";
                     console.error(err);
 		}
@@ -596,7 +605,7 @@ function renderLorikeet(divid,src) {
 
     const title = document.createElement("h1");
     title.style.marginLeft = "280px";
-    if (src == "MS2PIP") {
+    if (src == "MS2PIP" || src == "SEQ2MS") {
 	title.className = "title invalid";
 	title.innerHTML = "PREDICTED spectrum from "+src;
     }
@@ -659,24 +668,39 @@ function render_tables(usi) {
             link.appendChild(document.createTextNode(rname));
             td.appendChild(link);
 
-            if (rname == "MS2PIP") {
-		var sel = document.createElement('select');
-		sel.id = "MS2PIP_model";
-		sel.style.marginLeft = "10px";
-		sel.title = "Select prediction model";
-		sel.setAttribute('onchange', 'reload("MS2PIP");');
-		for (var model of [ 'HCD', 'HCD2019', 'HCD2021', 'CID', 'iTRAQ', 'iTRAQphospho', 'TMT', 'TTOF5600', 'HCDch2', 'CIDch2', 'Immuno-HCD', 'CID-TMT' ]) {
-		    var opt = document.createElement('option');
-		    opt.value = model;
-		    opt.innerText = model;
-		    sel.appendChild(opt);
-		}
-		td.appendChild(sel);
-	    }
-
 	}
 	else
             td.appendChild(document.createTextNode(rname));
+
+
+        if (rname == "MS2PIP") {
+	    var sel = document.createElement('select');
+	    sel.id = "MS2PIP_model";
+	    sel.style.marginLeft = "10px";
+	    sel.title = "Select prediction model";
+	    sel.setAttribute('onchange', 'reload("MS2PIP");');
+	    for (var model of [ 'HCD', 'HCD2019', 'HCD2021', 'CID', 'iTRAQ', 'iTRAQphospho', 'TMT', 'TTOF5600', 'HCDch2', 'CIDch2', 'Immuno-HCD', 'CID-TMT' ]) {
+		var opt = document.createElement('option');
+		opt.value = model;
+		opt.innerText = model;
+		sel.appendChild(opt);
+	    }
+	    td.appendChild(sel);
+	}
+        else if (rname == "SEQ2MS") {
+            var sel = document.createElement('select');
+            sel.id = "SEQ2MS_model";
+            sel.style.marginLeft = "10px";
+            sel.title = "Select prediction model";
+            sel.setAttribute('onchange', 'reload("SEQ2MS");');
+            for (var model of [ 'pretrained', 'retrained' ]) {
+                var opt = document.createElement('option');
+                opt.value = model;
+                opt.innerText = model;
+                sel.appendChild(opt);
+            }
+            td.appendChild(sel);
+        }
 
         tr.appendChild(td);
 
