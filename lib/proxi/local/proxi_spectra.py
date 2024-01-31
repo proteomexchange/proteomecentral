@@ -356,11 +356,12 @@ class ProxiSpectra:
 
         peptidoform = usi_obj.peptidoform_string
         model = usi_obj.collection_identifier
-        model_paths = { 'original': '/proteomics/dshteynb/data/Seq2MS/pretrained_model'}
+        model_paths = { 'pretrained': '/proteomics/dshteynb/data/Seq2MS/pretrained_model',
+                        'retrained': '/proteomics/dshteynb/data/Seq2MS/retrained_model'}
         if msRun is not None and msRun != '':
             model = msRun
-        if model not in [ 'original' ]:
-            model = "original"
+        if model not in [ 'pretrained', 'retrained' ]:
+            model = "pretrained"
 
         charge = usi_obj.charge
 
