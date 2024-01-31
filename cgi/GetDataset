@@ -102,6 +102,16 @@ if ($params->{action} && $params->{action} =~ /search/i){
   #### Otherwise list render a whole listing of datasets
   } else {
     if ($outputMode =~ /html/i){
+
+      print qq~
+<html>
+<header><meta http-equiv="REFRESH" content="0;url=https://proteomecentral.proteomexchange.org/ui">
+<body>
+</body>
+</html>
+~;
+return;
+
       #$HTML -> printPageHeader (template => \@template);
       my $js = get_js();
       $HTML -> printTablePageHeader (template => \@template, inject_content => $js);
