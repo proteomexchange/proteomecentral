@@ -1,6 +1,8 @@
 var _api = {};
+_api['base_url'] = "/api/proxi/v0.1/";
+
 var _done = 0;
-var _dispec = false;
+var _dispec = null;
 
 var usi_data = {
     "iProX"           : { "url" : "https://www.iprox.cn/proxi/spectra?resultType=full&usi=" },
@@ -11,10 +13,11 @@ var usi_data = {
 			  "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=INSERT_USI_HERE" },
     "PRIDE"           : { "url" : "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
 			  "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=INSERT_USI_HERE" },
-    "ProteomeCentral" : { "url" : "/api/proxi/v0.1/spectra?resultType=full&usi=" },
-    "MS2PIP"          : { "url" : "/api/proxi/v0.1/spectra?resultType=full&accession=MS2PIP&usi=",
+    "ProteomeCentral" : { "url" : _api['base_url'] + "spectra?resultType=full&usi=" },
+    "MS2PIP"          : { "url" : _api['base_url'] + "spectra?resultType=full&accession=MS2PIP&usi=",
                           "view": "https://compomics.github.io/projects/ms2pip_c" },
-    "SEQ2MS"          : { "url" : "/api/proxi/v0.1/spectra?resultType=full&accession=SEQ2MS&usi="}
+    "Seq2MS"          : { "url" : _api['base_url'] + "spectra?resultType=full&accession=SEQ2MS&usi=",
+                          "view": "https://github.com/Jerryccm/Seq2MS"}
 };
 
 var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730", "UNIMOD:731", "UNIMOD:737", "UNIMOD:738", "UNIMOD:739", "UNIMOD:889", "UNIMOD:984", "UNIMOD:985", "UNIMOD:1341", "UNIMOD:1342", "UNIMOD:2015", "UNIMOD:2016", "UNIMOD:2017", "UNIMOD:2050" ];
@@ -27,11 +30,14 @@ function init() {
         .then(config => {
             _api['validate'] = config.API_URL +"usi_validator";
             _api['examples'] = config.API_URL +"usi_examples";
+	    for (var src of ["ProteomeCentral", "MS2PIP", "Seq2MS"])
+		usi_data[src].url = usi_data[src].url.replace(_api['base_url'], config.API_URL);
+
 	    init2();
         })
         .catch(error => {
-            _api['validate'] = "/api/proxi/v0.1/usi_validator";
-            _api['examples'] = "/api/proxi/v0.1/usi_examples";
+            _api['validate'] = _api['base_url'] + "usi_validator";
+            _api['examples'] = _api['base_url'] + "usi_examples";
             init2();
         });
 }
@@ -83,6 +89,8 @@ async function validate_usi(carryon) {
 
     clear_element("main");
     clear_element("spec");
+    for (var p in usi_data)
+	usi_data[p].lori_data = null;
 
     var response = await fetch(_api['validate'], {
 	method: 'post',
@@ -275,7 +283,7 @@ async function check_usi() {
     document.getElementById("usi_stat").classList.add("running");
 
     _done = 0;
-    _dispec = false;
+    _dispec = null;
     get_usi_from(null);
 }
 
@@ -285,7 +293,7 @@ function get_usi_from(where) {
 	var i = where.indexOf("MS2PIP");
 	if (i > -1)
 	    where.splice(i, 1);
-	i = where.indexOf("SEQ2MS");
+	i = where.indexOf("Seq2MS");
         if (i > -1)
             where.splice(i, 1);
     }
@@ -293,10 +301,10 @@ function get_usi_from(where) {
     const usi = document.getElementById("usi_input").value;
     for (let p of where) {
 	var url = usi_data[p].url + encodeURIComponent(usi);
-	if (p == "MS2PIP" && document.getElementById("MS2PIP_model"))
-	    url += "&msRun=" + document.getElementById("MS2PIP_model").value;
-	if (p == "SEQ2MS" && document.getElementById("SEQ2MS_model"))
-	    url += "&msRun=" + document.getElementById("SEQ2MS_model").value;
+
+        // for MS2PIP and SEQ2MS
+        if (document.getElementById(p+"_model"))
+	    url += "&msRun=" + document.getElementById(p+"_model").value;
 
         var ccell = document.getElementById(p+"_msg");
         ccell.title = "view raw response from API";
@@ -315,7 +323,7 @@ function get_usi_from(where) {
             .then(alldata => {
 		if (p == "ProteomeCentral") {
 		    get_usi_from(["MS2PIP"]);
-		    get_usi_from(["SEQ2MS"]);
+		    get_usi_from(["Seq2MS"]);
 		}
 		try {
 		    _done++;
@@ -371,6 +379,7 @@ function get_usi_from(where) {
 			var sorted = sortLinkedArrays(data.mzs,data.intensities);
 			data.mzs = sorted[0];
 			data.intensities = sorted[1];
+			console.log(p+" data re-sorted OK");
 		    }
 
                     for (var i in data.mzs) {
@@ -453,7 +462,7 @@ function get_usi_from(where) {
                             if (att.accession == "MS:1003061") s.fileName    = att.value;
 			}
 		    }
-		    if (p == "MS2PIP" || p == "SEQ2MS")
+		    if (p == "MS2PIP" || p == "Seq2MS")
 			s.fileName = "PREDICTED SPECTRUM FOR: "+s.fileName;
 
 		    if (has_spectrum) {
@@ -465,9 +474,20 @@ function get_usi_from(where) {
 			cell.setAttribute('onclick', 'renderLorikeet("spec","'+p+'");');
 			cell.innerHTML = s.fileName;
 
-			if(!_dispec) {
-			    _dispec = true;
+			if(!_dispec && !s.fileName.startsWith("PREDICTED")) {
+			    _dispec = p;
 			    renderLorikeet("spec",p);
+			}
+			else if (_dispec == '---refresh---') {
+                            _dispec = p;
+                            renderLorikeet("spec",p);
+			}
+			else {
+                            var curr = document.getElementById(p+"_current");
+			    curr.title = "view as butterfly (mirror) spectrum";
+			    curr.setAttribute('onclick', 'renderLorikeet("spec","'+_dispec+'","'+p+'");');
+			    curr.style.cursor = "pointer";
+			    curr.innerHTML = "&#8853;";
 			}
 		    }
 		    else {
@@ -549,6 +569,8 @@ function viewJSON(divid,src) {
     for (var rname in usi_data) {
 	clear_element(rname+"_current");
         document.getElementById(rname+"_current").title = "";
+        document.getElementById(rname+"_current").setAttribute('onclick', '');
+        document.getElementById(rname+"_current").style.cursor = "initial";
     }
     document.getElementById(src+"_current").innerHTML = "&#127859";
     document.getElementById(src+"_current").title = "This JSON response is currently being displayed below";
@@ -567,13 +589,30 @@ function viewJSON(divid,src) {
 }
 
 
-function renderLorikeet(divid,src) {
+function renderLorikeet(divid,src,src2=null) {
+    if (src == 'null') // ugh
+	src = src2;
+    if (src2 && src2 == src)
+	src2 = null;
+
     var s = usi_data[src].lori_data;
     clear_element(divid);
 
     for (var rname in usi_data) {
 	clear_element(rname+"_current");
-	document.getElementById(rname+"_current").title = "";
+	var ele = document.getElementById(rname+"_current");
+	if (usi_data[rname].lori_data) {
+	    ele.title = "view as butterfly (mirror) spectrum";
+            ele.setAttribute('onclick', 'renderLorikeet("spec","'+src+'","'+rname+'");');
+	    ele.innerHTML = "&#8853;";
+	    ele.style.cursor = "pointer";
+	}
+	else
+            ele.title = "";
+    }
+    if (src2) {
+	document.getElementById(src2+"_current").innerHTML = "&#129419;";
+	document.getElementById(src2+"_current").title = "This spectrum is currently being displayed in butterfly (mirror) format below";
     }
     document.getElementById(src+"_current").innerHTML = "&#128202;";
     document.getElementById(src+"_current").title = "This spectrum/PSM is currently being displayed below";
@@ -601,11 +640,14 @@ function renderLorikeet(divid,src) {
 			   "labileModSum":s.labileModSum,
 			   "maxNeutralLossCount":s.maxNeutralLossCount,
 			   "labelReporters":s.reporterIons,
-			   "peaks":s.ms2peaks});
+			   "peaks":s.ms2peaks,
+			   "ms2peaks2Label": (src2 ? src2 : null),
+			   "peaks2": (src2 ? usi_data[src2].lori_data.ms2peaks : null)
+			  });
 
     const title = document.createElement("h1");
     title.style.marginLeft = "280px";
-    if (src == "MS2PIP" || src == "SEQ2MS") {
+    if (src == "MS2PIP" || src == "Seq2MS") {
 	title.className = "title invalid";
 	title.innerHTML = "PREDICTED spectrum from "+src;
     }
@@ -673,27 +715,18 @@ function render_tables(usi) {
             td.appendChild(document.createTextNode(rname));
 
 
-        if (rname == "MS2PIP") {
-	    var sel = document.createElement('select');
-	    sel.id = "MS2PIP_model";
-	    sel.style.marginLeft = "10px";
-	    sel.title = "Select prediction model";
-	    sel.setAttribute('onchange', 'reload("MS2PIP");');
-	    for (var model of [ 'HCD', 'HCD2019', 'HCD2021', 'CID', 'iTRAQ', 'iTRAQphospho', 'TMT', 'TTOF5600', 'HCDch2', 'CIDch2', 'Immuno-HCD', 'CID-TMT' ]) {
-		var opt = document.createElement('option');
-		opt.value = model;
-		opt.innerText = model;
-		sel.appendChild(opt);
-	    }
-	    td.appendChild(sel);
-	}
-        else if (rname == "SEQ2MS") {
+        if (rname == "MS2PIP" || rname == "Seq2MS") {
             var sel = document.createElement('select');
-            sel.id = "SEQ2MS_model";
+            sel.id = rname + "_model";
             sel.style.marginLeft = "10px";
             sel.title = "Select prediction model";
-            sel.setAttribute('onchange', 'reload("SEQ2MS");');
-            for (var model of [ 'pretrained', 'retrained' ]) {
+            sel.setAttribute('onchange', 'reload("'+rname+'");');
+
+	    var models = rname == "MS2PIP" ?
+		[ 'HCD', 'HCD2019', 'HCD2021', 'CID', 'iTRAQ', 'iTRAQphospho',
+		  'TMT', 'TTOF5600', 'HCDch2', 'CIDch2', 'Immuno-HCD', 'CID-TMT' ] :
+		[ 'retrained', 'pretrained' ];
+            for (var model of models) {
                 var opt = document.createElement('option');
                 opt.value = model;
                 opt.innerText = model;
@@ -701,6 +734,7 @@ function render_tables(usi) {
             }
             td.appendChild(sel);
         }
+
 
         tr.appendChild(td);
 
@@ -735,7 +769,7 @@ function reload(provider) {
 	document.getElementById(provider+thing).innerText = '-- processing request --';
 	document.getElementById(provider+thing).className = '';
     }
-    _dispec = false;
+    _dispec = '---refresh---';
     _done--;
     document.getElementById("usi_stat").classList.add("running");
     get_usi_from([provider]);
