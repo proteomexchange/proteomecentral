@@ -74,7 +74,7 @@ a:hover {
   opacity: 0;
   transition: visibility 0.5s, opacity 0.5s linear;
 }
-td[title$=spectrum]:hover {
+td[title$=spectrum]:hover, span[title$=spectrum]:hover {
  cursor:pointer;
  background-color: #2c99ce;
  color: #fff;

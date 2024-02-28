@@ -20,9 +20,17 @@ var usi_data = {
                           "view": "https://github.com/Jerryccm/Seq2MS"}
 };
 
+// for quick testing...
+if (0) {
+    usi_data = {
+	"PeptideAtlas"    : { "url" : "https://peptideatlas.org/api/proxi/v0.1/spectra?resultType=full&usi=" ,
+			      "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=INSERT_USI_HERE" }
+    };
+}
+
 var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730", "UNIMOD:731", "UNIMOD:737", "UNIMOD:738", "UNIMOD:739", "UNIMOD:889", "UNIMOD:984", "UNIMOD:985", "UNIMOD:1341", "UNIMOD:1342", "UNIMOD:2015", "UNIMOD:2016", "UNIMOD:2017", "UNIMOD:2050" ];
 
-var _peptidoform = null;
+var _peptidoforms = null;
 
 function init() {
     fetch("./proxi_config.json")
@@ -108,12 +116,12 @@ async function validate_usi(carryon) {
     }
 
     if (data.validation_results[usi]["is_valid"] == true) {
-	if (data.validation_results[usi]["peptidoform"]) {
-	    _peptidoform = JSON.parse(JSON.stringify(data.validation_results[usi]["peptidoform"])); // cheap dirty clone
-	    _peptidoform._f = data.validation_results[usi]["interpretation"] || '';
-	    _peptidoform._z = data.validation_results[usi]["charge"] || 0;
-	    _peptidoform._s = data.validation_results[usi]["index"] || 0;
+        if (data.validation_results[usi]["peptidoforms"] &&
+	    data.validation_results[usi]["peptidoforms"].length > 0) {
+	    _peptidoforms = JSON.parse(JSON.stringify(data.validation_results[usi]["peptidoforms"])); // cheap dirty clone
 	}
+
+
 	if (carryon) {
 	    if (data.validation_results[usi]["collection_type"] == 'placeholder') {
                 displayMsg("spec","WARNING: The USI you have entered uses the placeholder collection identifier of USI000000. This means that the creator of the USI used this placeholder instead of a public collection identifier such as PXD012345. In order for the USI resolution to work, you will need to find the correct dataset/collection identifier for the dataset you wish to access, and replace the USI000000 with the correct collection identifier.");
@@ -274,7 +282,7 @@ async function check_usi() {
     var usi = document.getElementById("usi_input").value;
     if (usi == "") return;
 
-    _peptidoform = null;
+    _peptidoforms = null;
     var valid = await validate_usi(true);
     if (!valid) return;
 
@@ -355,18 +363,11 @@ function get_usi_from(where) {
                     cell.innerHTML = "[ JSON ]";
 
 		    var s = {};
-                    s.sequence = "";
-                    s.charge = 1;
                     s.scanNum = 0;
                     s.precursorMz = 0;
                     s.fileName = p+" spectrum";
-                    s.ntermMod = 0;
-                    s.ctermMod = 0;
-		    s.reporterIons = false;
-                    s.variableMods = [];
-		    s.labileModSum = 0;
-		    s.maxNeutralLossCount = 1;
                     s.ms2peaks = [];
+		    s.pforms = [];
 
 		    var has_spectrum = false;
 		    var maxMz = 1999.0;
@@ -391,67 +392,77 @@ function get_usi_from(where) {
 		    s.minDisplayMz = 0.01;
                     s.maxDisplayMz = maxMz+1.0;
 
-		    if (_peptidoform) {
-			s.sequence = _peptidoform.peptide_sequence;
-			s.fileName = _peptidoform._f;
-			s.charge   = _peptidoform._z;
-			s.scanNum  = _peptidoform._s;
-			for (var mod in _peptidoform["terminal_modifications"]) {
-			    if (_peptidoform["terminal_modifications"][mod].base_residue == "nterm") {
-				s.ntermMod = _peptidoform["terminal_modifications"][mod].delta_mass;
-				if (isobaric_unimods.includes(_peptidoform["terminal_modifications"][mod].modification_curie))
-				    s.reporterIons = true;
-			    }
-			    else if (_peptidoform["terminal_modifications"][mod].base_residue == "cterm")
-				s.ctermMod = _peptidoform["terminal_modifications"][mod].delta_mass;
-			    else
-				console.warn("[WARN] Invalid mod terminus; ignoring...");
-			}
-			for (var mod in _peptidoform["residue_modifications"]) {
-			    var varmod  = {};
-			    varmod.index     = _peptidoform["residue_modifications"][mod].index;
-			    varmod.modMass   = _peptidoform["residue_modifications"][mod].delta_mass;
-			    varmod.aminoAcid = _peptidoform["residue_modifications"][mod].base_residue;
-			    if (Math.abs(varmod.modMass-79.966331) < 0.01) {  //Phos
-				varmod.losses = [];
-				var loss = {};
-				loss.monoLossMass = 97.976896;
-				loss.avgLossMass  = 97.9952;
-				loss.formula      = 'H3PO4';
-				loss.label        = 'p';
-				varmod.losses.push(loss);
-                                loss = {};
-                                loss.monoLossMass = 79.966331;
-                                loss.avgLossMass  = 79.9799;
-                                loss.formula      = 'HPO3';
-                                varmod.losses.push(loss);
-				s.maxNeutralLossCount++;
-			    }
-			    else if (varmod.aminoAcid == "M" && (Math.abs(varmod.modMass-15.9949) < 0.01)) {  //Ox
-				varmod.losses = [];
-				var loss = {};
-				loss.monoLossMass = 63.998285;
-				loss.avgLossMass  = 64.11;
-				loss.formula      = 'CH3SOH';
-				varmod.losses.push(loss);
-				s.maxNeutralLossCount++;
-			    }
-                            else if ((varmod.aminoAcid == "S" || varmod.aminoAcid == "T") && (Math.abs(varmod.modMass-27.9949) < 0.01)) {  //Formyl
-				varmod.losses = [];
-				var loss = {};
-				loss.monoLossMass = 27.9949;
-				loss.avgLossMass  = 28.0101;
-				loss.formula      = 'CO';
-				varmod.losses.push(loss);
-				s.maxNeutralLossCount++;
-			    }
+		    if (_peptidoforms) {
+			for (var pi in _peptidoforms) {
+			    s.pforms[pi] = {};
+			    s.pforms[pi].peptidoform = _peptidoforms[pi].peptidoform_string;
+			    s.pforms[pi].sequence = _peptidoforms[pi].peptide_sequence;
+			    s.pforms[pi].fileName = _peptidoforms[pi].peptidoform_string;
+			    s.pforms[pi].charge   = _peptidoforms[pi].charge;
+			    s.pforms[pi].ntermMod = 0;
+			    s.pforms[pi].ctermMod = 0;
+			    s.pforms[pi].reporterIons = false;
+			    s.pforms[pi].variableMods = [];
+			    s.pforms[pi].labileModSum = 0;
+			    s.pforms[pi].maxNeutralLossCount = 1;
 
-			    s.variableMods.push(varmod);
+			    for (var mod in _peptidoforms[pi]["terminal_modifications"]) {
+				if (_peptidoforms[pi]["terminal_modifications"][mod].base_residue == "nterm") {
+				    s.pforms[pi].ntermMod = _peptidoforms[pi]["terminal_modifications"][mod].delta_mass;
+				    if (isobaric_unimods.includes(_peptidoforms[pi]["terminal_modifications"][mod].modification_curie))
+					s.pforms[pi].reporterIons = true;
+				}
+				else if (_peptidoforms[pi]["terminal_modifications"][mod].base_residue == "cterm")
+				    s.pforms[pi].ctermMod = _peptidoforms[pi]["terminal_modifications"][mod].delta_mass;
+				else
+				    console.warn("[WARN] Invalid mod terminus; ignoring...");
+			    }
+			    for (var mod in _peptidoforms[pi]["residue_modifications"]) {
+				var varmod  = {};
+				varmod.index     = _peptidoforms[pi]["residue_modifications"][mod].index;
+				varmod.modMass   = _peptidoforms[pi]["residue_modifications"][mod].delta_mass;
+				varmod.aminoAcid = _peptidoforms[pi]["residue_modifications"][mod].base_residue;
+				if (Math.abs(varmod.modMass-79.966331) < 0.01) {  //Phos
+				    varmod.losses = [];
+				    var loss = {};
+				    loss.monoLossMass = 97.976896;
+				    loss.avgLossMass  = 97.9952;
+				    loss.formula      = 'H3PO4';
+				    loss.label        = 'p';
+				    varmod.losses.push(loss);
+                                    loss = {};
+                                    loss.monoLossMass = 79.966331;
+                                    loss.avgLossMass  = 79.9799;
+                                    loss.formula      = 'HPO3';
+                                    varmod.losses.push(loss);
+				    s.pforms[pi].maxNeutralLossCount++;
+				}
+				else if (varmod.aminoAcid == "M" && (Math.abs(varmod.modMass-15.9949) < 0.01)) {  //Ox
+				    varmod.losses = [];
+				    var loss = {};
+				    loss.monoLossMass = 63.998285;
+				    loss.avgLossMass  = 64.11;
+				    loss.formula      = 'CH3SOH';
+				    varmod.losses.push(loss);
+				    s.pforms[pi].maxNeutralLossCount++;
+				}
+				else if ((varmod.aminoAcid == "S" || varmod.aminoAcid == "T") && (Math.abs(varmod.modMass-27.9949) < 0.01)) {  //Formyl
+				    varmod.losses = [];
+				    var loss = {};
+				    loss.monoLossMass = 27.9949;
+				    loss.avgLossMass  = 28.0101;
+				    loss.formula      = 'CO';
+				    varmod.losses.push(loss);
+				    s.pforms[pi].maxNeutralLossCount++;
+				}
+
+				s.pforms[pi].variableMods.push(varmod);
+			    }
+                            for (var mod in _peptidoforms[pi]["unlocalized_mass_modifications"]) {
+				s.pforms[pi].labileModSum += _peptidoforms[pi]["unlocalized_mass_modifications"][mod].delta_mass;
+			    }
 			}
-                        for (var mod in _peptidoform["unlocalized_mass_modifications"]) {
-			    s.labileModSum += _peptidoform["unlocalized_mass_modifications"][mod].delta_mass;
-			}
-		    }
+		    } // if (_peptidoforms)
 
 		    if (data.attributes) {
 			for (var att of data.attributes) {
@@ -469,23 +480,38 @@ function get_usi_from(where) {
 			usi_data[p].lori_data = s;
 
 			var cell = document.getElementById(p+"_spectrum");
-			cell.title = "view spectrum";
 			cell.style.fontWeight = "bold";
-			cell.setAttribute('onclick', 'renderLorikeet("spec","'+p+'");');
-			cell.innerHTML = s.fileName;
+			cell.innerHTML = "";
+
+			if (usi_data[p].lori_data.pforms.length > 0) {
+			    for(var pf in usi_data[p].lori_data.pforms) {
+				var link = document.createElement("span");
+				link.style.padding = "5px";
+				link.title = "view matched spectrum";
+
+				link.setAttribute('onclick', 'renderLorikeet("spec",'+pf+',"'+p+'");');
+				link.innerHTML = usi_data[p].lori_data.pforms[pf].peptidoform;
+				cell.appendChild(link);
+			    }
+			}
+			else {
+			    cell.title = "view uninterpreted spectrum";
+			    cell.setAttribute('onclick', 'renderLorikeet("spec",null,"'+p+'");');
+			    cell.innerHTML = s.fileName;
+			}
 
 			if(!_dispec && !s.fileName.startsWith("PREDICTED")) {
 			    _dispec = p;
-			    renderLorikeet("spec",p);
+			    renderLorikeet("spec",usi_data[p].lori_data.pforms[0]?0:null,p);
 			}
 			else if (_dispec == '---refresh---') {
                             _dispec = p;
-                            renderLorikeet("spec",p);
+                            renderLorikeet("spec",0,p);
 			}
 			else {
                             var curr = document.getElementById(p+"_current");
 			    curr.title = "view as butterfly (mirror) spectrum";
-			    curr.setAttribute('onclick', 'renderLorikeet("spec","'+_dispec+'","'+p+'");');
+			    curr.setAttribute('onclick', 'renderLorikeet("spec",0,"'+_dispec+'","'+p+'");');
 			    curr.style.cursor = "pointer";
 			    curr.innerHTML = "&#8853;";
 			}
@@ -589,7 +615,7 @@ function viewJSON(divid,src) {
 }
 
 
-function renderLorikeet(divid,src,src2=null) {
+function renderLorikeet(divid,pfidx,src,src2=null) {
     if (src == 'null') // ugh
 	src = src2;
     if (src2 && src2 == src)
@@ -603,7 +629,7 @@ function renderLorikeet(divid,src,src2=null) {
 	var ele = document.getElementById(rname+"_current");
 	if (usi_data[rname].lori_data) {
 	    ele.title = "view as butterfly (mirror) spectrum";
-            ele.setAttribute('onclick', 'renderLorikeet("spec","'+src+'","'+rname+'");');
+            ele.setAttribute('onclick', 'renderLorikeet("spec",'+pfidx+',"'+src+'","'+rname+'");');
 	    ele.innerHTML = "&#8853;";
 	    ele.style.cursor = "pointer";
 	}
@@ -618,9 +644,9 @@ function renderLorikeet(divid,src,src2=null) {
     document.getElementById(src+"_current").title = "This spectrum/PSM is currently being displayed below";
 
 
-    $('#'+divid).specview({"sequence":s.sequence,
+    $('#'+divid).specview({"sequence":pfidx!=null ? s.pforms[pfidx].sequence : '',
 			   "scanNum":s.scanNum,
-			   "charge":s.charge,
+			   "charge":pfidx!=null ? s.pforms[pfidx].charge : s.charge ? s.charge : 1,
 			   "width":650,
 			   "height":400,
 			   "precursorMz":s.precursorMz,
@@ -634,12 +660,12 @@ function renderLorikeet(divid,src,src2=null) {
 			   "showB":[1,1,0],
 			   "showY":[1,1,0],
 			   "peakDetect":false,
-			   "ntermMod":s.ntermMod,
-			   "ctermMod":s.ctermMod,
-			   "variableMods":s.variableMods,
-			   "labileModSum":s.labileModSum,
-			   "maxNeutralLossCount":s.maxNeutralLossCount,
-			   "labelReporters":s.reporterIons,
+			   "ntermMod":pfidx!=null ? s.pforms[pfidx].ntermMod : 0,
+			   "ctermMod":pfidx!=null ? s.pforms[pfidx].ctermMod : 0,
+			   "variableMods":pfidx!=null ? s.pforms[pfidx].variableMods : [],
+			   "labileModSum":pfidx!=null ? s.pforms[pfidx].labileModSum : 0,
+			   "maxNeutralLossCount":pfidx!=null ? s.pforms[pfidx].maxNeutralLossCount : 1,
+			   "labelReporters":pfidx!=null ? s.pforms[pfidx].reporterIons : false,
 			   "peaks":s.ms2peaks,
 			   "ms2peaks2Label": (src2 ? src2 : null),
 			   "peaks2": (src2 ? usi_data[src2].lori_data.ms2peaks : null)
