@@ -278,30 +278,26 @@ class ProxiSpectra:
             message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string as input", "type": "about:blank" }
             return(status_code, message)
 
-        components = usi.split(':')
-
-        if len(components) < 6:
+        usi_string = usi
+        usi = UniversalSpectrumIdentifier(usi_string)
+ 
+        if usi.interpretation is None or usi.interpretation == '':
             status_code = 400
             message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string with a peptidoform component", "type": "about:blank" }
             return(status_code, message)
 
-        peptidoform = components[5]
-        model = components[2]
+        model = usi.collection_identifier
         if msRun is not None and msRun != '':
             model = msRun
         if model not in [ 'HCD', 'HCD2019', 'HCD2021', 'CID', 'iTRAQ', 'iTRAQphospho', 'TMT', 'TTOF5600', 'HCDch2', 'CIDch2', 'Immuno-HCD', 'CID-TMT' ]:
             model = "HCD"
 
         charge = "2"
-        match = re.search(r'/(\d+)$', peptidoform)
-        if match:
-            charge = match.group(1)
-
-        processing_result = predict_single(peptidoform, model=model)
-        predicted_spectrum = processing_result.as_spectra()[0]  # index 0 is the predicted spectrum (observed is None)
+        if usi.charge is not None:
+            charge = str(usi.charge)
 
         spectrum = Spectrum()
-        spectrum.usi = usi
+        spectrum.usi = usi_string
         spectrum.id = "0"
         spectrum.attributes = [
             #OntologyTerm("MS:1000744","selected ion m/z","473.1234"),
@@ -310,26 +306,35 @@ class ProxiSpectra:
             OntologyTerm("MS:1000586","contact name","MS2PIP","11"),
             OntologyTerm("MS:1000590","contact affiliation","VIB","11")
         ]
+        spectrum.mzs = []
+        spectrum.intensities = []
+        spectrum.interpretations = []
 
-        spectrum.mzs = list(predicted_spectrum.mz)
-        for i in range(len(spectrum.mzs)):
-            spectrum.mzs[i] = float(spectrum.mzs[i])
+        for peptidoform in usi.peptidoforms:
+            peptidoform_string = peptidoform['peptidoform_string']
+            charge = peptidoform['charge']
 
-        spectrum.intensities = list(predicted_spectrum.intensity)
-        max_intensity = 0.0
-        for i in range(len(spectrum.intensities)):
-            intensity = abs(float(spectrum.intensities[i]))
-            if intensity > max_intensity:
-                max_intensity = intensity
-            spectrum.intensities[i] = intensity
-        if max_intensity == 0.0:
-            max_intensity = 1.0
-        scaling_factor = 10000.0 / max_intensity
-        for i in range(len(spectrum.intensities)):
-            spectrum.intensities[i] = abs(float(spectrum.intensities[i])) * scaling_factor
+            processing_result = predict_single(f"{peptidoform_string}/{charge}", model=model)
+            predicted_spectrum = processing_result.as_spectra()[0]  # index 0 is the predicted spectrum (observed is None)
 
-        spectrum.interpretations = list(predicted_spectrum.annotations)
-        print(spectrum)
+            for i in range(len(predicted_spectrum.mz)):
+                spectrum.mzs.append(float(predicted_spectrum.mz[i]))
+
+            max_intensity = 0.0
+            intensities = []
+            for i in range(len(predicted_spectrum.intensity)):
+                intensity = abs(float(predicted_spectrum.intensity[i]))
+                if intensity > max_intensity:
+                    max_intensity = intensity
+                intensities.append(intensity)
+            if max_intensity == 0.0:
+                max_intensity = 1.0
+            scaling_factor = 10000.0 / max_intensity
+            for i in range(len(intensities)):
+                spectrum.intensities.append(abs(float(intensities[i])) * scaling_factor)
+
+            spectrum.interpretations.extend(list(predicted_spectrum.annotations))
+            print(spectrum)
 
         self.spectra = [ spectrum.to_dict() ]
         status_code = 200
