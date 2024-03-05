@@ -4,6 +4,12 @@ _api['base_url'] = "/api/proxi/v0.1/";
 var _done = 0;
 var _dispec = null;
 
+var _ion_list = ['a','b','c','x','y','z','I','prec','rep','int',"?",'other'];
+var _totint;
+var _totints;
+var _coreints;
+var _mzs = [];
+
 var usi_data = {
     "iProX"           : { "url" : "https://www.iprox.cn/proxi/spectra?resultType=full&usi=" },
     "jPOST"           : { "url" : "https://repository.jpostdb.org/proxi/spectra?resultType=full&usi=" },
@@ -38,19 +44,23 @@ function init() {
         .then(config => {
             _api['validate'] = config.API_URL +"usi_validator";
             _api['examples'] = config.API_URL +"usi_examples";
+            _api['annotate'] = config.API_URL +"annotate";
 	    for (var src of ["ProteomeCentral", "MS2PIP", "Seq2MS"])
-		usi_data[src].url = usi_data[src].url.replace(_api['base_url'], config.API_URL);
+		if (usi_data[src])
+		    usi_data[src].url = usi_data[src].url.replace(_api['base_url'], config.API_URL);
 
 	    init2();
         })
         .catch(error => {
             _api['validate'] = _api['base_url'] + "usi_validator";
             _api['examples'] = _api['base_url'] + "usi_examples";
+            _api['annotate'] = _api['base_url'] + "annotate";
             init2();
         });
 }
 
 function init2() {
+    tpp_dragElement(document.getElementById("quickplot"));
     const params = new URLSearchParams(window.location.search);
     if (params.has('usi')) {
 	document.getElementById("usi_input").value = params.get('usi');
@@ -97,6 +107,8 @@ async function validate_usi(carryon) {
 
     clear_element("main");
     clear_element("spec");
+    clear_element("annot");
+    toggle_box("quickplot",false,true);
     for (var p in usi_data)
 	usi_data[p].lori_data = null;
 
@@ -288,6 +300,8 @@ async function check_usi() {
 
     render_tables(usi);
     clear_element("spec");
+    clear_element("annot");
+    toggle_box("quickplot",false,true);
     document.getElementById("usi_stat").classList.add("running");
 
     _done = 0;
@@ -503,6 +517,7 @@ function get_usi_from(where) {
 			if(!_dispec && !s.fileName.startsWith("PREDICTED")) {
 			    _dispec = p;
 			    renderLorikeet("spec",usi_data[p].lori_data.pforms[0]?0:null,p);
+			    annotate_peaks(alldata,usi_data[p].lori_data.pforms[0].peptidoform);
 			}
 			else if (_dispec == '---refresh---') {
                             _dispec = p;
@@ -609,7 +624,7 @@ function viewJSON(divid,src) {
     title.innerHTML = src + " JSON response";
     jcode.appendChild(title);
 
-    jcode.innerHTML +=  JSON.stringify(usi_data[src].usi_data,null,2);
+    jcode.innerHTML += JSON.stringify(usi_data[src].usi_data,null,2);
 
     document.getElementById(divid).appendChild(jcode);
 }
@@ -809,18 +824,24 @@ function pick_box_example(anchor) {
     check_usi();
 }
 
-function toggle_box(box) {
-    if (document.getElementById(box).style.visibility == "visible") {
-        document.getElementById(box).style.visibility = "hidden";
-        document.getElementById(box).style.opacity = "0";
+function toggle_box(box,open=false,close=false) {
+    var elebox = document.getElementById(box);
+    if ((elebox.style.visibility == "visible" && !open) || close) {
+        elebox.style.visibility = "hidden";
+        elebox.style.opacity = "0";
         if (document.getElementById(box+"_button"))
             document.getElementById(box+"_button").classList.remove("on");
     }
     else {
-	document.getElementById(box).style.visibility = "visible";
-	document.getElementById(box).style.opacity = "1";
+	elebox.style.visibility = "visible";
+	elebox.style.opacity = "1";
         if (document.getElementById(box+"_button"))
             document.getElementById(box+"_button").classList.add("on");
+
+	if ((elebox.offsetLeft + elebox.offsetWidth) < 200)
+	    elebox.style.left = '10px';
+	if ((elebox.offsetTop + elebox.offsetHeight) < 200)
+	    elebox.style.top = '10px';
     }
 }
 
@@ -861,5 +882,358 @@ function clear_element(ele) {
     const node = document.getElementById(ele);
     while (node.firstChild) {
         node.removeChild(node.firstChild);
+    }
+}
+
+
+function annotate_peaks(spec_data,pform) {
+    if (!spec_data[0]["attributes"])
+	spec_data[0]["attributes"] = [];
+    var att = {};
+    att.name = 'proforma peptidoform sequence';
+    att.accession = 'MS:1003169';
+    att.value = pform;
+    spec_data[0]["attributes"].push(att);
+
+    fetch(_api['annotate'], {
+        method: 'post',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(spec_data)
+    })
+        .then(response => response.json())
+        .then(annot_data => {
+	    var annot_table = annotation_table(annot_data,pform);
+	    document.getElementById("annot").appendChild(annot_table);
+	});
+}
+
+function annotation_table(annot_data,pform) {
+    var table = document.createElement("table");
+    table.className = "annot prox";
+
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.colSpan = '12';
+    td.className = "rep";
+    td.appendChild(document.createTextNode("Peak Annotations for: "+pform));
+    tr.appendChild(td);
+
+    td = document.createElement("td");
+    td.colSpan = '2';
+    td.className = "rep";
+    td.style.fontSize = 'revert';
+    td.setAttribute('onclick', 'show_mass_defect()');
+    td.innerHTML = "&#128200; Mass Defect";
+    td.title = "View Mass Defect plot";
+    tr.appendChild(td);
+
+    td = document.createElement("td");
+    td.colSpan = '2';
+    td.className = "rep";
+    td.style.fontSize = 'revert';
+    td.setAttribute('onclick', 'show_ion_stats()');
+    td.innerHTML = "&#128202; Ion Stats";
+    td.title = "View Ion Contribution histogram plot";
+    tr.appendChild(td);
+
+    table.appendChild(tr);
+
+    tr = document.createElement("tr");
+    tr.style.position = 'sticky';
+    tr.style.top = '0';
+    tr.style.zIndex = '5';
+    for (var col of ["m/z", "intensity", "norm", "interpretation(s)"].concat(_ion_list)) {
+        td = document.createElement("th");
+	td.appendChild(document.createTextNode(col));
+        tr.appendChild(td);
+    }
+    table.appendChild(tr);
+
+    var maxint = 1;
+    for (var pint of annot_data['annotated_spectra'][0]['intensities'])
+	if (pint > maxint)
+	    maxint = pint;
+
+    _totint = 0;
+    _totints = [0,0,0,0,0,0,0,0,0,0,0,0];
+    _coreints = [0,0,0,0,0,0,0,0,0,0,0,0];
+    _mzs = annot_data['annotated_spectra'][0]['mzs'];
+
+    for (var idx in annot_data['annotated_spectra'][0]['mzs']) {
+	tr = document.createElement("tr");
+	for (var col of ["mzs", "intensities", "interpretations"]) {
+	    td = document.createElement("td");
+	    var val = annot_data['annotated_spectra'][0][col][idx];
+	    if (col == "interpretations")
+		td.appendChild(document.createTextNode(val));
+	    else {
+		td.className = "number";
+		var f = col == "intensities" ? 1 : 4;
+		td.appendChild(document.createTextNode(Number(val).toFixed(f)));
+		if (col == "intensities") {
+		    tr.appendChild(td);
+		    td = document.createElement("td");
+		    td.className = "number";
+		    td.style.borderRight = "1px solid rgb(187, 221, 187)";
+		    td.appendChild(document.createTextNode(Number(100*val/maxint).toFixed(1)));
+		    td.style.background = "linear-gradient(to left, rgb(187, 221, 187), rgb(187, 221, 187) "+(100*val/maxint)+"%, rgba(255, 255, 255, 0) "+(100*val/maxint)+"%)";
+		}
+	    }
+	    tr.appendChild(td);
+	}
+
+	// only consider the first one
+	var what = annot_data['annotated_spectra'][0]["interpretations"][idx].split('/')[0];
+	var mion = what.match(/[+-]/) ? false : true;
+	var chrg = '';
+	if (what.indexOf('^',-1) >= 0)
+	    for (var c=0; c<Number(what.substr(-1,1)); c++)
+		chrg += "+";
+
+	var where = 999;
+	var inum = what.match(/^.\d+/);
+
+	if (what.startsWith("0@")) {
+	    where = _ion_list.indexOf('other');
+            what = 'other';
+	}
+	else if (what.startsWith("?")) {
+            where = _ion_list.indexOf('?');
+            what = inum ? inum : '?';
+	}
+	else if (what.startsWith("p") ||
+		 what.includes("@p")) {
+            where = _ion_list.indexOf('prec');
+	    what = 'p'+chrg;;
+	}
+	else if (what.startsWith("I")) {
+            where = _ion_list.indexOf('I');
+	    what = what.substring(1,2);
+	}
+        else if (what.startsWith("r")) {
+            where = _ion_list.indexOf('rep');
+            what = what.substring(2,5);
+        }
+        else if (what.startsWith("m")) {
+            where = _ion_list.indexOf('int');
+            what = 'm';
+        }
+        else if (what.startsWith("a")) {
+            where = _ion_list.indexOf('a');
+            what = inum+chrg;
+        }
+        else if (what.startsWith("b")) {
+            where = _ion_list.indexOf('b');
+            what = inum+chrg;
+        }
+        else if (what.startsWith("c")) {
+            where = _ion_list.indexOf('c');
+            what = inum+chrg;
+        }
+        else if (what.startsWith("x")) {
+            where = _ion_list.indexOf('x');
+            what = inum+chrg;
+        }
+        else if (what.startsWith("y")) {
+            where = _ion_list.indexOf('y');
+            what = inum+chrg;
+        }
+        else if (what.startsWith("z")) {
+            where = _ion_list.indexOf('z');
+            what = inum+chrg;
+        }
+	else {
+            where = _ion_list.indexOf('other');
+	    what = "!!! "+what;
+	}
+
+	for (var aaa in _ion_list) {
+            td = document.createElement("td");
+	    if (aaa == where) {
+		td.className = 'annot_col'+aaa;
+		if (!mion)
+		    td.style.filter = "brightness(65%)";
+		else
+                    _coreints[aaa] += annot_data['annotated_spectra'][0]['intensities'][idx];
+		td.innerHTML = what;
+
+		_totints[aaa] += annot_data['annotated_spectra'][0]['intensities'][idx];
+		_totint += annot_data['annotated_spectra'][0]['intensities'][idx];
+
+	    }
+            tr.appendChild(td);
+	}
+
+	table.appendChild(tr);
+    }
+
+
+    tr = document.createElement("tr");
+    for (var col of ["", "", "", ""].concat(_ion_list)) {
+        td = document.createElement("th");
+        td.appendChild(document.createTextNode(col));
+        tr.appendChild(td);
+    }
+    table.appendChild(tr);
+
+    tr = document.createElement("tr");
+    td = document.createElement("th");
+    td.colSpan = '4';
+    td.style.textAlign = 'right';
+    td.appendChild(document.createTextNode("Share of Total Ion Current:"));
+    tr.appendChild(td);
+
+    for (var aaa in _ion_list) {
+	td = document.createElement("th");
+	td.appendChild(document.createTextNode((100*_totints[aaa]/_totint).toFixed(1)+"%"));
+	tr.appendChild(td);
+    }
+    table.appendChild(tr);
+
+    return table;
+}
+
+
+function show_ion_stats() {
+    clear_element("quickplot_canvas");
+    document.getElementById("quickplot_title").innerHTML = "Ion Stats";
+
+    var canvas = document.getElementById("quickplot_canvas");
+    canvas.height = 250;
+    canvas.width = 510;
+
+    const ctx = canvas.getContext("2d");
+    ctx.strokeStyle = "#ccc";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var pct=0; pct<=100; pct+=10) {
+        ctx.moveTo(0, 20+2*pct);
+        ctx.lineTo(480, 20+2*pct);
+        ctx.fillText((100-pct)+"%", 485, 20+2*pct);
+    }
+    ctx.stroke();
+
+    for (var aaa in _ion_list) {
+	var x = 5+40*aaa;
+	var h = 200*_totints[aaa]/_totint;
+	ctx.fillStyle = '#2c99ce';
+	ctx.fillRect(x,  220-h, 30, h);
+
+	h = 200*_coreints[aaa]/_totint;
+	ctx.fillStyle = '#047';
+	ctx.fillRect(x,  220-h, 30, h);
+
+	ctx.fillStyle = '#000';
+	ctx.font = "16px Consola";
+	ctx.textAlign = "center";
+	ctx.fillText(_ion_list[aaa], x+15, 240);
+    }
+
+    toggle_box("quickplot",true);
+}
+
+function show_mass_defect() {
+    clear_element("quickplot_canvas");
+    document.getElementById("quickplot_title").innerHTML = "Mass Defect";
+
+    var minmz = 1000;
+    var maxmz = 0;
+    for (var mz of _mzs) {
+	if (mz < minmz )
+	    minmz = mz;
+        if (mz > maxmz )
+            maxmz = mz;
+    }
+    var w = Number((maxmz-minmz+1).toFixed(0));
+
+    var canvas = document.getElementById("quickplot_canvas");
+    canvas.height = 650;
+    canvas.width = w+40;
+
+    const ctx = canvas.getContext("2d");
+    ctx.strokeStyle = "#ccc";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var p=0; p<=10; p++) {
+        ctx.moveTo(0, 10+p*60);
+        ctx.lineTo(w, 10+p*60);
+        ctx.fillText(((10-p)/10).toFixed(1), w+3, 15+p*60);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.strokeStyle = "#666";
+    ctx.moveTo(0, 610);
+    ctx.lineTo(w, 610);
+    ctx.stroke();
+
+    ctx.fillStyle = '#000';
+    ctx.textAlign = "center";
+    ctx.beginPath();
+    for (var p=0; p<=2400; p+=100) {
+	if (p>minmz && p<maxmz) {
+	    ctx.moveTo(p-minmz, 610);
+	    ctx.lineTo(p-minmz, 615);
+            ctx.fillText(p, p-minmz, 625);
+	}
+    }
+    ctx.stroke();
+
+    ctx.font = "14px Consola";
+    ctx.fillText('m/z', w/2, 645);
+
+    ctx.save();
+    ctx.translate( canvas.width - 1, 0 );
+    ctx.rotate(270 * Math.PI / 180);
+    ctx.fillText('m/z - int (m/z)', -(canvas.height/2).toFixed(0), -5);
+    ctx.restore();
+
+    ctx.strokeStyle = "rgba(0,64,120,0.6)";
+    for (var mz of _mzs) {
+	var md = mz - Math.floor(mz);
+
+	ctx.beginPath();
+	ctx.arc(mz-minmz, 610-md*600, 2, 0, 2 * Math.PI);
+	ctx.stroke();
+    }
+
+    toggle_box("quickplot",true);
+}
+
+// from w3schools (mostly)
+function tpp_dragElement(ele) {
+    ele.style.cursor = "move";
+    var posx1 = 0, posx2 = 0, posy1 = 0, posy2 = 0;
+    if (document.getElementById(ele.id + "header"))
+        document.getElementById(ele.id + "header").onmousedown = dragMouseDown;
+    else
+        ele.onmousedown = dragMouseDown;
+
+    function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        posx2 = e.clientX;
+        posy2 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        posx1 = posx2 - e.clientX;
+        posy1 = posy2 - e.clientY;
+        posx2 = e.clientX;
+        posy2 = e.clientY;
+        ele.style.top  = (ele.offsetTop  - posy1) + "px";
+        ele.style.left = (ele.offsetLeft - posx1) + "px";
+        ele.style.right = 'initial';
+    }
+
+    function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
     }
 }

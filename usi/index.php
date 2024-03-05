@@ -18,184 +18,7 @@
 <script src="../javascript/js/lorikeet/ion.js"></script>
 <link rel="stylesheet" type="text/css" href="../javascript/css/lorikeet.css">
 <link rel="stylesheet" type="text/css" href="../javascript/css/jquery-ui.slider.min.css">
-<style type="text/css">
-h1 {
-  margin-left: 5px;
-  margin-bottom: 0px;
-}
-hr {
-  border-bottom: 1px solid black;
-  border-top: 0;
-}
-a {
- text-decoration: none;
- font-weight:bolder;
- color:#2c99ce;
-}
-a:hover {
- text-decoration: underline;
- color:#f26722;
- cursor:pointer;
-}
-#usi_logo {
- position: absolute;
- z-index: -1;
- right: 50px;
- top: 100px;
- width: 400px;
- opacity: 0.4;
-}
-#usi_input {
- margin: 4px;
- padding: 6px;
- border: 2px solid black;
- vertical-align: baseline;
-}
-#NBTexamples {
-  position: absolute;
-  top: 200px;
-  left: 200px;
-  visibility: hidden;
-  opacity: 0;
-  transition: visibility 0.5s, opacity 0.5s linear;
-}
-#whatisusi {
-  position: absolute;
-  top: 190px;
-  left: 230px;
-  max-width: 410px;
-  background-color: #fff;
-  border: 2px solid #000;
-  float: left;
-  border-radius: 15px;
-  box-shadow: 6px 6px 10px 0 #aaa;
-  margin-bottom: 20px;
-  visibility: hidden;
-  opacity: 0;
-  transition: visibility 0.5s, opacity 0.5s linear;
-}
-td[title$=spectrum]:hover, span[title$=spectrum]:hover {
- cursor:pointer;
- background-color: #2c99ce;
- color: #fff;
-}
-td[title$=response]:hover {
- cursor:pointer;
- background-color: #e5e5e5;
-}
-.examples {
- position: relative;
- left: 40px;
- padding: 5px 10px;
- margin: 0;
- border: 1px solid #aaa;
- color: #666;
- border-radius: 20px;
- width:130px;
- background-color: #eee;
-}
-.on {
- font-weight: bold;
- background-color: #fff;
- color: #2c99ce;
- border: 2px solid #2c99ce;
-}
-.examples:hover {
- background-color: #fff;
- cursor:pointer;
-}
-.smgr {
- font-size: small;
- font-weight: normal;
- color: #aaa;
-}
-.prox {
- border-collapse: collapse;
-}
-.rowdata:hover {
- border-bottom: 2px solid #f26722;
-}
-.prox td {
- border-bottom: 1px solid #cdcdcd;
- padding: 3px 10px;
-}
-.prox th {
- border-bottom: 2px solid black;
- margin: 5px;
- padding: 3px 10px;
- text-align:left;
- background-color: #e5e5e5;
-}
-h1.title {
- line-height: normal;
- padding: 10px;
- margin:0;
- position: relative;
- top: -10px;
- left: -10px;
- width: 100%;
-}
-.rep {
- border-top: 2px solid black;
- background-color: #cdcdcd;
- font-size: large;
- font-weight:bold;
-}
-.rep a {
- font-size: 17px;
- float: right;
- color: #777;
-}
-.code200 { background-color: #5f5; }
-.code400 { background-color: #666; color: #eee; }
-.code404 { background-color: #ec1; }
-.code500 { background-color: #d22; color: #eee; }
-.code501 { background-color: #bbb; }
-.code598 { background-color: #f55; }
-#usi_stat, #usi_valid {
- border-radius: 20px;
- border: 2px solid black;
- transition: background-color .5s;
- background:#000;
- color:#fff;
- padding:5px 10px;
- display:inline-block;
- text-align: center;
-}
-#usi_stat:hover, #usi_valid:hover {
- cursor:pointer;
- background:#f26722;
-}
-.valid {
- color: #2b2;
-}
-.invalid {
- color: #b22;
-}
-.running {
-    animation-name:processing;
-    animation-duration:0.7s;
-    animation-direction:alternate;
-    animation-iteration-count:infinite;
-    animation-timing-function:linear;
-}
-@keyframes processing {
-    from { background-color:#f26722; }
-    to   { background-color:#000000; }
-}
-.json {
- font-family: Consolas,monospace;
- white-space: pre;
- display:inline-block;
- border: 1px solid #999;
- margin-left:10px;
- margin-bottom:30px;
- padding: 10px;
- background-color: #fff;
- box-shadow: 0 3px 10px 0 rgba(0,0,0,.5);
- max-width: 100%;
-}
-</style>
+<link rel="stylesheet" type="text/css" href="../css/usi.css">
 
 <body onload="init();">
 
@@ -230,17 +53,29 @@ h1.title {
 
 
 <div style="margin-top:20px;" id="main"></div>
+<div style="min-height:300px;" id="spec"></div>
+<div style="min-height:200px;" id="annot"></div>
 
-<div style="min-height:500px;" id="spec"></div>
+
+<div id="quickplot" class="site-content">
+  <h3 style="background:#666;margin:0;" class="dataset-title" id="quickplot_title">QuickPlot</h3>
+  <div class="dataset-content">
+    <canvas id="quickplot_canvas"></canvas>
+    <br>
+    <a style="background:#666;float:right" class="dataset-title" onclick="toggle_box('quickplot');">Dismiss</a>
+  </div>
+</div>
+
 
 <div id="whatisusi" class="site-content">
-<h3 style="background:#000;margin:0;" class="dataset-title">About</h3>
-<div style="text-align: justify;" class="dataset-content">
-<p>The <b>Universal Spectral Identifier</b> (USI) is an approved standard by the Proteomics Standards Initiative (PSI) that enables the identification of a specific spectrum or PSM contained in public ProteomeXchange repositories.</p>
-<p>For more information, including the specification and journal article, please see <a href="http://psidev.info/usi" target="PSI">http://psidev.info/usi/</a></p>
-<a style="background:#000;float:right" class="dataset-title" onclick="toggle_box('whatisusi');">Dismiss</a>
+  <h3 style="background:#000;margin:0;" class="dataset-title">About</h3>
+  <div style="text-align: justify;" class="dataset-content">
+    <p>The <b>Universal Spectral Identifier</b> (USI) is an approved standard by the Proteomics Standards Initiative (PSI) that enables the identification of a specific spectrum or PSM contained in public ProteomeXchange repositories.</p>
+    <p>For more information, including the specification and journal article, please see <a href="http://psidev.info/usi" target="PSI">http://psidev.info/usi/</a></p>
+    <a style="background:#000;float:right" class="dataset-title" onclick="toggle_box('whatisusi');">Dismiss</a>
+  </div>
 </div>
-</div>
+
 
 <div id="NBTexamples">
 <div id="dataset-primary" class="site-content">
