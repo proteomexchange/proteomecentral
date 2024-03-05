@@ -143,7 +143,7 @@ class ProxiAnnotator:
                 annotated_spectrum = Spectrum()
                 annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None)
                 annotator = SpectrumAnnotator()
-                annotator.annotate(annotated_spectrum, peptidoform=peptidoform, charge=precursor_charge, tolerance=tolerance)
+                annotator.annotate(annotated_spectrum, peptidoforms=[peptidoform], charges=[precursor_charge], tolerance=tolerance)
                 n_annotated_spectra += 1
 
             except Exception as error:
