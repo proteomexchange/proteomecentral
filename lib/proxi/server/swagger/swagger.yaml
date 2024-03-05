@@ -50,7 +50,6 @@ paths:
       - name: "resultType"
         in: "query"
         description: "Type of the object to be retrieve Compact or Full dataset"
-        required: true
         type: "string"
         default: "compact"
         enum:
