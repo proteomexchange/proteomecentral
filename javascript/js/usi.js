@@ -370,10 +370,20 @@ function get_usi_from(where) {
 
 		    usi_data[p].usi_data = data;
 
+                    cell = document.getElementById(p+"_atts");
+                    cell.className = "smgr";
+		    if (data && data.attributes) {
+			cell.title = "view attributes for this spectrum";
+			cell.setAttribute('onclick', 'viewAtts("spec","'+p+'");');
+			cell.innerHTML = "[ VIEW ]";
+		    }
+		    else
+			cell.innerHTML = "";
+
                     cell = document.getElementById(p+"_json");
                     cell.className = "smgr";
-                    cell.title = "view JSON response";
-                    cell.setAttribute('onclick', 'viewJSON("spec","'+p+'");');
+		    cell.title = "view JSON response";
+		    cell.setAttribute('onclick', 'viewJSON("spec","'+p+'");');
                     cell.innerHTML = "[ JSON ]";
 
 		    var s = {};
@@ -478,7 +488,7 @@ function get_usi_from(where) {
 			}
 		    } // if (_peptidoforms)
 
-		    if (data.attributes) {
+		    if (data && data.attributes && data.attributes.length>0) {
 			for (var att of data.attributes) {
                             if (att.accession == "MS:1008025") s.scanNum     = att.value;
                             if (att.accession == "MS:1000827") s.precursorMz = att.value;
@@ -517,7 +527,7 @@ function get_usi_from(where) {
 			if(!_dispec && !s.fileName.startsWith("PREDICTED")) {
 			    _dispec = p;
 			    renderLorikeet("spec",usi_data[p].lori_data.pforms[0]?0:null,p);
-			    annotate_peaks(alldata,usi_data[p].lori_data.pforms[0].peptidoform);
+			    annotate_peaks(data,usi_data[p].lori_data.pforms[0].peptidoform);
 			}
 			else if (_dispec == '---refresh---') {
                             _dispec = p;
@@ -558,6 +568,7 @@ function get_usi_from(where) {
 
                 document.getElementById(p+"_msg").innerHTML = error;
                 document.getElementById(p+"_spectrum").innerHTML = "--n/a--";
+                document.getElementById(p+"_atts").innerHTML = "--n/a--";
                 document.getElementById(p+"_json").innerHTML = "--n/a--";
 		console.error(error);
             });
@@ -582,7 +593,10 @@ function sortLinkedArrays(arr1,arr2) {
 
     arr2 = [];
     for (var i in arr1)
-	arr2.push(hoa[arr1[i]]);
+	arr2.push(Number(hoa[arr1[i]])); // also get rid of pesky strings
+
+    for (var i in arr1)
+        arr1[i] = Number(arr1[i]); // get rid of pesky strings
 
     return [arr1, arr2];
 }
@@ -602,6 +616,66 @@ function displayMsg(divid,msg) {
     txt.style.marginBottom = "0";
     txt.appendChild(document.createTextNode(msg));
     document.getElementById(divid).appendChild(txt);
+}
+
+function viewAtts(divid,src) {
+    clear_element(divid);
+
+    for (var rname in usi_data) {
+        clear_element(rname+"_current");
+        document.getElementById(rname+"_current").title = "";
+        document.getElementById(rname+"_current").setAttribute('onclick', '');
+        document.getElementById(rname+"_current").style.cursor = "initial";
+    }
+    document.getElementById(src+"_current").innerHTML = "&#128220";
+    document.getElementById(src+"_current").title = "The attributes for this spectrum are currently being displayed below";
+
+    var atts = document.createElement("div");
+    atts.className = "json";
+    atts.style.whiteSpace = "initial";
+
+    var title = document.createElement("h1");
+    title.className = "rep title";
+    title.innerHTML = "Spectrum attributes from " + src;
+    atts.appendChild(title);
+
+    if (usi_data[src].usi_data.attributes) {
+	var table = document.createElement("table");
+	table.className = "prox annot";
+
+	var tr = document.createElement("tr");
+	tr = document.createElement("tr");
+	for (var field of ["name", "accession", "value"]) {
+            td = document.createElement("th");
+            td.appendChild(document.createTextNode(field));
+            tr.appendChild(td);
+	}
+	table.appendChild(tr);
+
+	for (var att of usi_data[src].usi_data.attributes) {
+            tr = document.createElement("tr");
+
+            for (var field of ["name", "accession", "value"]) {
+		td = document.createElement("td");
+		if (field != "value")
+		    td.style.whiteSpace = "pre";
+		if (att[field])
+		    td.appendChild(document.createTextNode(att[field]));
+		else {
+		    td.className = "code404";
+		    td.appendChild(document.createTextNode('-- null --'));
+		}
+		tr.appendChild(td);
+	    }
+            table.appendChild(tr);
+	}
+	atts.appendChild(table);
+    }
+    else {
+	atts.innerHTML += src+" did not provide any attributes for this spectrum.";
+    }
+
+    document.getElementById(divid).appendChild(atts);
 }
 
 function viewJSON(divid,src) {
@@ -720,13 +794,13 @@ function render_tables(usi) {
     var tr = document.createElement("tr");
     var td = document.createElement("td");
     td.className = "rep";
-    td.colSpan = 5;
+    td.colSpan = 6;
     td.appendChild(document.createTextNode(usi));
     tr.appendChild(td);
     table.appendChild(tr);
 
     tr = document.createElement("tr");
-    var headings = ['Provider','Response','Spectrum / PSM (click to view)','','Dev Info']
+    var headings = ['Provider','Response','Spectrum / PSM (click to view)','','Attributes','Dev Info']
     for (var heading of headings) {
         td = document.createElement("th");
         td.appendChild(document.createTextNode(heading));
@@ -794,6 +868,10 @@ function render_tables(usi) {
         tr.appendChild(td);
 
         td = document.createElement("td");
+        td.id = rname+"_atts";
+        tr.appendChild(td);
+
+        td = document.createElement("td");
         td.id = rname+"_json";
         tr.appendChild(td);
 
@@ -806,7 +884,7 @@ function render_tables(usi) {
 }
 
 function reload(provider) {
-    for (var thing of ["_msg","_spectrum","_json"]) {
+    for (var thing of ["_msg","_spectrum","_atts","_json"]) {
 	document.getElementById(provider+thing).innerText = '-- processing request --';
 	document.getElementById(provider+thing).className = '';
     }
@@ -887,13 +965,13 @@ function clear_element(ele) {
 
 
 function annotate_peaks(spec_data,pform) {
-    if (!spec_data[0]["attributes"])
-	spec_data[0]["attributes"] = [];
+    if (!spec_data["attributes"])
+	spec_data["attributes"] = [];
     var att = {};
     att.name = 'proforma peptidoform sequence';
     att.accession = 'MS:1003169';
     att.value = pform;
-    spec_data[0]["attributes"].push(att);
+    spec_data["attributes"].push(att);
 
     fetch(_api['annotate'], {
         method: 'post',
@@ -901,7 +979,7 @@ function annotate_peaks(spec_data,pform) {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(spec_data)
+        body: JSON.stringify([spec_data])
     })
         .then(response => response.json())
         .then(annot_data => {
