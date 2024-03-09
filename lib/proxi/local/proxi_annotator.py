@@ -25,8 +25,9 @@ except:
 
 
 try:
-    from spectrum_annotator import SpectrumAnnotator
     from spectrum import Spectrum
+    from spectrum_annotator import SpectrumAnnotator
+    from spectrum_sequencer import SpectrumSequencer
 except:
     proxi_instance = os.environ.get('PROXI_INSTANCE')
     if proxi_instance:
@@ -37,8 +38,9 @@ except:
         else:
             print("ERROR: Environment variable PROXI_INSTANCE must be set")
             exit()
-    from spectrum_annotator import SpectrumAnnotator
     from spectrum import Spectrum
+    from spectrum_annotator import SpectrumAnnotator
+    from spectrum_sequencer import SpectrumSequencer
 
 
 
@@ -104,6 +106,7 @@ class ProxiAnnotator:
             peptidoform_string = None
             precursor_charge = None
             precursor_mz = None
+            create_peak_network = False
             for attribute in spectrum['attributes']:
                 if attribute['name'] == 'proforma peptidoform sequence' or attribute['accession'] == 'MS:1003169':
                     peptidoform_string = attribute['value']
@@ -142,8 +145,28 @@ class ProxiAnnotator:
             try:
                 annotated_spectrum = Spectrum()
                 annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None)
+                user_parameters = {}
+                if 'extended_data' in spectrum and isinstance(spectrum['extended_data'],dict):
+                    eprint("INFO-150: found extended_data in spectrum")
+                    annotated_spectrum.extended_data = spectrum['extended_data']
+                    if 'user_parameters' in annotated_spectrum.extended_data and isinstance(annotated_spectrum.extended_data['user_parameters'],dict):
+                        user_parameters = annotated_spectrum.extended_data['user_parameters']
+                    try:
+                        create_peak_network = user_parameters['create_peak_network']
+                    except:
+                        create_peak_network = False
                 annotator = SpectrumAnnotator()
                 annotator.annotate(annotated_spectrum, peptidoforms=[peptidoform], charges=[precursor_charge], tolerance=tolerance)
+
+                if 'create_svg' in user_parameters:
+                    print(annotated_spectrum.extended_data)
+                    annotator.plot(annotated_spectrum, peptidoform=peptidoform, charge=precursor_charge)
+
+                if create_peak_network:
+                    sequencer = SpectrumSequencer()
+                    sequencer.create_peak_network(annotated_spectrum)
+
+
                 n_annotated_spectra += 1
 
             except Exception as error:
@@ -156,8 +179,13 @@ class ProxiAnnotator:
             spectrum['intensities'] = intensities
             spectrum['interpretations'] = interpretations
             if resultType == 'full':
-                spectrum['extended_data'] = {}
+                if 'extended_data' not in spectrum or not isinstance(spectrum['extended_data'], dict):
+                    spectrum['extended_data'] = {}
+                if 'svg' in annotated_spectrum.extended_data:
+                    spectrum['extended_data']['svg'] = annotated_spectrum.extended_data['svg']
                 spectrum['extended_data']['metrics'] = annotated_spectrum.metrics
+                if create_peak_network:
+                    spectrum['extended_data']['network'] = annotated_spectrum.network
             response['annotated_spectra'].append(spectrum)
 
         if n_annotated_spectra > 0:
@@ -176,46 +204,111 @@ def main():
     input_list = [
         {
             "attributes": [
-            {
+                {
+                "accession": "MS:1008025",
+                "name": "scan number",
+                "value": 19343
+                },
+                {
                 "accession": "MS:1000827",
-                "name": "selected ion m/z",
-                "value": "767.9700"
-            },
-            {
+                "name": "isolation window target m/z",
+                "value": 401.2628
+                },
+                {
                 "accession": "MS:1000041",
                 "name": "charge state",
-                "value": "2"
-            },
-            {
+                "value": 2
+                },
+                {
+                "accession": "MS:1003061",
+                "name": "spectrum name",
+                "value": "LLSILSR/2"
+                },
+                {
                 "accession": "MS:1003169",
                 "name": "proforma peptidoform sequence",
-                "value": "VLHPLEGAVVIIFK"
-            }
+                "value": "LLSILSR"
+                }
             ],
             "intensities": [
-            39316.4648,
-            319.6931,
-            1509.0269,
-            104.0572,
-            260.096,
-            118.672,
-            110.9478,
-            101.2496,
-            101.259,
-            6359.8389
+                25679.1973,
+                32007.0879,
+                27618.2852,
+                56783.7109,
+                30913.8457,
+                25987.8301,
+                31703.4883,
+                142053.4688,
+                176166.5469,
+                28250.5781,
+                28694.4512,
+                30808.9004,
+                909449.6875,
+                69067.8516,
+                32153.8398,
+                214112.3906,
+                47653.3086,
+                38805.7852,
+                63561.7812,
+                60056.1641,
+                74805.0234,
+                233378.7031,
+                31245.2598,
+                66539.4375,
+                174329.375,
+                30949.7793,
+                186827.3594,
+                2128354.0,
+                119101.2656,
+                83573.9922,
+                86702.4844,
+                37098.1367,
+                478844.0938
             ],
             "mzs": [
-            110.0712,
-            111.0682,
-            111.0745,
-            111.2657,
-            112.087,
-            115.0866,
-            116.4979,
-            118.0746,
-            118.2988,
-            120.0808
-            ]
+                104.0084,
+                108.1924,
+                118.5454,
+                129.1007,
+                150.2932,
+                155.4323,
+                156.7006,
+                173.128,
+                175.1188,
+                175.4851,
+                180.3093,
+                196.4062,
+                199.1802,
+                201.1224,
+                210.8365,
+                227.175,
+                257.1603,
+                296.1951,
+                314.2058,
+                323.9073,
+                358.2076,
+                375.2346,
+                383.2175,
+                401.2125,
+                401.2846,
+                450.4062,
+                488.3182,
+                575.3502,
+                576.3517,
+                585.3349,
+                670.4265,
+                678.9627,
+                688.4347
+            ],
+            "extended_data": {
+                "user_parameters": {
+                    "create_svg": True,
+                    "create_pdf": True,
+                    "xmin": 300,
+                    "xmax": 600,
+                    "yfactor": 2.0
+                }
+            }
         }
     ]
 
