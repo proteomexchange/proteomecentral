@@ -431,6 +431,12 @@ function get_usi_from(where) {
 			    s.pforms[pi].maxNeutralLossCount = 1;
 
 			    for (var mod in _peptidoforms[pi]["terminal_modifications"]) {
+				if (_peptidoforms[pi]["terminal_modifications"][mod].labile_delta_mass &&
+				    _peptidoforms[pi]["terminal_modifications"][mod].labile_delta_mass > 0) {
+				    s.pforms[pi].labileModSum += _peptidoforms[pi]["terminal_modifications"][mod].labile_delta_mass;
+				    continue;
+				}
+
 				if (_peptidoforms[pi]["terminal_modifications"][mod].base_residue == "nterm") {
 				    s.pforms[pi].ntermMod = _peptidoforms[pi]["terminal_modifications"][mod].delta_mass;
 				    if (isobaric_unimods.includes(_peptidoforms[pi]["terminal_modifications"][mod].modification_curie))
@@ -442,6 +448,12 @@ function get_usi_from(where) {
 				    console.warn("[WARN] Invalid mod terminus; ignoring...");
 			    }
 			    for (var mod in _peptidoforms[pi]["residue_modifications"]) {
+				if (_peptidoforms[pi]["residue_modifications"][mod].labile_delta_mass &&
+				    _peptidoforms[pi]["residue_modifications"][mod].labile_delta_mass > 0) {
+				    s.pforms[pi].labileModSum += _peptidoforms[pi]["residue_modifications"][mod].labile_delta_mass;
+				    continue;
+				}
+
 				var varmod  = {};
 				varmod.index     = _peptidoforms[pi]["residue_modifications"][mod].index;
 				varmod.modMass   = _peptidoforms[pi]["residue_modifications"][mod].delta_mass;
