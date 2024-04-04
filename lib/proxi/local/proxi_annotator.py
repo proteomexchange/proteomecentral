@@ -11,6 +11,7 @@ test_mode = False
 
 try:
     from proforma_peptidoform import ProformaPeptidoform
+    from universal_spectrum_identifier import UniversalSpectrumIdentifier
 except:
     proxi_instance = os.environ.get('PROXI_INSTANCE')
     if proxi_instance:
@@ -22,7 +23,7 @@ except:
             print("ERROR: Environment variable PROXI_INSTANCE must be set")
             exit()
     from proforma_peptidoform import ProformaPeptidoform
-
+    from universal_spectrum_identifier import UniversalSpectrumIdentifier
 
 try:
     from spectrum import Spectrum
@@ -107,6 +108,18 @@ class ProxiAnnotator:
             precursor_charge = None
             precursor_mz = None
             create_peak_network = False
+
+            #### Check if there's a usi provided, and if so, extract some default information from that
+            if 'usi' in spectrum and spectrum['usi'] is not None and spectrum['usi'] != '':
+                usi = UniversalSpectrumIdentifier()
+                usi.parse(spectrum['usi'])
+                precursor_charge = usi.charge
+                if usi.peptidoform is not None:
+                    peptidoform_string = usi.peptidoform['peptidoform_string']
+                else:
+                    peptidoform_string = ''
+
+            #### Loop over attributes, extracting information from that
             for attribute in spectrum['attributes']:
                 if attribute['name'] == 'proforma peptidoform sequence' or attribute['accession'] == 'MS:1003169':
                     peptidoform_string = attribute['value']
@@ -125,13 +138,11 @@ class ProxiAnnotator:
                 response['annotated_spectra'].append(None)
                 continue
 
-            #if precursor_mz is None:
-            #    response['log'].append(f"Entry {i_spectrum - 1} does not have required attribute MS:1000827 - 'selected ion m/z'")
-            #    response['annotated_spectra'].append(None)
-            #    continue
+            if precursor_mz is None:
+                response['log'].append(f"Entry {i_spectrum - 1} does not have the desirable attribute MS:1000827 - 'selected ion m/z' but will continue anyway without it")
 
             if peptidoform_string == '':
-                update_response(response, log_entry=f"WARNING: The 'proforma peptidoform sequence' for spectrum {i_spectrum - 1} is EMPTY. This is permitted and will result in a 'blind annotation', just labeling peaks that can be inferred in the absence of a know analyte. If this was not the intent, please provide a valid ProForma peptidoform")
+                update_response(response, log_entry=f"WARNING: The 'proforma peptidoform sequence' for spectrum {i_spectrum - 1} is EMPTY. This is permitted and will result in a 'blind annotation', just labeling peaks that can be inferred in the absence of a known analyte. If this was not the intent, please provide a valid ProForma peptidoform")
                 peptidoform = None
             else:
                 update_response(response, log_entry=f"Parsing ProForma peptidoform '{peptidoform_string}' for spectrum {i_spectrum - 1}")
