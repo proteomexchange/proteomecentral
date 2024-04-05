@@ -386,10 +386,24 @@ function get_usi_from(where) {
 		    cell.setAttribute('onclick', 'viewJSON("spec","'+p+'");');
                     cell.innerHTML = "[ JSON ]";
 
+                    cell = document.getElementById(p+"_reannot");
+                    cell.className = "smgr";
+		    if (p != "MS2PIP" && p != "Seq2MS" && data) {
+			cell.title = "Re-annotate peaks using data from this response";
+			cell.setAttribute('onclick', 'reannotate_peaks("'+p+'");');
+			cell.innerHTML = "[ A ]";
+		    }
+		    else
+                        cell.innerHTML = "";
+
 		    var s = {};
                     s.scanNum = 0;
                     s.precursorMz = 0;
                     s.fileName = p+" spectrum";
+		    s.mzError = 20;
+		    s.mzUnits = 'ppm';
+		    s.showA = [1,0,0];
+		    s.peakDetect = false;
                     s.ms2peaks = [];
 		    s.pforms = [];
 
@@ -507,6 +521,13 @@ function get_usi_from(where) {
                             if (att.accession == "MS:1000041") s.charge      = att.value;
                             if (att.accession == "MS:1000888") s.sequence    = att.value;
                             if (att.accession == "MS:1003061") s.fileName    = att.value;
+                            if (att.accession == "MS:10000512" &&
+				att.value.startsWith("ITMS")) {
+				s.mzError = 0.6;
+				s.mzUnits = 'Th';
+				s.showA = [0,0,0];
+				s.peakDetect = true;
+			    }
 			}
 		    }
 		    if (p == "MS2PIP" || p == "Seq2MS")
@@ -582,6 +603,7 @@ function get_usi_from(where) {
                 document.getElementById(p+"_spectrum").innerHTML = "--n/a--";
                 document.getElementById(p+"_atts").innerHTML = "--n/a--";
                 document.getElementById(p+"_json").innerHTML = "--n/a--";
+                document.getElementById(p+"_reannot").innerHTML = "";
 		console.error(error);
             });
     }
@@ -753,14 +775,14 @@ function renderLorikeet(divid,pfidx,src,src2=null) {
 			   "precursorMz":s.precursorMz,
 			   "minDisplayMz":s.minDisplayMz,
 			   "maxDisplayMz":s.maxDisplayMz,
-			   "massError":20,
-			   "massErrorUnit":'ppm',
+			   "massError":s.mzError,
+			   "massErrorUnit":s.mzUnits,
 			   "showMassErrorPlot":true,
 			   "fileName":s.fileName,
-			   "showA":[1,0,0],
+			   "showA":s.showA,
 			   "showB":[1,1,0],
 			   "showY":[1,1,0],
-			   "peakDetect":false,
+			   "peakDetect":s.peakDetect,
 			   "ntermMod":pfidx!=null ? s.pforms[pfidx].ntermMod : 0,
 			   "ctermMod":pfidx!=null ? s.pforms[pfidx].ctermMod : 0,
 			   "variableMods":pfidx!=null ? s.pforms[pfidx].variableMods : [],
@@ -806,13 +828,13 @@ function render_tables(usi) {
     var tr = document.createElement("tr");
     var td = document.createElement("td");
     td.className = "rep";
-    td.colSpan = 6;
+    td.colSpan = 99;
     td.appendChild(document.createTextNode(usi));
     tr.appendChild(td);
     table.appendChild(tr);
 
     tr = document.createElement("tr");
-    var headings = ['Provider','Response','Spectrum / PSM (click to view)','','Attributes','Dev Info']
+    var headings = ['Provider','Response','Spectrum / PSM (click to view)','','Attributes','Dev Info','']
     for (var heading of headings) {
         td = document.createElement("th");
         td.appendChild(document.createTextNode(heading));
@@ -887,6 +909,10 @@ function render_tables(usi) {
         td.id = rname+"_json";
         tr.appendChild(td);
 
+        td = document.createElement("td");
+        td.id = rname+"_reannot";
+        tr.appendChild(td);
+
 	table.appendChild(tr);
     }
 
@@ -896,7 +922,7 @@ function render_tables(usi) {
 }
 
 function reload(provider) {
-    for (var thing of ["_msg","_spectrum","_atts","_json"]) {
+    for (var thing of ["_msg","_spectrum","_atts","_json","_reannot"]) {
 	document.getElementById(provider+thing).innerText = '-- processing request --';
 	document.getElementById(provider+thing).className = '';
     }
@@ -976,16 +1002,35 @@ function clear_element(ele) {
 }
 
 
+function reannotate_peaks(who) {
+    annotate_peaks(usi_data[who].usi_data,usi_data[who].lori_data.pforms[0].peptidoform);
+}
+
 function annotate_peaks(spec_data,pform) {
     if (!spec_data["attributes"])
 	spec_data["attributes"] = [];
-    var att = {};
-    att.name = 'proforma peptidoform sequence';
-    att.accession = 'MS:1003169';
-    att.value = pform;
-    spec_data["attributes"].push(att);
 
-    fetch(_api['annotate'], {
+    var url = _api['annotate'];
+    var mztol = null;
+    var addMS1003169 = true;
+    for (var att of spec_data['attributes']) {
+        if (att.accession == "MS:10000512" &&
+            att.value.startsWith("ITMS")) {
+	    url += "?tolerance=500";
+	    mztol = '500ppm';
+	}
+        if (att.accession == "MS:1003169")
+	    addMS1003169 = false;
+    }
+    if (addMS1003169) {
+	var att = {};
+	att.accession = 'MS:1003169';
+	att.name = 'proforma peptidoform sequence';
+	att.value = pform;
+	spec_data["attributes"].push(att);
+    }
+
+    fetch(url, {
         method: 'post',
         headers: {
             'Accept': 'application/json',
@@ -995,12 +1040,13 @@ function annotate_peaks(spec_data,pform) {
     })
         .then(response => response.json())
         .then(annot_data => {
-	    var annot_table = annotation_table(annot_data,pform);
+	    var annot_table = annotation_table(annot_data,mztol,pform);
+	    clear_element("annot");
 	    document.getElementById("annot").appendChild(annot_table);
 	});
 }
 
-function annotation_table(annot_data,pform) {
+function annotation_table(annot_data,mztol,pform) {
     var table = document.createElement("table");
     table.className = "annot prox";
 
@@ -1035,7 +1081,8 @@ function annotation_table(annot_data,pform) {
     tr.style.position = 'sticky';
     tr.style.top = '0';
     tr.style.zIndex = '5';
-    for (var col of ["m/z", "intensity", "norm", "interpretation(s)"].concat(_ion_list)) {
+    mztol = mztol ?  " [mztol="+mztol+"]" : '';
+    for (var col of ["m/z", "intensity", "norm", "interpretation(s)"+mztol].concat(_ion_list)) {
         td = document.createElement("th");
 	td.appendChild(document.createTextNode(col));
         tr.appendChild(td);
