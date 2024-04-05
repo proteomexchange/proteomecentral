@@ -361,6 +361,7 @@ Each output spectrum may also have an `extended_data` property (not part of the 
 
 - *pdf*: A stringified PDF object with the SVG of the annotated spectrum
 
+- *user_parameters*: A simple return of the input `user_parameters`
 
 
 
