@@ -1,7 +1,7 @@
 # PROXI /annotate endpoint at ProteomeCentral
 
 ## Overview
-ProteomeCentral hosts an API endpoint for a Quetzal peptide MS2 spectrum annotator based on the PROXI API.
+ProteomeCentral hosts an API endpoint for Quetzal, a peptide MS2 spectrum annotator based on the PROXI API.
 The Quetzal annotator is still in development with an initial release expected in late 2024.
 
 ## Endpoint
@@ -15,12 +15,12 @@ POST https://proteomecentral.proteomexchange.org/api/proxi/v0.1/annotate?param1=
 
 The endpoint accepts several URL parameters:
 
-- *resultType*: The *resultType* parameter may be `compact` or `full`, following PROXI conventions
+- *resultType*: [optional] The *resultType* parameter may be `compact` or `full`, following PROXI conventions [default = compact]
     - `compact`: Returns a list of plain PROXI `spectrum` objects
     - `full`: Returns substantial extra information in an `extended_data` component
 
-- *tolerance*: The *tolerance* parameter directs the annotator to use a maximum tolerance as specified (always in ppm)
-  This parameter maybe extended in the future to allow specification of either ppm or m/z units
+- *tolerance*: [optional] `The *tolerance* parameter directs the annotator to use a maximum tolerance as specified (always in ppm) 
+  This parameter maybe extended in the future to allow specification of either ppm or m/z units [default = 20ppm]
 
 ## Input Payload
 
@@ -128,7 +128,7 @@ must be specified as a list of one item.
 Each PROXI spectrum object in the list may have the following properties:
 
 - *attributes*: A list of CV terms using the PSI-MS controlled vocabulary. There may be as many attributes as desired.
-  The following are recognized by the annotator
+  The following are recognized by the annotator:
     - `proforma peptidoform sequence` (MS:1003169): A peptidoform string following the ProForma 2.0 specification
       (e.g. `LLSILSR` or `[TMTpro]-DALSSVQE[Cation:Fe[III]]SQVAQQ[Deamidated]AR`). If this information is not provided,
       the annotator will annotate the spectrum in an ID-free mode, labeling known low-mass ions, precursor-related ions (if provided)
@@ -141,17 +141,17 @@ Each PROXI spectrum object in the list may have the following properties:
 
 - *intensities*: A list of floats expressing the intensity values of the fragmentation spectrum, corresponding to the `mzs`
 
-- *status*: This PROXI properties is technically required, but is ignored
+- *status*: This PROXI property is technically required, but is ignored
 
 - *usi*: An optional specification of the USI of the spectrum being provided for annotation. This is not required, but the service will use
-  the `usi` information to obtain the peptideoform and charge if not provided as formal `attributes` (`attributes` take precedence).
+  the `usi` information to obtain the peptidoform and charge if not provided as formal `attributes` (`attributes` take precedence).
 
 - *extended_data*: An optional object for the user to provide additional information to guide output and annotation of the spectrum. The
-  contents of `extended_data` is described below in a seprate section.
+  contents of `extended_data` are described below in a separate section.
 
 ## Input extended_data
 
-The `extended_data` property may to specified as input for each spectrum object. Information in this object is used to guide the desired output
+The `extended_data` property may be specified as input for each spectrum object. Information in this object is used to guide the desired output
 and guide annotation of the spectrum. Example:
 
 ```
@@ -168,9 +168,9 @@ and guide annotation of the spectrum. Example:
 
 Currently, only properties inside the `user_parameters` property are checked. Properties inside the `user_parameters` may be as follows:
 
-- *xmin*: Specify an exact X-axis (m/z) minimum value
+- *xmin*: A float used to specify an exact X-axis (m/z) minimum value
 
-- *xmax*: Specify an exact X-axis (m/z) maximum value
+- *xmax*: A float used to specify an exact X-axis (m/z) maximum value
 
 - *yfactor*: Stretch the Y-axis scaling by this factor. By default the Y-axis is shown as 0 to 1 (1 is the maximum peak height). To change
   the scale such that the tallest peak extends beyond the top of the plot (to gain more insight into the smaller peaks, use a yfactor
