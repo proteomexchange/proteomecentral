@@ -32,19 +32,14 @@ must be specified as a list of one item.
   {
     "attributes": [
       {
-        "accession": "MS:1008025",
-        "name": "scan number",
-        "value": "19343"
-      },
-      {
         "accession": "MS:1000827",
-        "name": "isolation window target m/z",
-        "value": "401.2628"
+        "name": "selected ion m/z",
+        "value": 401.2628
       },
       {
-        "accession": "MS:1003061",
-        "name": "spectrum name",
-        "value": "LLSILSR/2"
+        "accession": "MS:1000041",
+        "name": "charge state",
+        "value": 2
       },
       {
         "accession": "MS:1003169",
@@ -52,13 +47,7 @@ must be specified as a list of one item.
         "value": "LLSILSR"
       }
     ],
-    "extended_data": {
-      "user_parameters": {
-        "create_svg": true,
-        "xmax": 600,
-        "xmin": 300,
-        "yfactor": 2.0
-      }
+    "extended_data": {}
     },
     "intensities": [
       25679.1973,
@@ -129,10 +118,38 @@ must be specified as a list of one item.
       670.4265,
       678.9627,
       688.4347
-    ]
+    ],
+    "status": "READABLE",
+    "usi": "mzspec:PXD005336:Varlitinib_01410_A01_P014203_B00_A00_R1:scan:19343:LLSILSR/2"
   }
 ]
 ```
+
+Each PROXI spectrum object in the list may have the following properties:
+
+- *attributes*: A list of CV terms using the PSI-MS controlled vocabulary. There may be as many attributes as desired.
+  The following are recognized by the annotator
+    - `proforma peptidoform sequence` (MS:1003169): A peptidoform string following the ProForma 2.0 specification
+      (e.g. `LLSILSR` or `[TMTpro]-DALSSVQE[Cation:Fe[III]]SQVAQQ[Deamidated]AR`). If this information is not provided,
+      the annotator will annotate the spectrum in an ID-free mode, labeling known low-mass ions, precursor-related ions (if provided)
+      and isotopes.
+    - `charge state` (MS:1000041): The charge state of the analyte that produced the spectrum, usually instrument-provided. The charge state
+      information must be provided, either via this term, or via the spectrum `usi` property, or annotation will terminate.
+    - `selected ion m/z` (MS:1000827): The observed precursor m/z should be provided, but is not required
+
+- *mzs*: A list of floats expressing the m/z values of the fragmentation spectrum. The code may fail if not in increasing order, not sure.
+
+- *intensities*: A list of floats expressing the intensity values of the fragmentation spectrum, corresponding to the `mzs`
+
+- *status*: This PROXI properties is technically required, but is ignored
+
+- *usi*: An optional specification of the USI of the spectrum being provided for annotation. This is not required, but the service will use
+  the `usi` information to obtain the peptideoform and charge if not provided as formal `attributes` (`attributes` take precedence).
+
+- *extended_data*: An optional object for the user to provide additional information to guide output and annotation of the spectrum. The
+  contents of `extended_data` is described below in a seprate section.
+
+## Input extended_data
 
 Write more
 
