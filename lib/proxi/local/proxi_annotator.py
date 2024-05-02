@@ -7,7 +7,7 @@ from datetime import datetime
 import traceback
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
-test_mode = True
+test_mode = False
 
 try:
     from proforma_peptidoform import ProformaPeptidoform
