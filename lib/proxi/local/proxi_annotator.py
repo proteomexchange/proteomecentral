@@ -7,7 +7,7 @@ from datetime import datetime
 import traceback
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
-test_mode = False
+test_mode = True
 
 try:
     from proforma_peptidoform import ProformaPeptidoform
@@ -152,7 +152,7 @@ class ProxiAnnotator:
             #eprint(json.dumps(peptidoform.to_dict(),indent=2))
             #eprint("============================")
 
-            update_response(response, log_entry=f"Annotating spectrum {i_spectrum - 1}")
+            update_response(response, log_entry=f"Processing spectrum {i_spectrum - 1}")
             try:
                 annotated_spectrum = Spectrum()
                 interpretations = None
@@ -172,11 +172,13 @@ class ProxiAnnotator:
 
                 annotator = SpectrumAnnotator()
                 if 'skip_annotation' in user_parameters and user_parameters['skip_annotation']:
-                    pass
+                    update_response(response, log_entry=f"- Skipping annotation by request")
                 else:
+                    update_response(response, log_entry=f"- Executing annotator on spectrum")
                     annotator.annotate(annotated_spectrum, peptidoforms=[peptidoform], charges=[precursor_charge], tolerance=tolerance)
 
                 if ( 'create_svg' in user_parameters and user_parameters['create_svg'] ) or ( 'create_pdf' in user_parameters and user_parameters['create_pdf'] ):
+                    update_response(response, log_entry=f"- Generating spectrum plot")
                     print(annotated_spectrum.extended_data)
                     annotator.plot(annotated_spectrum, peptidoform=peptidoform, charge=precursor_charge)
 
@@ -189,7 +191,7 @@ class ProxiAnnotator:
 
             except Exception as error:
                 exception_type, exception_value, exception_traceback = sys.exc_info()
-                update_response(response, log_entry=f"Attempt to annotate spectrum {i_spectrum - 1} resulted in an error: {error}: {repr(traceback.format_exception(exception_type, exception_value, exception_traceback))}")
+                update_response(response, log_entry=f"- Attempt to annotate spectrum {i_spectrum - 1} resulted in an error: {error}: {repr(traceback.format_exception(exception_type, exception_value, exception_traceback))}")
 
             #print(annotated_spectrum.show())
             mzs, intensities, interpretations = annotated_spectrum.get_peaks()
@@ -318,13 +320,49 @@ def main():
                 678.9627,
                 688.4347
             ],
+            "interpretations": [    
+                "?",                  
+                "?",                  
+                "?",                  
+                "yow!"
+                "?",                  
+                "?",                  
+                "?",                  
+                "m2:3-CO/-2.6ppm",    
+                "y1/-0.9ppm",         
+                "?",                  
+                "?",                  
+                "?",                  
+                "a2/-1.5ppm",         
+                "m2:3/-4.8ppm",       
+                "?",                  
+                "b2/-1.8ppm",         
+                "0@b2{KQ}/-2.0ppm",   
+                "b3-H2O/-6.0ppm",     
+                "b3/-5.2ppm",         
+                "?",                  
+                "y3-NH3/-2.5ppm",     
+                "y3/-1.2ppm",         
+                "?",                  
+                "2@p/0.0ppm",         
+                "3@p/0.0ppm",         
+                "?",                  
+                "y4/-1.9ppm",         
+                "y5/-1.6ppm",         
+                "y5+i/-3.2ppm",       
+                "?",                  
+                "y6-H2O/2.8ppm",      
+                "?",                  
+                "y6/-0.7ppm"          
+            ],                      
             "extended_data": {
                 "user_parameters": {
                     "create_svg": True,
-                    "create_pdf": True,
+                    "create_pdf": False,
                     "xmin": 300,
                     "xmax": 600,
-                    "ymax": 2.0
+                    "ymax": 2.0,
+                    "skip_annotation": True
                 }
             }
         }
