@@ -169,7 +169,7 @@ class ProxiAnnotator:
                 annotator = SpectrumAnnotator()
                 annotator.annotate(annotated_spectrum, peptidoforms=[peptidoform], charges=[precursor_charge], tolerance=tolerance)
 
-                if 'create_svg' in user_parameters:
+                if ( 'create_svg' in user_parameters and user_parameters['create_svg'] ) or ( 'create_pdf' in user_parameters and user_parameters['create_pdf'] ):
                     print(annotated_spectrum.extended_data)
                     annotator.plot(annotated_spectrum, peptidoform=peptidoform, charge=precursor_charge)
 
@@ -317,7 +317,7 @@ def main():
                     "create_pdf": True,
                     "xmin": 300,
                     "xmax": 600,
-                    "yfactor": 2.0
+                    "ymax": 2.0
                 }
             }
         }
