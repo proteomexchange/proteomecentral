@@ -155,7 +155,10 @@ class ProxiAnnotator:
             update_response(response, log_entry=f"Annotating spectrum {i_spectrum - 1}")
             try:
                 annotated_spectrum = Spectrum()
-                annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None)
+                interpretations = None
+                if 'interpretations' in spectrum:
+                    interpretations = spectrum['interpretations']
+                annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], interpretations=interpretations, precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None)
                 user_parameters = {}
                 if 'extended_data' in spectrum and isinstance(spectrum['extended_data'],dict):
                     eprint("INFO-150: found extended_data in spectrum")
@@ -166,8 +169,12 @@ class ProxiAnnotator:
                         create_peak_network = user_parameters['create_peak_network']
                     except:
                         create_peak_network = False
+
                 annotator = SpectrumAnnotator()
-                annotator.annotate(annotated_spectrum, peptidoforms=[peptidoform], charges=[precursor_charge], tolerance=tolerance)
+                if 'skip_annotation' in user_parameters and user_parameters['skip_annotation']:
+                    pass
+                else:
+                    annotator.annotate(annotated_spectrum, peptidoforms=[peptidoform], charges=[precursor_charge], tolerance=tolerance)
 
                 if ( 'create_svg' in user_parameters and user_parameters['create_svg'] ) or ( 'create_pdf' in user_parameters and user_parameters['create_pdf'] ):
                     print(annotated_spectrum.extended_data)
