@@ -1,0 +1,162 @@
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../css/isb.css">
+  <link rel="stylesheet" href="../css/usi.css">
+  <link rel="stylesheet" href="../css/quetzal.css">
+
+  <script src="../javascript/js/quetzal.js"></script>
+
+  <script src="../javascript/js/chartJS/chart.umd.min.js"></script>
+  <script src="../javascript/js/chartJS/hammer.min.js"></script>
+  <script src="../javascript/js/chartJS/chartjs-plugin-zoom.min.js"></script>
+  <script src="../javascript/js/chartJS/chartjs-plugin-datalabels@2.0.0"></script>
+
+  <!-- script src="../javascript/js/lorikeet/jquery.min.js"></script>
+  <script src="../javascript/js/lorikeet/jquery-ui.slider.min.js"></script>
+  <script src="../javascript/js/lorikeet/jquery.flot.js"></script>
+  <script src="../javascript/js/lorikeet/jquery.flot.selection.js"></script>
+  <script src="../javascript/js/lorikeet/specview.js"></script>
+  <script src="../javascript/js/lorikeet/peptide.js"></script>
+  <script src="../javascript/js/lorikeet/aminoacid.js"></script>
+  <script src="../javascript/js/lorikeet/ion.js"></script>
+  <link rel="stylesheet" type="text/css" href="../javascript/css/lorikeet.css">
+  <link rel="stylesheet" type="text/css" href="../javascript/css/jquery-ui.slider.min.css" -->
+
+  <title>QUETZAL: Peptide Spectrum Peak Annotation Utility</title>
+</head>
+
+<body onload="init()">
+  <div id="pagebanner" class="topbanner" banner-bg-text="QUETZAL"></div>
+
+  <div class="pagemenu">
+    <span onclick="show_input(this);" id="import_menu">Import</span>
+    <span onclick="show_input(this);" id="edit_menu">Edit</span>
+    <span onclick="show_input(this);" id="explore_menu">Explore</span>
+    <span onclick="show_input(this);" id="export_menu">Export</span>
+    <span onclick="show_input(this);" id="viewlog_menu">Log / Errors</span>
+  </div>
+
+
+  <div id="quickplot" class="site-content">
+    <h3 style="background:#666;margin:0;" class="dataset-title" id="quickplot_title">QuickPlot</h3>
+    <div class="dataset-content">
+      <canvas id="quickplot_canvas"></canvas>
+      <br>
+      <a style="background:#666;float:right" class="dataset-title" onclick="toggle_box('quickplot');">Dismiss</a>
+    </div>
+  </div>
+
+
+<div id="main">
+  <div class="hideit" id="import_div">
+    <h2 class="rep">Universal Spectrum Identifier
+      <span style="font-size:x-small; float:right;">
+	<button id="usi_button" class="buttonlike" title="Fetch USI spectrum" onclick="validate_usi(this,true);">Fetch Spectrum</button>
+	<span class="buttonlike" title="Clear USI input" onclick="document.getElementById('usi_input').value='';">&#128937;</span>
+      </span>
+    </h2>
+    <div>
+      <br>
+      <input size="150" id="usi_input">
+      <br><br>
+    </div>
+
+    <br><br>
+
+    <h2 class="rep">Peak List
+      <span style="font-size:x-small; float:right;">
+	<button class="buttonlike" title="Import Spectrum" onclick="import_dta(this);">Import Spectrum</button>
+	<span class="buttonlike" title="Clear input form" onclick="document.getElementById('dta_input').value='';">&#128937;</span>
+      </span>
+    </h2>
+    <div>
+      <br>Enter peak (and optional annotation) data, or drag/drop a TSV file below:<br>
+      <textarea cols="100" rows="25" id="dta_input" ondrop="dropFile(event)" ondragover="allowDrop(event)" ondragleave="stopDrop(event)"></textarea>
+      <br><br>
+    </div>
+  </div>
+
+
+  <div class="hideit" id="edit_div">
+    <h2 class="rep">Spectrum Properties</h2>
+    <div class="user_input">
+      <span>Peptidoform(s): </span><input size="90" id="pform_input">
+      <span >Charge(s): </span><span><input size="15" id="charge_input"></span>
+      <span>Precursor m/z: </span><span><input size="15" id="precmz_input"></span>
+      <span></span>
+      <span>
+	<button class="buttonlike" title="Update" onclick="update_spectrum(this);">Update Properties</button>
+	<button class="buttonlike blue" style="margin-left:80px;" title="(re-)Annotate peaks with annotator service" onclick="annotate_peaks(this);">Run Annotator</button>
+     </span>
+    </div>
+
+    <h2 class="rep">Peak Annotations
+    <button class="buttonlike" style="float:right;" title="Update peak annotations based on user input table" onclick="user_annotations(this);">Save Annotations</button>
+    </h2>
+    <div id="annotation_form">
+      <p>Please load spectrum data to see annotation form.</p>
+    </div>
+  </div>
+
+  <div class="hideit" id="explore_div">
+    <div class="ms2chart_wrapper">
+      <canvas class="ms2chart" id="viewspectrum_canvas"></canvas>
+    </div>
+    <button class="buttonlike" title="Reset Zoom" onclick="reset_x();">Reset Zoom</button>
+    <div style="margin-top:20px;" id="ion_div"></div>
+
+    <div style="margin-top:20px;" id="annot_div"></div>
+
+  </div>
+
+  <div class="hideit" id="export_div">
+    <h2 class="rep">Settings</h2>
+    <div class="user_input">
+      <span>m/z minimum: </span><span><input size="20" id="xmin_input"></span>
+      <span>m/z maximum: </span><span><input size="20" id="xmax_input"></span>
+      <span>Y maximum: </span><span><input size="20" id="ymax_input"></span>
+      <span>Mask isolation win: </span><span><input size="20" id="mask_isolation_width_input"></span>
+      <label for="show_sequence_input">Show sequence: </label><span><input type="checkbox" id="show_sequence_input" checked></span>
+      <label for="show_b_and_y_flags_input">Show b/y flags: </label><span><input type="checkbox" id="show_b_and_y_flags_input" checked></span>
+      <label for="showppm_input">Show delta ppm: </label><span><input type="checkbox" id="showppm_input" checked></span>
+      <label for="show_unknown_input">Label unknown peaks: </label><span><input type="checkbox" id="show_unknown_input"></span>
+      <span></span>
+      <span>
+	<button class="buttonlike" title="Generate annotated spectrum with current settings" onclick="generate_figure(this,'svg',false);">Preview</button>
+	<button class="buttonlike" title="create svg" onclick="generate_figure(this,'svg',true);">Download SVG</button>
+	<button class="buttonlike" title="create pdf" onclick="generate_figure(this,'pdf',true);">Download PDF</button>
+	<button class="buttonlike" title="download tab-delimited peak list with annotations" onclick="download(this,'tsv');">Download TSV</button>
+      </span>
+    </div>
+
+    <span>
+    <h2 class="rep">Preview</h2>
+      <div id="spectrum_preview"><br><br>Press the Preview button above to generate image<br><br></div>
+    </span>
+
+  </div>
+
+  <div class="hideit" id="viewlog_div">
+    <pre id="command_output" class="cmdout"></pre>
+  </div>
+
+</div>
+
+
+<!-- END main content -->
+
+<br clear="all">
+
+<div class="footer">
+  <table width="100%"><tr>
+      <td style="vertical-align:top; text-align:left; padding: 10px;">If you have a question or comment about ProteomeXchange, please <a href="https://www.proteomexchange.org/contact">contact us</a>!<BR>
+	<a href="https://www.proteomexchange.org/subscribe/index.html"><img width="70" height="20" src="/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000"> to receive all new ProteomeXchange dataset release announcements!</font></a>
+      </td>
+      <td style="text-align:right; padding: 10px;">
+	<a class="logolink" target="_blank" href="https://www.ebi.ac.uk/"><img src="/images/ebi_footer_logo.png"></a>&nbsp;&nbsp;&nbsp;&nbsp;
+	<a class="logolink" target="_blank" href="https://www.isbscience.org/"><img src="/images/isb.jpg"></a>&nbsp;&nbsp;&nbsp;&nbsp;
+	<a class="logolink" target="_blank" href="https://ec.europa.eu/research/fp7/index_en.cfm"><img src="/images/capacities.png"></a>
+  </td></tr></table>
+</div>
+</body>
+</html>

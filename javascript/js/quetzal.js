@@ -1,0 +1,1698 @@
+var _api = {};
+_api['base_url'] = "/api/proxi/v0.1/";
+
+var _ion_list = ['a','b','c','x','y','z','I','prec','rep','int',"?",'other'];
+var _ion_colors = {};
+var _settings = {}
+var _spectrum = {};
+var _peptidoforms = [];
+var _chartdata = null;
+var _totint;
+var _totints;
+var _coreints;
+var _mzs = [];
+
+function init() {
+    fetch("./proxi_config.json")
+	.then(response => response.json())
+	.then(config => {
+	    _api['spectra'] = config.API_URL +"spectra";
+	    _api['annotate'] = config.API_URL +"annotate";
+	    _api['validate'] = config.API_URL +"usi_validator";
+	    init2();
+	})
+	.catch(error => {
+	    _api['spectra'] = _api['base_url'] + "spectra";
+	    _api['annotate'] = _api['base_url'] + "annotate";
+	    _api['validate'] = _api['base_url'] + "usi_validator";
+	    init2();
+	});
+}
+
+function init2() {
+    _settings['usi_url'] = _api['spectra'] + '?resultType=full&usi=';
+    _settings['mztolerance'] = 20;
+    // always PPM.... _settings['mztolerance_units'] = 'ppm';
+    // ??? _settings['isobaricdetect'] = 'remove';
+
+    for (var setting in _settings) {
+	if (document.getElementById(setting+"_setting"))
+	    document.getElementById(setting+"_setting").value = _settings[setting];
+	if (document.getElementById(setting+"_setting_button"))
+	    document.getElementById(setting+"_setting_button").disabled = true;
+    }
+
+    // remove::
+    var tab_colors = {
+	'_': 'tab:gray',
+	'f': 'tab:purple'
+    }
+    // tab:purple : #9467bd
+    // tab:gray : #7f7f7f
+
+    _ion_colors['a'] = "#2ca02c"; // tab:green
+    _ion_colors['b'] = "#1f77b4"; // tab:blue
+    _ion_colors['c'] = "#008B8B"; // dark cyan
+    _ion_colors['x'] = "#4B0082"; // indigo
+    _ion_colors['y'] = "#d62728"; // tab:red
+    _ion_colors['z'] = "#FF8C00"; // dark orange
+    _ion_colors['I'] = "#ff7f0e"; // tab:orange
+    _ion_colors['prec'] = "#e377c2"; // tab:pink
+    _ion_colors['rep'] = "#9467bd"; // tab:purple
+    _ion_colors['int'] = "#8c564b"; // tab:brown
+    _ion_colors['?'] = "#7f7f7f"; // tab:gray
+    _ion_colors['other'] = "#7f7f7f"; // tab:gray
+
+    Chart.register(ChartDataLabels);
+    tpp_dragElement(document.getElementById("quickplot"));
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('usi')) {
+	document.getElementById("usi_input").value = params.get('usi');
+	validate_usi(document.getElementById("usi_button"),true);
+    }
+    else
+	show_input('import_menu');
+}
+
+function reset_forms(exclude='NONE') {
+    for (var what of ['usi','dta','pform','charge','precmz','xmin','xmax','ymax','mask_isolation_width'])
+	if (what != exclude)
+	    document.getElementById(what+"_input").value = '';
+
+    _spectrum = {};
+    _peptidoforms = [];
+
+    clear_element("ion_div");
+    clear_element("annot_div");
+    if (_chartdata)
+        _chartdata.destroy();
+}
+
+
+function validate_usi(button,alsofetch) {
+    var usi = document.getElementById("usi_input").value.trim();
+
+    if (alsofetch) {
+	reset_forms('usi');
+    }
+    else {
+	usi = "mzspec:PXD123456:foo:scan:1:";
+        var plus = '';
+        for (var pi in _peptidoforms) {
+            usi += plus + _peptidoforms[pi].peptidoform_string;
+            usi += '/' + _peptidoforms[pi].charge;
+            plus = "+";
+        }
+    }
+
+    if (usi == "") return;
+
+    user_log(null, "Validating USI: "+usi,'run');
+    stuff_is_running(button,true);
+
+    if (!usi.startsWith("mzspec:"))
+	usi = "mzspec:" + usi;
+    if (alsofetch)
+	document.getElementById("usi_input").value = usi;
+
+
+    fetch(_api['validate'], {
+        method: 'post',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: "["+JSON.stringify(usi)+"]"
+    })
+        .then(response => response.json())
+        .then(data => {
+	    if (data.error_code != "OK") {
+                user_log(null, "Error: "+data.error_message);
+		return;
+	    }
+
+	    if (data.validation_results[usi]["is_valid"] == true) {
+		if (data.validation_results[usi]["peptidoforms"] &&
+		    data.validation_results[usi]["peptidoforms"].length > 0) {
+		    _peptidoforms = JSON.parse(JSON.stringify(data.validation_results[usi]["peptidoforms"])); // cheap dirty clone
+
+		    var pforms = document.getElementById("pform_input");
+		    var charges = document.getElementById("charge_input");
+		    pforms.value = '';
+		    charges.value = '';
+		    var plus = '';
+		    for (var pi in _peptidoforms) {
+			pforms.value += plus + _peptidoforms[pi].peptidoform_string;
+			charges.value += plus + _peptidoforms[pi].charge;
+			plus = "+";
+		    }
+		    if (document.getElementById("precmz_input").value == '')
+			document.getElementById("precmz_input").value = _peptidoforms[0].ion_mz;
+
+		    _spectrum['name'] = pforms.value;
+
+		}
+		if (alsofetch)
+		    fetch_usi(usi,button);
+		else {
+		    process_spectrum_data();
+		    stuff_is_running(button,false);
+		}
+	    }
+	    else {
+		stuff_is_running(button,false);
+		user_log(null, "USI Validation Error",'error');
+		user_log(null, data.validation_results[usi]["error_message"]);
+                show_input('viewlog_menu');
+	    }
+	})
+	.catch(error => {
+	    stuff_is_running(button,false);
+            user_log(null,"ERROR validating the USI::",'error');
+            user_log(null,error);
+            console.error(error);
+            show_input('viewlog_menu');
+	});
+}
+
+
+function fetch_usi(usi,button) {
+    user_log(null, "Fetching USI: "+usi,'run');
+    user_log(null, "...from: "+_settings['usi_url']);
+
+    stuff_is_running(button,true);
+
+    var rcode = -1;
+    fetch(_settings["usi_url"]+encodeURIComponent(usi))
+	.then(response => {
+	    //stuff_is_running(button,false);
+	    rcode = response.status; // must capture it before json parsing
+	    return response;
+	})
+	.then(response => response.json())
+	.then(rdata => {
+	    if (rcode != 200) {
+		stuff_is_running(button,false);
+		user_log(null, "Error: "+rdata.title,'error');
+		user_log(null, "Trace: "+rdata.detail);
+		console.log("["+rdata.status+"] "+rdata.title+" :: "+rdata.detail);
+		show_input('viewlog_menu');
+		return;
+	    }
+
+	    user_log(null,"Successfully loaded spectrum with "+rdata[0].mzs.length+" peaks");
+	    user_log(null,"---- Attributes ----");
+	    for (var a of rdata[0].attributes) {
+		user_log(null," "+a.name+": "+a.value);
+		var name = null;
+		if (a.accession == 'MS:1000041')
+		    name = 'charge';
+		else if (a.accession == 'MS:1000744')
+		    name = 'mz';
+		else if (a.accession == "MS:1000827" && !rdata['mz'])
+                    name = 'mz';
+		else if (a.accession == 'MS:1003061')
+		    name = 'name';
+
+		if (name)
+		    rdata[name] = a.value;
+	    }
+	    user_log(null,"--------------------");
+	    rdata['origin'] = usi;
+
+	    rdata[0]['interpretations'] = [];
+	    for (var i in rdata[0].mzs)
+		rdata[0]['interpretations'].push('');
+
+	    _spectrum = rdata;
+	    process_spectrum_data();
+
+	    stuff_is_running(button,false);
+	})
+	.catch(error => {
+	    stuff_is_running(button,false);
+	    user_log(null,"ERROR fetching the USI::",'error');
+	    user_log(null,error);
+	    console.error(error);
+            show_input('viewlog_menu');
+	});
+
+}
+
+function allowDrop(event) {
+    event.preventDefault();
+    //event.target.classList.add("drophere");
+    event.target.style.background = "#def";
+}
+function stopDrop(event) {
+    event.preventDefault();
+    //event.target.classList.remove("drophere");
+    event.target.style.background = "revert";
+}
+function dropFile(event) {
+    stopDrop(event);
+
+    if (!event.dataTransfer.files)
+	return false;
+
+    var file = event.dataTransfer.files[0];
+    reader = new FileReader();
+    reader.onload = function(ev) {
+        event.target.value = ev.target.result;
+    };
+    reader.readAsText(file);
+}
+
+
+function import_dta(button) {
+    var dta = document.getElementById("dta_input").value.trim();
+    if (dta == "") return;
+
+    stuff_is_running(button,true);
+    reset_forms('dta');
+
+    var rdata = {};
+    var mzs = [];
+    var ints = [];
+    var annots = [];
+    var maxint = 0;
+    for (var line of dta.split("\n")) {
+	var pair = line.trim().split(/\s+/);
+	var skip = false;
+
+        if (pair[0] == "PEPTIDOFORMS")
+	    document.getElementById("pform_input").value = pair[1];
+        else if (pair[0] == "CHARGES") {
+            document.getElementById("charge_input").value = pair[1];
+	    rdata['charge'] = Number(pair[1]);
+	}
+        else if (pair[0] == "PRECURSORMZ") {
+            document.getElementById("precmz_input").value = pair[1];
+	    rdata['mz'] = Number(pair[1]);
+	}
+
+	for (var p in [0,1])
+	    if (isNaN(pair[p]))
+		skip = true;
+	if (skip) continue;
+
+	if (pair[1]) {
+	    mzs.push(Number(pair[0]));
+	    ints.push(Number(pair[1]));
+
+            if (Number(pair[1]) > maxint)
+                maxint = Number(pair[1]);
+
+	    if (pair[2])
+		annots.push(pair[2]);
+	    else
+		annots.push('');
+	}
+    }
+    rdata[0] = {};
+    rdata[0]['mzs'] = mzs;
+    rdata[0]['intensities'] = ints;
+    rdata[0]['interpretations'] = annots;
+
+    rdata['max_intensity'] = maxint;
+    rdata['name'] = "NO_MATCH";
+    rdata['origin'] = "DTA import";
+
+    if (rdata[0].mzs.length < 1) {
+	user_log(null, "Unable to import spectrum: NO peaks found!",'error');
+	user_log(null, "  Please double-check input data.");
+        show_input('viewlog_menu');
+	stuff_is_running(button,false);
+	return;
+    }
+
+    user_log(null,"Successfully imported spectrum with "+rdata[0].mzs.length+" peaks",'run');
+    user_log(null,"  Mass:"+rdata["mz"]+"  Charge:"+rdata["charge"]);
+
+    _spectrum = rdata;
+
+    show_input('explore_menu');
+
+    update_spectrum(button);
+}
+
+
+
+function update_spectrum(button) {
+    stuff_is_running(button,true);
+
+    var pforms = document.getElementById("pform_input").value.trim();
+    var charges = document.getElementById("charge_input").value.trim();
+    if (pforms == "" || charges == "") {
+        user_log(null, "Unable to annotate: please enter a peptidoform and precursor charge state",'error');
+        show_input('viewlog_menu');
+	stuff_is_running(button,false);
+	return;
+    }
+
+    document.getElementById("pform_input").value = pforms;
+    document.getElementById("charge_input").value = charges;
+
+    var seqs = pforms.split("+");
+    var zs = charges.split("+");
+
+    _peptidoforms = [];
+    for (var i in seqs) {
+	_peptidoforms[i] = {};
+	_peptidoforms[i].peptidoform_string = seqs[i];
+	_peptidoforms[i].peptide_sequence = seqs[i];  //// fix this to striped sequence!!!
+	_peptidoforms[i].charge = zs[i];
+    }
+
+    validate_usi(button,false);
+    addCheckBox(button,true);
+}
+
+
+function show_spectrum() {
+    show_input('explore_menu');
+
+    var chart = {};
+    chart['type'] = 'scatter';
+    chart['options'] = {};
+    chart['options']['aspectRatio'] = 2.5;
+    chart['options']['animation'] = false;
+    chart['options']['spanGaps'] = true;
+    //chart['options']['responsive'] = false;
+
+    chart['options']['elements'] = {};
+    chart['options']['elements']['line'] = {'borderWidth':1};
+    chart['options']['elements']['point'] = {'hitRadius':0, 'radius':0};
+
+    chart['options']['scales'] = {};
+    chart['options']['scales']['x'] = {};
+    //chart['options']['scales']['x']['min'] = 0;
+    chart['options']['scales']['x']['title'] = {};
+    chart['options']['scales']['x']['title']['display'] = true;
+    chart['options']['scales']['x']['title']['text'] = 'm/z';
+    //chart['options']['scales']['y'] = {};
+
+    // //// for speed???
+    //chart['options']['scales']['xAxes'] = {};
+    //chart['options']['scales']['xAxes']['type'] = "time";
+    //chart['options']['scales']['x']['time'] = { 'unit': "day", 'displayFormats': { 'day': "DD-MM-YYYY" } };
+    // distribution: "series", // Careful with this, this creates another problem when you pan the chart. Issue: #361
+    chart['options']['scales']['y'] = {};
+    chart['options']['scales']['y']['ticks'] = {'beginAtZero': true };
+    // ////
+
+    chart['options']['plugins'] = {};
+    chart['options']['plugins']['tooltip'] = {'enabled':false};
+    chart['options']['plugins']['decimation'] = {'enabled':true};
+    chart['options']['plugins']['legend'] = {'display':false};
+    chart['options']['plugins']['title'] = {};
+    chart['options']['plugins']['title']['display'] = true;
+    chart['options']['plugins']['title']['text'] = _spectrum['origin'];
+    chart['options']['plugins']['title']['color'] = '#006dff';
+    chart['options']['plugins']['subtitle'] = {};
+    chart['options']['plugins']['subtitle']['display'] = true;
+    chart['options']['plugins']['subtitle']['text'] = _spectrum['name'];
+    chart['options']['plugins']['subtitle']['color'] = '#000';
+
+    chart['options']['plugins']['zoom'] = {};
+    chart['options']['plugins']['zoom']['pan'] = {};
+    chart['options']['plugins']['zoom']['pan']['enabled'] = false;
+    chart['options']['plugins']['zoom']['pan']['mode'] = 'x';
+    chart['options']['plugins']['zoom']['pan']['threshold'] = 0.2;
+    chart['options']['plugins']['zoom']['pan']['scaleMode'] = 'y';
+    chart['options']['plugins']['zoom']['zoom'] = {};
+    //chart['options']['plugins']['zoom']['zoom']['wheel'] = {'enabled':true, 'speed':0.1};
+    chart['options']['plugins']['zoom']['zoom']['drag'] = {};
+    chart['options']['plugins']['zoom']['zoom']['drag']['enabled'] = true;
+    chart['options']['plugins']['zoom']['zoom']['drag']['backgroundColor'] = 'rgba(44,153,206,0.3)';
+    chart['options']['plugins']['zoom']['zoom']['drag']['borderColor'] = 'rgba(44,153,206,1)';
+    chart['options']['plugins']['zoom']['zoom']['drag']['borderWidth'] = 1;
+    chart['options']['plugins']['zoom']['zoom']['mode'] = 'x';
+    chart['options']['plugins']['zoom']['zoom']['scaleMode'] = 'y';
+    chart['options']['plugins']['zoom']['limits'] = {};
+    //chart['options']['plugins']['zoom']['limits']['x'] = {'min': data['mzmin'], 'max': data['mzmax']};
+    chart['options']['plugins']['zoom']['limits']['x'] = {};
+    chart['options']['plugins']['zoom']['limits']['x']['min'] = 'original';
+    chart['options']['plugins']['zoom']['limits']['x']['max'] = 'original';
+    chart['options']['plugins']['zoom']['limits']['y'] = {'min':0, 'max':'original'};
+
+    chart['options']['plugins']['datalabels'] = {};
+    chart['options']['plugins']['datalabels']['rotation'] = '270';
+    chart['options']['plugins']['datalabels']['display'] = 'auto';
+    chart['options']['plugins']['datalabels']['align'] = 'end';
+    chart['options']['plugins']['datalabels']['anchor'] = 'end';
+    chart['options']['plugins']['datalabels']['formatter'] = function(value, context) {
+	return !(context.dataIndex % 2) ? context.dataset.label : null;
+    };
+    chart['options']['plugins']['datalabels']['color'] = function(context) {
+        return context.dataset.borderColor;
+    };
+
+    chart['data'] = {};
+    chart['data']['datasets'] = [];
+
+    for (var idx in _spectrum[0]['mzs'])
+	chart['data']['datasets'].push(add_datapoint(idx));
+
+    if (_chartdata)
+	_chartdata.destroy();
+    _chartdata = new Chart("viewspectrum_canvas", chart);
+}
+
+function add_datapoint(index,scale=1.0) {
+    var color = '#999';
+    if (_spectrum[0]['_ion_series'][index])
+	color = _ion_colors[_spectrum[0]['_ion_series'][index]];
+
+    var datapoint = {};
+    datapoint['showLine'] = true;
+    datapoint['parsing'] = false;
+    datapoint['pointRadius'] = 0;
+    datapoint['borderColor'] = color;  //(point['mz'] == data['parentmz'] ? '#2a2' : '#999');
+    datapoint['pointBackgroundColor'] = datapoint['borderColor'];
+    datapoint['data'] = [];
+    datapoint['data'].push({'x':_spectrum[0]['mzs'][index], 'y':scale*_spectrum[0]['intensities'][index]});
+    datapoint['data'].push({'x':_spectrum[0]['mzs'][index], 'y':0});
+    datapoint['label'] = _spectrum[0]['interpretations'][index].split('/')[0];
+
+    return datapoint;
+}
+
+
+function reset_x() {
+    if (!_chartdata)
+	return;
+    _chartdata.resetZoom();
+}
+
+
+function add_to_user_log(logarr) {
+    for (var log of logarr)
+        user_log(null, log);
+}
+
+function user_log(where,what,msg_type='',cr=true,clear=false) {
+    if (!where)
+	where = document.getElementById("command_output");
+    if (!where.className) {
+	where.className = "cmdout";
+	where.style.marginTop = '-65px';
+	clear = true;
+    }
+
+    if (clear)
+	where.innerHTML = "";
+
+    if (msg_type == 'run')
+	where.innerHTML += "\n&#128640; ";
+    else if (msg_type == 'warn')
+	where.innerHTML += "&#128679; ";
+    else if (msg_type == 'error')
+	where.innerHTML += "&#128721; ";
+    where.innerHTML += what;
+    if (cr)
+	where.innerHTML += "\n";
+
+    where.scrollTop = where.scrollHeight;
+}
+
+
+function show_input(who) {
+    if (typeof who === 'string')
+	who = document.getElementById(who);
+
+    for (var input of ['import_menu', 'edit_menu', 'explore_menu','export_menu','viewlog_menu']) {
+	if (who.id == input) {
+	    document.getElementById(who.id.replace("_menu","")+"_div").classList.replace("hideit", "specinput");
+	    who.classList.add("current");
+	}
+	else {
+	    document.getElementById(input.replace("_menu","")+"_div").className = "hideit";
+	    document.getElementById(input).classList.remove("current");
+	}
+    }
+}
+
+
+function process_spectrum_data() {
+    var data = _spectrum[0]; // just consider the first one  FIXME??
+
+    if (!data || !data.mzs || !data.intensities)
+        throw "Incomplete spectrum data!";
+
+    if (!isSorted(data.mzs)) {
+        console.log("Peak data NOT sorted :: attempting to sort...");
+        var sorted = sortLinkedArrays(data.mzs,data.intensities,data.interpretations);
+        data.mzs = sorted[0];
+        data.intensities = sorted[1];
+        data.interpretations = sorted[2];
+        console.log("...data re-sorted OK");
+    }
+
+    var precmz = null;
+    if (data && data.attributes && data.attributes.length>0) {
+        for (var att of data.attributes) {
+            if (att.accession == "MS:1000744") precmz = att.value;  // preferred
+            if (att.accession == "MS:1000827" && !precmz) precmz = att.value;
+	}
+    }
+    if (precmz)
+	document.getElementById("precmz_input").value = precmz;
+
+
+    var has_annots = false;
+    for (var annot of data.interpretations)
+	has_annots ||= annot?true:false;
+
+    if (has_annots)
+        add_annotation_form();
+    else
+        annotate_peaks(null);
+
+}
+
+
+function prepare_lorikeet_data() {
+    var data = _spectrum[0]; // just consider the first one  FIXME??
+
+    var s = {};
+    s.scanNum = 0;
+    s.precursorMz = _spectrum['mz'] ? _spectrum['mz'] : 0;
+    s.fileName = " spectrum";
+    s.mzError = 20;
+    s.mzUnits = 'ppm';
+    s.showA = [1,0,0];
+    s.peakDetect = false;
+    s.ms2peaks = [];
+    s.pforms = [];
+
+    var has_spectrum = false;
+    var maxMz = 1999.0;
+
+    if (!data || !data.mzs || !data.intensities)
+        throw "Incomplete spectrum data!";
+
+    for (var i in data.mzs) {
+        var usipeaks = [Number(data.mzs[i]), Number(data.intensities[i])];
+        s.ms2peaks.push(usipeaks);
+        if (Number(data.mzs[i]) > maxMz) maxMz = Number(data.mzs[i]);
+        has_spectrum = true;
+    }
+    s.minDisplayMz = 0.01;
+    s.maxDisplayMz = maxMz+1.0;
+
+    if (_peptidoforms) {
+	var isobaric_unimods = [ "UNIMOD:214", "UNIMOD:532", "UNIMOD:533", "UNIMOD:730", "UNIMOD:731", "UNIMOD:737", "UNIMOD:738", "UNIMOD:739", "UNIMOD:889", "UNIMOD:984", "UNIMOD:985", "UNIMOD:1341", "UNIMOD:1342", "UNIMOD:2015", "UNIMOD:2016", "UNIMOD:2017", "UNIMOD:2050" ];
+
+        for (var pi in _peptidoforms) {
+	    s.pforms[pi] = {};
+	    s.pforms[pi].peptidoform = _peptidoforms[pi].peptidoform_string;
+	    s.pforms[pi].sequence = _peptidoforms[pi].peptide_sequence;
+	    s.pforms[pi].fileName = _peptidoforms[pi].peptidoform_string;
+	    s.pforms[pi].charge   = _peptidoforms[pi].charge;
+	    s.pforms[pi].ntermMod = 0;
+	    s.pforms[pi].ctermMod = 0;
+	    s.pforms[pi].reporterIons = false;
+	    s.pforms[pi].variableMods = [];
+	    s.pforms[pi].labileModSum = 0;
+	    s.pforms[pi].maxNeutralLossCount = 1;
+
+	    for (var mod in _peptidoforms[pi]["terminal_modifications"]) {
+		if (_peptidoforms[pi]["terminal_modifications"][mod].labile_delta_mass &&
+		    _peptidoforms[pi]["terminal_modifications"][mod].labile_delta_mass > 0) {
+		    s.pforms[pi].labileModSum += _peptidoforms[pi]["terminal_modifications"][mod].labile_delta_mass;
+		    continue;
+                }
+
+                if (_peptidoforms[pi]["terminal_modifications"][mod].base_residue == "nterm") {
+		    s.pforms[pi].ntermMod = _peptidoforms[pi]["terminal_modifications"][mod].delta_mass;
+		    if (isobaric_unimods.includes(_peptidoforms[pi]["terminal_modifications"][mod].modification_curie))
+			s.pforms[pi].reporterIons = true;
+                }
+                else if (_peptidoforms[pi]["terminal_modifications"][mod].base_residue == "cterm")
+		    s.pforms[pi].ctermMod = _peptidoforms[pi]["terminal_modifications"][mod].delta_mass;
+		else
+		    console.warn("[WARN] Invalid mod terminus; ignoring...");
+	    }
+	    for (var mod in _peptidoforms[pi]["residue_modifications"]) {
+		if (_peptidoforms[pi]["residue_modifications"][mod].labile_delta_mass &&
+		    _peptidoforms[pi]["residue_modifications"][mod].labile_delta_mass > 0) {
+		    s.pforms[pi].labileModSum += _peptidoforms[pi]["residue_modifications"][mod].labile_delta_mass;
+		    continue;
+                }
+
+                var varmod  = {};
+                varmod.index     = _peptidoforms[pi]["residue_modifications"][mod].index;
+                varmod.modMass   = _peptidoforms[pi]["residue_modifications"][mod].delta_mass;
+                varmod.aminoAcid = _peptidoforms[pi]["residue_modifications"][mod].base_residue;
+                if (Math.abs(varmod.modMass-79.966331) < 0.01) {  //Phos
+		    varmod.losses = [];
+		    var loss = {};
+		    loss.monoLossMass = 97.976896;
+		    loss.avgLossMass  = 97.9952;
+		    loss.formula      = 'H3PO4';
+		    loss.label        = 'p';
+		    varmod.losses.push(loss);
+		    loss = {};
+		    loss.monoLossMass = 79.966331;
+		    loss.avgLossMass  = 79.9799;
+		    loss.formula      = 'HPO3';
+		    varmod.losses.push(loss);
+		    s.pforms[pi].maxNeutralLossCount++;
+                }
+                else if (varmod.aminoAcid == "M" && (Math.abs(varmod.modMass-15.9949) < 0.01)) {  //Ox
+		    varmod.losses = [];
+		    var loss = {};
+		    loss.monoLossMass = 63.998285;
+		    loss.avgLossMass  = 64.11;
+		    loss.formula      = 'CH3SOH';
+		    varmod.losses.push(loss);
+		    s.pforms[pi].maxNeutralLossCount++;
+                }
+                else if ((varmod.aminoAcid == "S" || varmod.aminoAcid == "T") && (Math.abs(varmod.modMass-27.9949) < 0.01)) {  //Formyl
+		    varmod.losses = [];
+		    var loss = {};
+		    loss.monoLossMass = 27.9949;
+		    loss.avgLossMass  = 28.0101;
+		    loss.formula      = 'CO';
+		    varmod.losses.push(loss);
+		    s.pforms[pi].maxNeutralLossCount++;
+                }
+
+                s.pforms[pi].variableMods.push(varmod);
+	    }
+	    for (var mod in _peptidoforms[pi]["unlocalized_mass_modifications"]) {
+		s.pforms[pi].labileModSum += _peptidoforms[pi]["unlocalized_mass_modifications"][mod].delta_mass;
+	    }
+        }
+    } // if (_peptidoforms)
+
+    if (data && data.attributes && data.attributes.length>0) {
+	for (var att of data.attributes) {
+	    if (att.accession == "MS:1000744") s.precursorMz = att.value;  // preferred
+	    if (att.accession == "MS:1000827" && s.precursorMz == 0) s.precursorMz = att.value;
+
+	    if (att.accession == "MS:1008025") s.scanNum     = att.value;
+	    if (att.accession == "MS:1000041") s.charge      = att.value;
+	    if (att.accession == "MS:1000888") s.sequence    = att.value;
+	    if (att.accession == "MS:1003061") s.fileName    = att.value;
+	    if (att.accession == "MS:10000512" &&
+		att.value.startsWith("ITMS")) {
+		s.mzError = 0.6;
+		s.mzUnits = 'Th';
+		s.showA = [0,0,0];
+		s.peakDetect = true;
+	    }
+	}
+    }
+
+    if (has_spectrum) {
+	_spectrum.lori_data = s;
+	renderLorikeet("explore_div",s.pforms[0]?0:null);
+
+	add_annotation_form();
+	// annotate_peaks();
+    }
+    else {
+	_spectrum.lori_data = {};
+    }
+
+}
+
+
+function isSorted(arr) {
+    for(var i = 0 ; i < arr.length - 1 ; i++)
+	if (arr[i] > arr[i+1])
+	    return false;
+    return true;
+}
+
+function sortLinkedArrays(arr1,arr2,arr3) {
+    var hoa2 = {};
+    var hoa3 = {};
+    for (var i in arr1) {
+	hoa2[arr1[i]] = arr2[i];
+	hoa3[arr1[i]] = arr3[i];
+    }
+
+    arr1.sort(function(a, b){return a - b});
+
+    arr2 = [];
+    arr3 = [];
+    for (var i in arr1) {
+	arr2.push(Number(hoa2[arr1[i]])); // also get rid of pesky strings
+	arr3.push(hoa3[arr1[i]]);
+    }
+    for (var i in arr1)
+	arr1[i] = Number(arr1[i]); // get rid of pesky strings
+
+    return [arr1, arr2, arr3];
+}
+
+// not used:
+function renderLorikeet(divid,pfidx) {
+    var s = _spectrum.lori_data;
+    clear_element(divid);
+
+    $('#'+divid).specview({
+	"sequence":pfidx!=null ? s.pforms[pfidx].sequence : '',
+	"scanNum":s.scanNum,
+	"charge":pfidx!=null ? s.pforms[pfidx].charge : s.charge ? s.charge : 1,
+	"width":650,
+	"height":400,
+	"precursorMz":s.precursorMz,
+	"minDisplayMz":s.minDisplayMz,
+	"maxDisplayMz":s.maxDisplayMz,
+	"massError":s.mzError,
+	"massErrorUnit":s.mzUnits,
+	"showMassErrorPlot":true,
+	"fileName":s.fileName,
+	"showA":s.showA,
+	"showB":[1,1,0],
+	"showY":[1,1,0],
+	"peakDetect":s.peakDetect,
+	"ntermMod":pfidx!=null ? s.pforms[pfidx].ntermMod : 0,
+	"ctermMod":pfidx!=null ? s.pforms[pfidx].ctermMod : 0,
+	"variableMods":pfidx!=null ? s.pforms[pfidx].variableMods : [],
+	"labileModSum":pfidx!=null ? s.pforms[pfidx].labileModSum : 0,
+	"maxNeutralLossCount":pfidx!=null ? s.pforms[pfidx].maxNeutralLossCount : 1,
+	"labelReporters":pfidx!=null ? s.pforms[pfidx].reporterIons : false,
+	"peaks":s.ms2peaks,
+    });
+
+}
+
+
+function download(button,format='tsv') {
+    user_log(null, "Sending "+format+" data...",'run');
+
+    var tsv = null;
+
+    for (var idx in _spectrum[0]['mzs']) {
+	tsv += _spectrum[0]['mzs'][idx];
+	tsv += "\t" + _spectrum[0]['intensities'][idx];
+	if (_spectrum[0]['interpretations'][idx])
+	    tsv += "\t" + _spectrum[0]['interpretations'][idx];
+	tsv += "\n";
+    }
+
+    if (tsv) {
+        var pforms = '';
+        var charges = '';
+        var plus = '';
+        for (var pi in _peptidoforms) {
+            pforms += plus + _peptidoforms[pi].peptidoform_string;
+            charges += plus + _peptidoforms[pi].charge;
+            plus = "+";
+        }
+	if (pforms)
+	    tsv = "PEPTIDOFORMS\t"+pforms+"\n"+"CHARGES\t"+charges+"\n"+tsv;
+	if (_spectrum['mz'])
+	    tsv = "PRECURSORMZ\t"+_spectrum['mz']+"\n"+tsv;
+
+
+        var filename =  _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : 'quetzal_peakdata';
+
+	var downloadLink = document.createElement("a");
+        downloadLink.download = filename + '.' + format;
+	downloadLink.href = "data:text/tab-separated-values," + encodeURIComponent(tsv);
+	downloadLink.click();
+
+	addCheckBox(button,true);
+    }
+    else {
+	user_log(null, "No spectrum data available!",'error');
+        show_input('viewlog_menu');
+    }
+}
+
+
+function generate_figure(button,format,download=false) {
+    user_log(null, "Generating "+format+" figure...",'run');
+
+    // check if empty spectrum, annotations....TODO
+    // verify format
+
+    review_spectrum_attributes();
+
+    _spectrum[0]['extended_data'] = {};
+
+    var user_parameters = {};
+    user_parameters.skip_annotation = true;
+
+    user_parameters.create_svg = false;
+    user_parameters.create_pdf = false;
+    user_parameters["create_"+format] = true;
+
+    for (var field of ["xmin", "xmax", "mask_isolation_width", "ymax"]) {
+	var val = document.getElementById(field+"_input").value.trim();
+	if (val != "")
+	    user_parameters[field] = Number(val);
+	document.getElementById(field+"_input").value = val;
+    }
+
+    for (var field of ["show_sequence", "show_b_and_y_flags", "showppm", "show_unknown"]) {
+	if (document.getElementById(field+"_input").checked)
+            user_parameters[field] = true;
+	else
+            user_parameters[field] = false;
+    }
+
+    stuff_is_running(button,true);
+    if (!download)
+        document.getElementById("spectrum_preview").innerHTML = '';
+
+    _spectrum[0]['extended_data']['user_parameters'] = user_parameters;
+
+    var url = _api['annotate'];
+    fetch(url, {
+        method: 'post',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify([_spectrum[0]])
+    })
+        .then(response => response.json())
+        .then(annot_data => {
+	    stuff_is_running(button,false);
+	    _spectrum[0]['extended_data'] = null;
+	    add_to_user_log(annot_data.status.log);
+	    if (annot_data.status.status == "ERROR")
+		throw annot_data.status.error_code + " :: " + annot_data.status.description;
+
+	    var file_data = annot_data['annotated_spectra'][0]['extended_data'];
+
+	    if (download) {
+		var filename =  _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : 'quetzal_spectrum';
+
+		var downloadLink = document.createElement('a');
+		downloadLink.target = '_blank';
+		downloadLink.download = filename + '.' + format;
+
+		if (format == 'pdf') {
+		    // avoid ISO8859-1 foolery...
+		    var blob = new Blob([Uint8Array.from(file_data['pdf'], c => c.charCodeAt(0))], { type: 'application/pdf' });
+		    var URL = window.URL || window.webkitURL;
+		    var downloadUrl = URL.createObjectURL(blob);
+		    downloadLink.href = downloadUrl;
+		    downloadLink.click();
+		    URL.revokeObjectURL(downloadUrl);
+		}
+		else {
+		    downloadLink.href = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(file_data['svg']);
+		    downloadLink.click();
+		}
+	    }
+	    else {
+		var img = document.createElement('img');
+		img.src = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(file_data['svg']);
+		document.getElementById("spectrum_preview").appendChild(img);
+	    }
+
+        })
+	.catch(error => {
+	    stuff_is_running(button,false);
+            user_log(null,"ERROR annotating:",'error');
+            user_log(null,error);
+            show_input('viewlog_menu');
+        });
+}
+
+
+function toggle_box(box,open=false,close=false) {
+    var elebox = document.getElementById(box);
+    if ((elebox.style.visibility == "visible" && !open) || close) {
+	elebox.style.visibility = "hidden";
+	elebox.style.opacity = "0";
+	if (document.getElementById(box+"_button"))
+	    document.getElementById(box+"_button").classList.remove("on");
+    }
+    else {
+	elebox.style.visibility = "visible";
+	elebox.style.opacity = "1";
+	if (document.getElementById(box+"_button"))
+	    document.getElementById(box+"_button").classList.add("on");
+
+	if ((elebox.offsetLeft + elebox.offsetWidth) < 200)
+	    elebox.style.left = '10px';
+	if ((elebox.offsetTop + elebox.offsetHeight) < 200)
+	    elebox.style.top = '10px';
+    }
+}
+
+
+// for use with "examples" drop/pull-down
+function update_usi_input(sel) {
+    document.getElementById('usi_input').value=sel.value;
+    if (sel.options[sel.selectedIndex].dataset.desc)
+	document.getElementById('usi_desc').innerHTML = sel.options[sel.selectedIndex].dataset.desc;
+    else
+	document.getElementById('usi_desc').innerHTML = '';
+
+    sel.value='';
+}
+
+
+
+function user_annotations(button) {
+    user_log(null, "Updating annotations via user input...",'run');
+    for (var idx in _spectrum[0]['interpretations']) {
+	_spectrum[0]['interpretations'][idx] = document.getElementById("peak_annotation_"+idx).value;
+	if (document.getElementById("peak_annotation_ppm_"+idx).value)
+	    _spectrum[0]['interpretations'][idx] += '/'+document.getElementById("peak_annotation_ppm_"+idx).value;
+    }
+
+    add_annotation_table();
+    addCheckBox(button,true);
+}
+
+
+function review_spectrum_attributes() {
+    user_log(null, " (verifying attributes...)");
+
+    var spec_data = _spectrum[0];
+    var pform = _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : '';
+    var charge = _peptidoforms[0] ? _peptidoforms[0].charge : 1;
+
+    if (!spec_data["attributes"])
+        spec_data["attributes"] = [];
+
+    var addMS1003169 = true;
+    var addMS1000041 = true;
+    for (var att of spec_data['attributes']) {
+	if (att.accession == "MS:1003169") {
+            att.value = pform;
+            addMS1003169 = false;
+        }
+        else if (att.accession == "MS:1000041") {
+            att.value = charge;
+            addMS1000041 = false;
+        }
+    }
+
+    if (addMS1003169) {
+	var att = {};
+	att.accession = 'MS:1003169';
+	att.name = 'proforma peptidoform sequence';
+	att.value = pform;
+	spec_data["attributes"].push(att);
+    }
+    if (addMS1000041) {
+        var att = {};
+        att.accession = 'MS:1000041';
+        att.name = 'charge state';
+        att.value = charge;
+        spec_data["attributes"].push(att);
+    }
+
+}
+
+
+function annotate_peaks(button) {
+    user_log(null, "Calling annotator service...",'run');
+    stuff_is_running(button,true);
+
+    review_spectrum_attributes();
+
+    var pform = _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : '';
+
+    var url = _api['annotate'];
+    var mztol = null;
+    for (var att of _spectrum[0]['attributes']) {
+	if (att.accession == "MS:10000512" &&
+	    att.value.startsWith("ITMS")) {
+	    url += "?tolerance=500";
+	    mztol = '500ppm';
+	}
+    }
+
+    fetch(url, {
+	method: 'post',
+	headers: {
+	    'Accept': 'application/json',
+	    'Content-Type': 'application/json'
+	},
+	body: JSON.stringify([_spectrum[0]])
+    })
+	.then(response => response.json())
+	.then(annot_data => {
+            add_to_user_log(annot_data.status.log);
+            if (annot_data.status.status == "ERROR")
+                throw annot_data.status.error_code + " :: " + annot_data.status.description;
+
+	    _spectrum[0]['interpretations'] = annot_data['annotated_spectra'][0]['interpretations'];
+
+	    add_annotation_form(mztol);
+	    stuff_is_running(button,false);
+        })
+        .catch(error => {
+	    stuff_is_running(button,false);
+            user_log(null,"ERROR annotating:",'error');
+            user_log(null,error);
+            show_input('viewlog_menu');
+	});
+}
+
+
+function extract_ion_series() {
+    if (!_spectrum[0]['interpretations'])
+	return;
+
+    _spectrum[0]['_ion_series'] = [];
+    _spectrum[0]['_ion_table'] = {};
+
+    for (var annot of _spectrum[0]['interpretations']) {
+        var what = annot.split('/')[0];
+
+	var mion = what.match(/[+-]/) ? false : true;
+	var inum = what.match(/^.\d+/);
+	var chrg = 1;
+	if (what.indexOf('^',-1) >= 0)
+	    chrg = Number(what.substr(-1,1));
+
+	var ion = 'other';
+        if (what.startsWith("0@"))
+            ion = 'other';
+        else if (what.startsWith("?"))
+            ion = '?';
+        else if (what.startsWith("p") || what.includes("@p"))
+	    ion = 'prec';
+        else if (what.startsWith("I"))
+            ion = 'I';
+        else if (what.startsWith("r"))
+	    ion = 'rep';
+        else if (what.startsWith("m"))
+	    ion = 'int';
+        else if (what.startsWith("a"))
+	    ion = 'a';
+        else if (what.startsWith("b"))
+	    ion = 'b';
+        else if (what.startsWith("c"))
+	    ion = 'c';
+        else if (what.startsWith("x"))
+            ion = 'x';
+        else if (what.startsWith("y"))
+            ion = 'y';
+        else if (what.startsWith("z"))
+            ion = 'z';
+
+	_spectrum[0]['_ion_series'].push(ion);
+
+	for (var series of ['a','b','c','x','y','z']) {
+	    if (ion == series) {
+		var seriesion = "+"+chrg+inum;
+		if (mion)
+		    _spectrum[0]['_ion_table'][seriesion] = true;
+		else if (!_spectrum[0]['_ion_table'][seriesion])
+		    _spectrum[0]['_ion_table'][seriesion] = false;
+	    }
+	}
+    }
+
+    show_spectrum();
+    add_ion_table();
+}
+
+
+function add_annotation_form(mztol=null) {
+    add_annotation_table(mztol);
+
+    var annot_form = document.getElementById("annotation_form");
+    annot_form.innerHTML = '';
+
+    for (var idx in _spectrum[0]['mzs']) {
+        for (var col of ["mzs", "intensities", "interpretations"]) {
+            var span = document.createElement("span");
+
+            var val = _spectrum[0][col][idx];
+            if (col == "interpretations") {
+                var input = document.createElement("input");
+                input.id = "peak_annotation_"+idx;
+                input.size = 40;
+                input.value = val.split('/')[0];
+                annot_form.appendChild(input);
+
+		input = document.createElement("input");
+                input.id = "peak_annotation_ppm_"+idx;
+                input.size = 10;
+                annot_form.appendChild(input);
+                if (val.includes('/'))
+                    input.value = val.split('/')[1];
+
+		span.className = "buttonlike";
+		span.title = "Clear annotation values for this row";
+		span.setAttribute('onclick', "document.getElementById('peak_annotation_"+idx+"').value='';document.getElementById('peak_annotation_ppm_"+idx+"').value='';");
+                span.appendChild(document.createTextNode('\u{1F7A9}'));
+
+            }
+            else {
+                span.appendChild(document.createTextNode(val));
+	    }
+
+            annot_form.appendChild(span);
+	}
+    }
+}
+
+
+function add_ion_table() {
+    var table = document.createElement("table");
+    table.id = "detected_ion_table";
+    table.className = "annot prox";
+
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.colSpan = '99';
+    td.className = "rep";
+    td.appendChild(document.createTextNode('Ion Series'));
+    tr.appendChild(td);
+    table.appendChild(tr);
+
+    tr = document.createElement("tr");
+    td = document.createElement("th");
+    td.colSpan = '2';
+    //td.appendChild(document.createTextNode('Series'));
+    tr.appendChild(td);
+
+    for (var idx in _peptidoforms[0].peptide_sequence) {
+	td = document.createElement("th");
+	td.appendChild(document.createTextNode(_peptidoforms[0].peptide_sequence[idx]));
+	tr.appendChild(td);
+    }
+    table.appendChild(tr);
+
+    for (var series of ['a','b','c','x','y','z']) {
+	var first = true;
+	for (var chg of [1,2,3,4,5]) {
+	    var show = false;
+	    tr = document.createElement("tr");
+
+            td = document.createElement("td");
+	    if (first) {
+		tr.style.borderTop = '2px solid black';
+		td.style.color = 'white';
+		td.style.background = 'black';
+		td.appendChild(document.createTextNode(series));
+	    }
+	    else
+		td.className = "rep";
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            td.className = "rep";
+	    td.appendChild(document.createTextNode("("+chg+"+)"));
+	    tr.appendChild(td);
+
+	    for (var i in _peptidoforms[0].peptide_sequence) {
+		var pos = 'abc'.includes(series) ? Number(i)+1 : Number(_peptidoforms[0].peptide_sequence.length) - i;
+
+		td = document.createElement("td");
+		td.appendChild(document.createTextNode(pos));
+		td.style.color = 'white';
+
+                //var seriesion = "+"+chg+series+('abc'.includes(series) ? nterm:cterm);
+                var seriesion = "+"+chg+series+pos;
+                if (_spectrum[0]['_ion_table'][seriesion]) {
+		    td.style.background = _ion_colors[series];
+		    show = true;
+		    first = false;
+		}
+                else if (_spectrum[0]['_ion_table'][seriesion] === false) {
+                    td.style.background = _ion_colors[series];
+                    td.style.filter = "brightness(65%)";
+		    show = true;
+		    first = false;
+		}
+		tr.appendChild(td);
+            }
+	    if (show)
+		table.appendChild(tr);
+        }
+    }
+
+    tr = document.createElement("tr");
+    td = document.createElement("th");
+    td.colSpan = '2';
+    tr.appendChild(td);
+    for (var idx in _peptidoforms[0].peptide_sequence) {
+        td = document.createElement("th");
+        td.appendChild(document.createTextNode(_peptidoforms[0].peptide_sequence[idx]));
+        tr.appendChild(td);
+    }
+    table.appendChild(tr);
+
+    clear_element("ion_div");
+    document.getElementById("ion_div").appendChild(table);
+}
+
+
+function add_annotation_table(mztol=null) {
+    extract_ion_series();
+
+    var annot_data = _spectrum[0];
+    var pform = _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : 'n/a';
+
+    var table = document.createElement("table");
+    table.id = "full_annotation_table";
+    table.className = "annot prox";
+
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.colSpan = '12';
+    td.className = "rep";
+    td.appendChild(document.createTextNode("Peak Annotations for: "+pform));
+    tr.appendChild(td);
+
+    td = document.createElement("td");
+    td.colSpan = '2';
+    td.className = "rep";
+    td.style.fontSize = 'revert';
+    td.setAttribute('onclick', 'show_mass_defect()');
+    td.innerHTML = "&#128200; Mass Defect";
+    td.title = "View Mass Defect plot";
+    tr.appendChild(td);
+
+    td = document.createElement("td");
+    td.colSpan = '2';
+    td.className = "rep";
+    td.style.fontSize = 'revert';
+    td.setAttribute('onclick', 'show_ion_stats()');
+    td.innerHTML = "&#128202; Ion Stats";
+    td.title = "View Ion Contribution histogram plot";
+    tr.appendChild(td);
+
+    table.appendChild(tr);
+
+    tr = document.createElement("tr");
+    tr.style.position = 'sticky';
+    tr.style.top = '0';
+    tr.style.zIndex = '5';
+    mztol = mztol ?  " [mztol="+mztol+"]" : '';
+    for (var col of ["m/z", "intensity", "norm", "interpretation(s)"+mztol].concat(_ion_list)) {
+	td = document.createElement("th");
+	td.appendChild(document.createTextNode(col));
+	tr.appendChild(td);
+    }
+    table.appendChild(tr);
+
+    var maxint = 1;
+    for (var pint of annot_data['intensities'])
+	if (pint > maxint)
+	    maxint = pint;
+
+    _totint = 0;
+    _totints = [0,0,0,0,0,0,0,0,0,0,0,0];
+    _coreints = [0,0,0,0,0,0,0,0,0,0,0,0];
+    _mzs = annot_data['mzs'];
+
+    for (var idx in annot_data['mzs']) {
+	tr = document.createElement("tr");
+	for (var col of ["mzs", "intensities", "interpretations"]) {
+	    td = document.createElement("td");
+
+	    var val = annot_data[col][idx];
+	    if (col == "interpretations") {
+		td.appendChild(document.createTextNode(val));
+	    }
+	    else {
+		td.className = "number";
+		var f = col == "intensities" ? 1 : 4;
+		td.appendChild(document.createTextNode(Number(val).toFixed(f)));
+		if (col == "intensities") {
+		    tr.appendChild(td);
+		    td = document.createElement("td");
+		    td.className = "number";
+		    td.style.borderRight = "1px solid rgb(187, 221, 187)";
+		    td.appendChild(document.createTextNode(Number(100*val/maxint).toFixed(1)));
+		    td.style.background = "linear-gradient(to left, rgb(187, 221, 187), rgb(187, 221, 187) "+(100*val/maxint)+"%, rgba(255, 255, 255, 0) "+(100*val/maxint)+"%)";
+		}
+	    }
+	    tr.appendChild(td);
+	}
+
+	// only consider the first one
+	var what = annot_data['interpretations'][idx].split('/')[0];
+	var mion = what.match(/[+-]/) ? false : true;
+	var chrg = '';
+	if (what.indexOf('^',-1) >= 0)
+	    for (var c=0; c<Number(what.substr(-1,1)); c++)
+		chrg += "+";
+
+	var where = 999;
+	var inum = what.match(/^.\d+/);
+
+	if (what.startsWith("0@")) {
+	    where = _ion_list.indexOf('other');
+	    what = 'other';
+	}
+	else if (what.startsWith("?")) {
+	    where = _ion_list.indexOf('?');
+	    what = inum ? inum : '?';
+	}
+	else if (what.startsWith("p") ||
+		 what.includes("@p")) {
+	    where = _ion_list.indexOf('prec');
+	    what = 'p'+chrg;;
+	}
+	else if (what.startsWith("I")) {
+            where = _ion_list.indexOf('I');
+            what = what.substring(1,2);
+	}
+	else if (what.startsWith("r")) {
+            where = _ion_list.indexOf('rep');
+            what = what.substring(2,5);
+	}
+	else if (what.startsWith("m")) {
+            where = _ion_list.indexOf('int');
+            what = 'm';
+	}
+	else if (what.startsWith("a")) {
+            where = _ion_list.indexOf('a');
+            what = inum+chrg;
+	}
+	else if (what.startsWith("b")) {
+            where = _ion_list.indexOf('b');
+            what = inum+chrg;
+	}
+	else if (what.startsWith("c")) {
+            where = _ion_list.indexOf('c');
+            what = inum+chrg;
+	}
+	else if (what.startsWith("x")) {
+            where = _ion_list.indexOf('x');
+            what = inum+chrg;
+	}
+	else if (what.startsWith("y")) {
+            where = _ion_list.indexOf('y');
+            what = inum+chrg;
+	}
+	else if (what.startsWith("z")) {
+            where = _ion_list.indexOf('z');
+            what = inum+chrg;
+	}
+	else {
+            where = _ion_list.indexOf('other');
+            what = "!!! "+what;
+	}
+
+	for (var aaa in _ion_list) {
+            td = document.createElement("td");
+            if (aaa == where) {
+		td.className = 'annot_col'+aaa;
+		if (!mion)
+		    td.style.filter = "brightness(65%)";
+		else
+		    _coreints[aaa] += annot_data['intensities'][idx];
+		td.innerHTML = what;
+
+		_totints[aaa] += annot_data['intensities'][idx];
+		_totint += annot_data['intensities'][idx];
+
+            }
+            tr.appendChild(td);
+	}
+
+	table.appendChild(tr);
+    }
+
+    tr = document.createElement("tr");
+    for (var col of ["", "", "", ""].concat(_ion_list)) {
+	td = document.createElement("th");
+	td.appendChild(document.createTextNode(col));
+	tr.appendChild(td);
+    }
+    table.appendChild(tr);
+
+    tr = document.createElement("tr");
+    td = document.createElement("th");
+    td.colSpan = '4';
+    td.style.textAlign = 'right';
+    td.appendChild(document.createTextNode("Share of Total Ion Current:"));
+    tr.appendChild(td);
+
+    for (var aaa in _ion_list) {
+	td = document.createElement("th");
+	td.appendChild(document.createTextNode((100*_totints[aaa]/_totint).toFixed(1)+"%"));
+	tr.appendChild(td);
+    }
+    table.appendChild(tr);
+
+    clear_element("annot_div");
+    document.getElementById("annot_div").appendChild(table);
+}
+
+
+function show_ion_stats() {
+    clear_element("quickplot_canvas");
+    document.getElementById("quickplot_title").innerHTML = "Ion Stats";
+
+    var canvas = document.getElementById("quickplot_canvas");
+    canvas.height = 250;
+    canvas.width = 510;
+
+    const ctx = canvas.getContext("2d");
+    ctx.strokeStyle = "#ccc";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var pct=0; pct<=100; pct+=10) {
+	ctx.moveTo(0, 20+2*pct);
+	ctx.lineTo(480, 20+2*pct);
+	ctx.fillText((100-pct)+"%", 485, 20+2*pct);
+    }
+    ctx.stroke();
+
+    for (var aaa in _ion_list) {
+	var x = 5+40*aaa;
+	var h = 200*_totints[aaa]/_totint;
+	ctx.fillStyle = '#047';
+	ctx.fillRect(x,  220-h, 30, h);
+
+	h = 200*_coreints[aaa]/_totint;
+	ctx.fillStyle = '#2c99ce';
+	ctx.fillRect(x,  220-h, 30, h);
+
+	ctx.fillStyle = '#000';
+	ctx.font = "16px Consola";
+	ctx.textAlign = "center";
+	ctx.fillText(_ion_list[aaa], x+15, 240);
+    }
+
+    toggle_box("quickplot",true);
+}
+
+function show_mass_defect() {
+    clear_element("quickplot_canvas");
+    document.getElementById("quickplot_title").innerHTML = "Mass Defect";
+
+    var minmz = 1000;
+    var maxmz = 0;
+    for (var mz of _mzs) {
+	if (mz < minmz )
+	    minmz = mz;
+	if (mz > maxmz )
+	    maxmz = mz;
+    }
+    var w = Number((maxmz-minmz+1).toFixed(0));
+
+    var canvas = document.getElementById("quickplot_canvas");
+    canvas.height = 650;
+    canvas.width = w+40;
+
+    const ctx = canvas.getContext("2d");
+    ctx.strokeStyle = "#ccc";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var p=0; p<=10; p++) {
+	ctx.moveTo(0, 10+p*60);
+	ctx.lineTo(w, 10+p*60);
+	ctx.fillText(((10-p)/10).toFixed(1), w+3, 15+p*60);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.strokeStyle = "#666";
+    ctx.moveTo(0, 610);
+    ctx.lineTo(w, 610);
+    ctx.stroke();
+
+    ctx.fillStyle = '#000';
+    ctx.textAlign = "center";
+    ctx.beginPath();
+    for (var p=0; p<=2400; p+=100) {
+	if (p>minmz && p<maxmz) {
+	    ctx.moveTo(p-minmz, 610);
+	    ctx.lineTo(p-minmz, 615);
+	    ctx.fillText(p, p-minmz, 625);
+	}
+    }
+    ctx.stroke();
+
+    ctx.font = "14px Consola";
+    ctx.fillText('m/z', w/2, 645);
+
+    ctx.save();
+    ctx.translate( canvas.width - 1, 0 );
+    ctx.rotate(270 * Math.PI / 180);
+    ctx.fillText('m/z - int (m/z)', -(canvas.height/2).toFixed(0), -5);
+    ctx.restore();
+
+    ctx.strokeStyle = "rgba(0,64,120,0.6)";
+    for (var mz of _mzs) {
+	var md = mz - Math.floor(mz);
+
+	ctx.beginPath();
+	ctx.arc(mz-minmz, 610-md*600, 2, 0, 2 * Math.PI);
+	ctx.stroke();
+    }
+
+    toggle_box("quickplot",true);
+}
+
+
+// misc utils
+function clear_element(ele) {
+    if (!document.getElementById(ele))
+	return;
+    const node = document.getElementById(ele);
+    while (node.firstChild) {
+	node.removeChild(node.firstChild);
+    }
+}
+
+function addCheckBox(ele,remove=true) {
+    var check = document.createElement("span");
+    check.className = 'alert';
+    check.innerHTML = '&check;';
+    ele.parentNode.insertBefore(check, ele.nextSibling);
+
+    if (remove)
+	var timeout = setTimeout(function() { check.remove(); }, 1500 );
+}
+
+function stuff_is_running(button=null,isit=true) {
+    if (isit)
+	document.getElementById("pagebanner").classList.add('crawl');
+    else
+	document.getElementById("pagebanner").classList.remove('crawl');
+
+    if (button)
+	button.disabled = isit ? true : '';
+}
+
+
+// from w3schools (mostly)
+function tpp_dragElement(ele) {
+    ele.style.cursor = "move";
+    var posx1 = 0, posx2 = 0, posy1 = 0, posy2 = 0;
+    if (document.getElementById(ele.id + "header"))
+	document.getElementById(ele.id + "header").onmousedown = dragMouseDown;
+    else
+	ele.onmousedown = dragMouseDown;
+
+    function dragMouseDown(e) {
+	e = e || window.event;
+	e.preventDefault();
+	posx2 = e.clientX;
+	posy2 = e.clientY;
+	document.onmouseup = closeDragElement;
+	document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+	e = e || window.event;
+	e.preventDefault();
+	posx1 = posx2 - e.clientX;
+	posy1 = posy2 - e.clientY;
+	posx2 = e.clientX;
+	posy2 = e.clientY;
+	ele.style.top  = (ele.offsetTop  - posy1) + "px";
+	ele.style.left = (ele.offsetLeft - posx1) + "px";
+	ele.style.right = 'initial';
+    }
+
+    function closeDragElement() {
+	document.onmouseup = null;
+	document.onmousemove = null;
+    }
+}
+
+
+// unused:
+function generateRandomId() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let randomId = '';
+
+    for (let i = 0; i < 32; i++) {
+	const randomIndex = Math.floor(Math.random() * characters.length);
+	randomId += characters.charAt(randomIndex);
+    }
+
+    return randomId;
+}
+
+function enter_setting(ele) {
+    if (event.key === 'Enter')
+	update_setting(ele.id,null);
+    else
+	update_save_button(ele);
+}
+
+function chart_controls() {
+    var div = document.createElement("div");
+    div.className = "ms2chart_controls";
+
+    var span = document.createElement("span");
+    span.className = 'buttonlike';
+    span.title = "Reset Zoom and axes to intial settings";
+    span.onclick= function(){reset_x();};
+    span.innerHTML = '&#8634;';
+    div.appendChild(span);
+
+    return div;
+}
+
+function update_setting(key,value) {
+    key = key.replace("_setting",'');
+    if (value)
+	document.getElementById(key+"_setting").value = value;
+
+    if (key == 'mztolerance') {
+	var tol = Number(document.getElementById(key+"_setting").value.trim());
+	if (isNaN(tol))
+	    tol = '20';
+	_settings[key] = tol;
+	_settings[key+"_units"] = document.getElementById(key+"_units_setting").value;
+	document.getElementById(key+"_setting").value = _settings[key];
+    }
+    else {
+	_settings[key] = document.getElementById(key+"_setting").value.trim();
+	document.getElementById(key+"_setting").value = _settings[key];
+    }
+
+    addCheckBox(document.getElementById(key+"_setting_button"),true);
+    var timeout = setTimeout(function() { document.getElementById(key+"_setting_button").disabled = true; } , 1500 );
+}
+
+function update_save_button(ele,bid=null) {
+    var key = ele.id.replace("_setting",'');
+    if (!bid)
+	bid = key+"_setting_button";
+
+    var currval = _settings[key];
+    if (currval == ele.value)
+	document.getElementById(bid).disabled = true;
+    else
+	document.getElementById(bid).disabled = false;
+}
+
+
+function displayMsg(divid,msg) {
+    clear_element(divid);
+    var txt = document.createElement("h2");
+    txt.className = "invalid";
+    txt.style.marginBottom = "0";
+    txt.appendChild(document.createTextNode(msg));
+    document.getElementById(divid).appendChild(txt);
+}
+
