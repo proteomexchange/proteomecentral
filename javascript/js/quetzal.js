@@ -1,7 +1,7 @@
 var _api = {};
 _api['base_url'] = "/api/proxi/v0.1/";
 
-var _ion_list = ['a','b','c','x','y','z','I','prec','rep','int',"?",'other'];
+var _ion_list = ['a','b','c','x','y','z','I','prec','rep','int','mol',"?",'other'];
 var _ion_colors = {};
 var _settings = {}
 var _spectrum = {};
@@ -33,7 +33,6 @@ function init2() {
     _settings['usi_url'] = _api['spectra'] + '?resultType=full&usi=';
     _settings['mztolerance'] = 20;
     // always PPM.... _settings['mztolerance_units'] = 'ppm';
-    // ??? _settings['isobaricdetect'] = 'remove';
 
     for (var setting in _settings) {
 	if (document.getElementById(setting+"_setting"))
@@ -45,10 +44,7 @@ function init2() {
     // remove::
     var tab_colors = {
 	'_': 'tab:gray',
-	'f': 'tab:purple'
     }
-    // tab:purple : #9467bd
-    // tab:gray : #7f7f7f
 
     _ion_colors['a'] = "#2ca02c"; // tab:green
     _ion_colors['b'] = "#1f77b4"; // tab:blue
@@ -60,6 +56,7 @@ function init2() {
     _ion_colors['prec'] = "#e377c2"; // tab:pink
     _ion_colors['rep'] = "#9467bd"; // tab:purple
     _ion_colors['int'] = "#8c564b"; // tab:brown
+    _ion_colors['mol'] = "#9467bd"; // tab:purple
     _ion_colors['?'] = "#7f7f7f"; // tab:gray
     _ion_colors['other'] = "#7f7f7f"; // tab:gray
 
@@ -75,7 +72,7 @@ function init2() {
 	show_input('import_menu');
 }
 
-function reset_forms(exclude='NONE') {
+function reset_forms(exclude='NONE_OF_THE_ABOVE') {
     for (var what of ['usi','dta','pform','charge','precmz','xmin','xmax','ymax','mask_isolation_width'])
 	if (what != exclude)
 	    document.getElementById(what+"_input").value = '';
@@ -85,9 +82,44 @@ function reset_forms(exclude='NONE') {
 
     clear_element("ion_div");
     clear_element("annot_div");
+    clear_element("useralerts");
+    toggle_box("quickplot",false,true);
+    toggle_box("USIexamples",false,true);
     if (_chartdata)
         _chartdata.destroy();
+
+    document.getElementById("annotation_form").innerHTML = '<p>Please load annotated spectrum data to see annotation form.</p>';
 }
+
+
+function set_usi_url(button) {
+    var where = _api['spectra'];
+
+    //switch (document.getElementById("usiprovider_input").value) {
+    switch (button.value) {
+    case "iProX":
+        where = "https://www.iprox.cn/proxi/spectra";
+	break;
+    case "jPOST":
+        where = "https://repository.jpostdb.org/proxi/spectra";
+	break;
+    case "MassIVE":
+        where = "https://massive.ucsd.edu/ProteoSAFe/proxi/v0.1/spectra";
+        break;
+    case "PeptideAtlas":
+	where = "https://peptideatlas.org/api/proxi/v0.1/spectra";
+        break;
+    case "PRIDE":
+        where = "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra";
+        break;
+    case "ProteomeCentral":
+	where = _api['spectra'];
+    }
+
+    _settings['usi_url'] = where + '?resultType=full&usi=';
+    addCheckBox(button,true);
+}
+
 
 
 function validate_usi(button,alsofetch) {
@@ -106,7 +138,8 @@ function validate_usi(button,alsofetch) {
         }
     }
 
-    if (usi == "") return;
+    if (usi == "")
+	return user_msg("Unable to load spectrum.  Please specify a valid USI.",404,false);
 
     user_log(null, "Validating USI: "+usi,'run');
     stuff_is_running(button,true);
@@ -129,7 +162,7 @@ function validate_usi(button,alsofetch) {
         .then(data => {
 	    if (data.error_code != "OK") {
                 user_log(null, "Error: "+data.error_message);
-		return;
+                return user_msg("Error: "+data.error_message,500,false);
 	    }
 
 	    if (data.validation_results[usi]["is_valid"] == true) {
@@ -164,7 +197,7 @@ function validate_usi(button,alsofetch) {
 		stuff_is_running(button,false);
 		user_log(null, "USI Validation Error",'error');
 		user_log(null, data.validation_results[usi]["error_message"]);
-                show_input('viewlog_menu');
+		user_msg("USI Validation Error: "+data.validation_results[usi]["error_message"],500,false);
 	    }
 	})
 	.catch(error => {
@@ -172,7 +205,7 @@ function validate_usi(button,alsofetch) {
             user_log(null,"ERROR validating the USI::",'error');
             user_log(null,error);
             console.error(error);
-            show_input('viewlog_menu');
+            user_msg("ERROR validating the USI: "+error,500,false);
 	});
 }
 
@@ -197,26 +230,32 @@ function fetch_usi(usi,button) {
 		user_log(null, "Error: "+rdata.title,'error');
 		user_log(null, "Trace: "+rdata.detail);
 		console.log("["+rdata.status+"] "+rdata.title+" :: "+rdata.detail);
-		show_input('viewlog_menu');
-		return;
+                return user_msg(rdata.detail?rdata.detail:rdata.title,500,false);
 	    }
 
+	    user_msg("Successfully loaded spectrum "+usi,200);
 	    user_log(null,"Successfully loaded spectrum with "+rdata[0].mzs.length+" peaks");
 	    user_log(null,"---- Attributes ----");
-	    for (var a of rdata[0].attributes) {
-		user_log(null," "+a.name+": "+a.value);
-		var name = null;
-		if (a.accession == 'MS:1000041')
-		    name = 'charge';
-		else if (a.accession == 'MS:1000744')
-		    name = 'mz';
-		else if (a.accession == "MS:1000827" && !rdata['mz'])
-                    name = 'mz';
-		else if (a.accession == 'MS:1003061')
-		    name = 'name';
+	    if (rdata[0].attributes) {
+		for (var a of rdata[0].attributes) {
+		    user_log(null," "+a.name+": "+a.value);
+		    var name = null;
+		    if (a.accession == 'MS:1000041')
+			name = 'charge';
+		    else if (a.accession == 'MS:1000744')
+			name = 'mz';
+		    else if (a.accession == "MS:1000827" && !rdata['mz'])
+			name = 'mz';
+		    else if (a.accession == 'MS:1003061')
+			name = 'name';
 
-		if (name)
-		    rdata[name] = a.value;
+		    if (name)
+			rdata[name] = a.value;
+		}
+	    }
+	    else {
+		user_msg("No spectrum attributes found! Some features may not work properly",404,false);
+		user_log(null,"NO attributes found! Some features may not work properly",'warn');
 	    }
 	    user_log(null,"--------------------");
 	    rdata['origin'] = usi;
@@ -235,7 +274,8 @@ function fetch_usi(usi,button) {
 	    user_log(null,"ERROR fetching the USI::",'error');
 	    user_log(null,error);
 	    console.error(error);
-            show_input('viewlog_menu');
+
+            user_msg("ERROR fetching the USI: "+error,500,false);
 	});
 
 }
@@ -267,7 +307,8 @@ function dropFile(event) {
 
 function import_dta(button) {
     var dta = document.getElementById("dta_input").value.trim();
-    if (dta == "") return;
+    if (dta == "")
+	return user_msg("Unable to load spectrum.  Please specify a valid peak list.",404,true);
 
     stuff_is_running(button,true);
     reset_forms('dta');
@@ -317,18 +358,18 @@ function import_dta(button) {
 
     rdata['max_intensity'] = maxint;
     rdata['name'] = "NO_MATCH";
-    rdata['origin'] = "DTA import";
+    rdata['origin'] = "Peak List import";
 
     if (rdata[0].mzs.length < 1) {
 	user_log(null, "Unable to import spectrum: NO peaks found!",'error');
 	user_log(null, "  Please double-check input data.");
-        show_input('viewlog_menu');
 	stuff_is_running(button,false);
-	return;
+        return user_msg("Unable to import spectrum: <b>no peaks found</b>! Please double-check input data.",500,false);
     }
 
+    user_msg("Successfully loaded spectrum with "+rdata[0].mzs.length+" peaks",200);
     user_log(null,"Successfully imported spectrum with "+rdata[0].mzs.length+" peaks",'run');
-    user_log(null,"  Mass:"+rdata["mz"]+"  Charge:"+rdata["charge"]);
+    user_log(null,"  M/Z:"+rdata["mz"]+"  Charge:"+rdata["charge"]);
 
     _spectrum = rdata;
 
@@ -339,31 +380,38 @@ function import_dta(button) {
 
 
 
-function update_spectrum(button) {
+function update_spectrum(button,clear_annots=false) {
+    button.classList.remove('blue');
+
+    if (!_spectrum[0] || !_spectrum[0].mzs || !_spectrum[0].intensities)
+        return user_msg("Unable to update spectrum data.  No spectrum has been loaded.",500,true);
+
     stuff_is_running(button,true);
 
     var pforms = document.getElementById("pform_input").value.trim();
     var charges = document.getElementById("charge_input").value.trim();
     if (pforms == "" || charges == "") {
         user_log(null, "Unable to annotate: please enter a peptidoform and precursor charge state",'error');
-        show_input('viewlog_menu');
+        show_input('edit_menu');
 	stuff_is_running(button,false);
-	return;
+	return user_msg("Unable to annotate: please enter a peptidoform and precursor charge state",500,false);
     }
 
     document.getElementById("pform_input").value = pforms;
     document.getElementById("charge_input").value = charges;
 
-    var seqs = pforms.split("+");
     var zs = charges.split("+");
+    var seqs = zs.length > 1 ? pforms.split("+") : [pforms];
 
     _peptidoforms = [];
-    for (var i in seqs) {
+    for (var i in zs) {
 	_peptidoforms[i] = {};
 	_peptidoforms[i].peptidoform_string = seqs[i];
 	_peptidoforms[i].peptide_sequence = seqs[i];  //// fix this to striped sequence!!!
 	_peptidoforms[i].charge = zs[i];
     }
+    if (clear_annots)
+	_spectrum[0]['interpretations'] = [];
 
     validate_usi(button,false);
     addCheckBox(button,true);
@@ -383,7 +431,7 @@ function show_spectrum() {
 
     chart['options']['elements'] = {};
     chart['options']['elements']['line'] = {'borderWidth':1};
-    chart['options']['elements']['point'] = {'hitRadius':0, 'radius':0};
+    chart['options']['elements']['point'] = {'hitRadius':5, 'radius':0};
 
     chart['options']['scales'] = {};
     chart['options']['scales']['x'] = {};
@@ -391,29 +439,44 @@ function show_spectrum() {
     chart['options']['scales']['x']['title'] = {};
     chart['options']['scales']['x']['title']['display'] = true;
     chart['options']['scales']['x']['title']['text'] = 'm/z';
-    //chart['options']['scales']['y'] = {};
+    chart['options']['scales']['x']['grid'] = {};
+    chart['options']['scales']['x']['grid']['display'] = false;
+    chart['options']['scales']['y'] = {};
+    chart['options']['scales']['y']['grid'] = {};
+    chart['options']['scales']['y']['grid']['display'] = false;
 
     // //// for speed???
     //chart['options']['scales']['xAxes'] = {};
     //chart['options']['scales']['xAxes']['type'] = "time";
     //chart['options']['scales']['x']['time'] = { 'unit': "day", 'displayFormats': { 'day': "DD-MM-YYYY" } };
     // distribution: "series", // Careful with this, this creates another problem when you pan the chart. Issue: #361
-    chart['options']['scales']['y'] = {};
-    chart['options']['scales']['y']['ticks'] = {'beginAtZero': true };
+    //chart['options']['scales']['y']['ticks'] = {'beginAtZero': true };
     // ////
 
     chart['options']['plugins'] = {};
-    chart['options']['plugins']['tooltip'] = {'enabled':false};
+    chart['options']['plugins']['tooltip'] = {'enabled':true};
     chart['options']['plugins']['decimation'] = {'enabled':true};
     chart['options']['plugins']['legend'] = {'display':false};
     chart['options']['plugins']['title'] = {};
     chart['options']['plugins']['title']['display'] = true;
     chart['options']['plugins']['title']['text'] = _spectrum['origin'];
-    chart['options']['plugins']['title']['color'] = '#006dff';
+    if (_spectrum['mz'])
+	chart['options']['plugins']['title']['text'] += " Exp.m/z:"+_spectrum['mz'];
+
+    chart['options']['plugins']['title']['color'] = '#2c99ce';
+    chart['options']['plugins']['title']['padding'] = 0;
+
     chart['options']['plugins']['subtitle'] = {};
     chart['options']['plugins']['subtitle']['display'] = true;
     chart['options']['plugins']['subtitle']['text'] = _spectrum['name'];
+    if (_peptidoforms[0].ion_mz) {
+        chart['options']['plugins']['subtitle']['text'] += " m/z:"+_peptidoforms[0].ion_mz.toFixed(4);
+	if (_spectrum['mz'])
+	    chart['options']['plugins']['subtitle']['text'] += " ("+(1000000/_peptidoforms[0].ion_mz*(_peptidoforms[0].ion_mz-Number(_spectrum['mz']))).toFixed(1)+" ppm)";
+    }
+
     chart['options']['plugins']['subtitle']['color'] = '#000';
+    chart['options']['plugins']['subtitle']['padding'] = {'bottom':50};
 
     chart['options']['plugins']['zoom'] = {};
     chart['options']['plugins']['zoom']['pan'] = {};
@@ -442,6 +505,7 @@ function show_spectrum() {
     chart['options']['plugins']['datalabels']['display'] = 'auto';
     chart['options']['plugins']['datalabels']['align'] = 'end';
     chart['options']['plugins']['datalabels']['anchor'] = 'end';
+    //chart['options']['plugins']['datalabels']['clip'] = true;
     chart['options']['plugins']['datalabels']['formatter'] = function(value, context) {
 	return !(context.dataIndex % 2) ? context.dataset.label : null;
     };
@@ -484,6 +548,27 @@ function reset_x() {
     if (!_chartdata)
 	return;
     _chartdata.resetZoom();
+}
+
+function user_msg(what,code=400,remove=true) {
+    var div = document.createElement("div");
+    div.className = 'code'+code;
+    div.innerHTML = what;
+
+    var span = document.createElement("span");
+    span.className = 'bigx';
+    span.title = "dismiss this message";
+    span.innerHTML = "&times;"
+    span.onclick= function(){div.remove();};
+    div.appendChild(span);
+
+    document.getElementById("useralerts").appendChild(div);
+
+    if (remove) {
+        setTimeout(function() { div.style.opacity = "0"; }, 3000 );
+	setTimeout(function() { div.remove(); }, 3500 );
+    }
+    return null;
 }
 
 
@@ -785,6 +870,9 @@ function renderLorikeet(divid,pfidx) {
 
 
 function download(button,format='tsv') {
+    if (!_spectrum[0] || !_spectrum[0].mzs || !_spectrum[0].intensities)
+        return user_msg("Unable to download.  No spectrum has been loaded.",404,true);
+
     user_log(null, "Sending "+format+" data...",'run');
 
     var tsv = null;
@@ -822,6 +910,7 @@ function download(button,format='tsv') {
 	addCheckBox(button,true);
     }
     else {
+	user_msg("No spectrum data available!",500,false);
 	user_log(null, "No spectrum data available!",'error');
         show_input('viewlog_menu');
     }
@@ -829,6 +918,9 @@ function download(button,format='tsv') {
 
 
 function generate_figure(button,format,download=false) {
+    if (!_spectrum[0] || !_spectrum[0].mzs || !_spectrum[0].intensities)
+        return user_msg("Unable to generate "+format+" figure.  No spectrum has been loaded.",404,true);
+
     user_log(null, "Generating "+format+" figure...",'run');
 
     // check if empty spectrum, annotations....TODO
@@ -916,7 +1008,8 @@ function generate_figure(button,format,download=false) {
 	    stuff_is_running(button,false);
             user_log(null,"ERROR annotating:",'error');
             user_log(null,error);
-            show_input('viewlog_menu');
+
+            user_msg("ERROR annotating: "+error,500,false);
         });
 }
 
@@ -943,20 +1036,24 @@ function toggle_box(box,open=false,close=false) {
 }
 
 
-// for use with "examples" drop/pull-down
-function update_usi_input(sel) {
-    document.getElementById('usi_input').value=sel.value;
-    if (sel.options[sel.selectedIndex].dataset.desc)
-	document.getElementById('usi_desc').innerHTML = sel.options[sel.selectedIndex].dataset.desc;
-    else
-	document.getElementById('usi_desc').innerHTML = '';
-
-    sel.value='';
+// for use with "examples" pop-up
+function pick_box_example(anchor) {
+    document.getElementById('usi_input').value = anchor.innerHTML;
+    var button = document.getElementById("usiprovider_input");
+    if (button.value != "ProteomeCentral") {
+	button.value = "ProteomeCentral";
+	set_usi_url(button);
+    }
+    validate_usi(document.getElementById("usi_button"),true);
 }
 
 
-
 function user_annotations(button) {
+    button.classList.remove('blue');
+
+    if (!_spectrum[0] || !_spectrum[0].mzs || !_spectrum[0].intensities)
+        return user_msg("Unable to save annotations.  No spectrum has been loaded.",500,true);
+
     user_log(null, "Updating annotations via user input...",'run');
     for (var idx in _spectrum[0]['interpretations']) {
 	_spectrum[0]['interpretations'][idx] = document.getElementById("peak_annotation_"+idx).value;
@@ -1011,6 +1108,9 @@ function review_spectrum_attributes() {
 
 
 function annotate_peaks(button) {
+    if (!_spectrum[0] || !_spectrum[0].mzs || !_spectrum[0].intensities)
+        return user_msg("Unable to annotate.  No spectrum has been loaded.",500,true);
+
     user_log(null, "Calling annotator service...",'run');
     stuff_is_running(button,true);
 
@@ -1051,7 +1151,8 @@ function annotate_peaks(button) {
 	    stuff_is_running(button,false);
             user_log(null,"ERROR annotating:",'error');
             user_log(null,error);
-            show_input('viewlog_menu');
+
+            user_msg("ERROR annotating: "+error,500,false);
 	});
 }
 
@@ -1085,6 +1186,8 @@ function extract_ion_series() {
 	    ion = 'rep';
         else if (what.startsWith("m"))
 	    ion = 'int';
+        else if (what.startsWith("f"))
+	    ion = 'mol';
         else if (what.startsWith("a"))
 	    ion = 'a';
         else if (what.startsWith("b"))
@@ -1132,18 +1235,20 @@ function add_annotation_form(mztol=null) {
                 input.id = "peak_annotation_"+idx;
                 input.size = 40;
                 input.value = val.split('/')[0];
+		input.setAttribute('oninput', "document.getElementById('save_input').classList.add('blue')");
                 annot_form.appendChild(input);
 
 		input = document.createElement("input");
                 input.id = "peak_annotation_ppm_"+idx;
                 input.size = 10;
+		input.setAttribute('oninput', "document.getElementById('save_input').classList.add('blue')");
                 annot_form.appendChild(input);
                 if (val.includes('/'))
                     input.value = val.split('/')[1];
 
 		span.className = "buttonlike";
 		span.title = "Clear annotation values for this row";
-		span.setAttribute('onclick', "document.getElementById('peak_annotation_"+idx+"').value='';document.getElementById('peak_annotation_ppm_"+idx+"').value='';");
+		span.setAttribute('onclick', "document.getElementById('peak_annotation_"+idx+"').value='';document.getElementById('peak_annotation_ppm_"+idx+"').value='';document.getElementById('save_input').classList.add('blue')");
                 span.appendChild(document.createTextNode('\u{1F7A9}'));
 
             }
@@ -1260,7 +1365,7 @@ function add_annotation_table(mztol=null) {
 
     var tr = document.createElement("tr");
     var td = document.createElement("td");
-    td.colSpan = '12';
+    td.colSpan = '13';
     td.className = "rep";
     td.appendChild(document.createTextNode("Peak Annotations for: "+pform));
     tr.appendChild(td);
@@ -1303,8 +1408,8 @@ function add_annotation_table(mztol=null) {
 	    maxint = pint;
 
     _totint = 0;
-    _totints = [0,0,0,0,0,0,0,0,0,0,0,0];
-    _coreints = [0,0,0,0,0,0,0,0,0,0,0,0];
+    _totints = [0,0,0,0,0,0,0,0,0,0,0,0,0];
+    _coreints = [0,0,0,0,0,0,0,0,0,0,0,0,0];
     _mzs = annot_data['mzs'];
 
     for (var idx in annot_data['mzs']) {
@@ -1368,6 +1473,10 @@ function add_annotation_table(mztol=null) {
             where = _ion_list.indexOf('int');
             what = 'm';
 	}
+        else if (what.startsWith("f")) {
+            where = _ion_list.indexOf('mol');
+            what = what.substring(2, what.length-1);
+        }
 	else if (what.startsWith("a")) {
             where = _ion_list.indexOf('a');
             what = inum+chrg;
@@ -1400,7 +1509,10 @@ function add_annotation_table(mztol=null) {
 	for (var aaa in _ion_list) {
             td = document.createElement("td");
             if (aaa == where) {
-		td.className = 'annot_col'+aaa;
+		//td.className = 'annot_col'+aaa;
+                td.style.color = 'white';
+                td.style.background = _ion_colors[_ion_list[aaa]];
+
 		if (!mion)
 		    td.style.filter = "brightness(65%)";
 		else
@@ -1450,34 +1562,48 @@ function show_ion_stats() {
 
     var canvas = document.getElementById("quickplot_canvas");
     canvas.height = 250;
-    canvas.width = 510;
+    canvas.width = 550;
 
     const ctx = canvas.getContext("2d");
+    ctx.fillStyle = '#eee';
+    ctx.fillRect(400, 20, 120, 200);
+
     ctx.strokeStyle = "#ccc";
+    ctx.fillStyle = '#aaa';
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (var pct=0; pct<=100; pct+=10) {
 	ctx.moveTo(0, 20+2*pct);
-	ctx.lineTo(480, 20+2*pct);
-	ctx.fillText((100-pct)+"%", 485, 20+2*pct);
+	ctx.lineTo(520, 20+2*pct);
+	ctx.fillText((100-pct)+"%", 525, 22+2*pct);
     }
     ctx.stroke();
 
+    var ismine = [0,0];
     for (var aaa in _ion_list) {
+        ismine[aaa>9?1:0] += _totints[aaa];
+
 	var x = 5+40*aaa;
 	var h = 200*_totints[aaa]/_totint;
-	ctx.fillStyle = '#047';
-	ctx.fillRect(x,  220-h, 30, h);
 
-	h = 200*_coreints[aaa]/_totint;
-	ctx.fillStyle = '#2c99ce';
-	ctx.fillRect(x,  220-h, 30, h);
+        ctx.fillStyle = _ion_colors[_ion_list[aaa]];
+	ctx.fillRect(x, 220-h, 30, h);
 
+	var h2 = 200*_coreints[aaa]/_totint;
+	ctx.fillStyle = '#000';
+	ctx.globalAlpha = 0.35;
+	ctx.fillRect(x, 220-h, 30, h-h2);
+
+        ctx.globalAlpha = 1;
 	ctx.fillStyle = '#000';
 	ctx.font = "16px Consola";
 	ctx.textAlign = "center";
 	ctx.fillText(_ion_list[aaa], x+15, 240);
     }
+    ctx.fillStyle = '#666';
+    ctx.font = "24px Consola";
+    ctx.fillText(Number(100*ismine[0]/_totint).toFixed(1)+"%", 205, 38);
+    ctx.fillText(Number(100*ismine[1]/_totint).toFixed(1)+"%", 465, 38);
 
     toggle_box("quickplot",true);
 }

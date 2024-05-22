@@ -80,7 +80,7 @@
 .user_input {
     display: grid;
     grid-gap: 5px;
-    grid-template-columns: 150px max-content;
+    grid-template-columns: 150px max-content 150px max-content;
     align-items:baseline;
 }
 .user_input > span:nth-child(odd), .user_input > label:nth-child(odd) {
@@ -110,6 +110,10 @@ input, textarea {
     border: 2px solid black;
     vertical-align: baseline;
     font-family: monospace;
+}
+input[type=checkbox] {
+    width: 20px;
+    height: 20px;
 }
 
 .specinput {
@@ -158,6 +162,43 @@ input, textarea {
     color: #444;
     background: #fbfbfb;
 }
+
+#USIexamples {
+    z-index: 50;
+    position: absolute;
+    top: 150px;
+    left: 40px;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0.5s, opacity 0.5s linear;
+}
+
+#useralerts {
+    z-index:99;
+    position:fixed;
+    top:0;left:0;
+    display:block;
+    width:100%;
+    min-height:0px;
+}
+#useralerts > div {
+    padding: 20px;
+    margin-bottom: 5px;
+    opacity: 0.9;
+    transition: opacity 0.6s;
+}
+
+.bigx {
+    font-size: xx-large;
+    float: right;
+    cursor: pointer;
+    line-height: 20px;
+    color: #fff;
+}
+.bigx:hover {
+    color: #000;
+}
+
 
 .alert {
   display:inline-block;

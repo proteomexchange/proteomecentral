@@ -28,22 +28,14 @@
 <body onload="init()">
   <div id="pagebanner" class="topbanner" banner-bg-text="QUETZAL"></div>
 
+  <div id="useralerts"></div>
+
   <div class="pagemenu">
     <span onclick="show_input(this);" id="import_menu">Import</span>
     <span onclick="show_input(this);" id="edit_menu">Edit</span>
     <span onclick="show_input(this);" id="explore_menu">Explore</span>
     <span onclick="show_input(this);" id="export_menu">Export</span>
     <span onclick="show_input(this);" id="viewlog_menu">Log / Errors</span>
-  </div>
-
-
-  <div id="quickplot" class="site-content">
-    <h3 style="background:#666;margin:0;" class="dataset-title" id="quickplot_title">QuickPlot</h3>
-    <div class="dataset-content">
-      <canvas id="quickplot_canvas"></canvas>
-      <br>
-      <a style="background:#666;float:right" class="dataset-title" onclick="toggle_box('quickplot');">Dismiss</a>
-    </div>
   </div>
 
 
@@ -58,7 +50,38 @@
     <div>
       <br>
       <input size="150" id="usi_input">
+      <br>
+      USI Provider: 
+      <select id="usiprovider_input" class="buttonlike" onchange="set_usi_url(this)">
+	<option value="iProX">iProX</option>
+	<option value="jPOST">jPOST</option>
+	<option value="MassIVE">MassIVE</option>
+	<option value="PeptideAtlas">PeptideAtlas</option>
+	<option value="PRIDE">PRIDE</option>
+	<option value="ProteomeCentral" selected>ProteomeCentral</option>
+      </select>
+
+      <span onclick="toggle_box('USIexamples');" id="USIexamples_button" title="Examples from Box 1 of the Quetzal manuscript (in press)" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
       <br><br>
+    </div>
+
+    <div id="USIexamples">
+      <div id="dataset-primary" class="site-content">
+	<h1 style="margin:0;" class="dataset-title">Example use cases (USIs)</h1>
+	<div class="dataset-content">
+
+	  <a onclick="pick_box_example(this);">mzspec:PXD005336:Varlitinib_01410_A01_P014203_B00_A00_R1:scan:19343:LLSILSR/2</a><br>
+	  <i>Simple HCD spectrum of LLSILSR</i>
+	  <hr>
+          <a onclick="pick_box_example(this);">mzspec:PXD020762:20160211_S1to9_1ug_HCD_MS2_Fr2_01:scan:17354:[TMT6plex]-VGS[Phospho]AAQLK[TMT6plex]/2</a><br>
+	  <i>Complex HCD spectrum of a TMT-labeled phosphopeptide (Figure 1 in paper)</i>
+	  <hr>
+          <a onclick="pick_box_example(this);">mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2</a><br>
+	  <i>Complex spectrum that includes many prominent internal fragmentation ions (Figure 2 in paper)</i>
+	  <br>
+	  <a style="float:right" class="dataset-title" onclick="toggle_box('USIexamples');">Dismiss</a>
+	</div>
+      </div>
     </div>
 
     <br><br>
@@ -80,25 +103,34 @@
   <div class="hideit" id="edit_div">
     <h2 class="rep">Spectrum Properties</h2>
     <div class="user_input">
-      <span>Peptidoform(s): </span><input size="90" id="pform_input">
-      <span >Charge(s): </span><span><input size="15" id="charge_input"></span>
-      <span>Precursor m/z: </span><span><input size="15" id="precmz_input"></span>
+      <span>Peptidoform(s): </span><input size="90" id="pform_input" style="grid-column: 2 / 5;" oninput="document.getElementById('update_input').classList.add('blue')">
+      <span >Charge(s): </span><span><input size="15" id="charge_input" oninput="document.getElementById('update_input').classList.add('blue')"></span><span></span><span></span>
+      <span>Precursor m/z: </span><span><input size="15" id="precmz_input" oninput="document.getElementById('update_input').classList.add('blue')"></span><span></span><span></span>
       <span></span>
       <span>
-	<button class="buttonlike" title="Update" onclick="update_spectrum(this);">Update Properties</button>
-	<button class="buttonlike blue" style="margin-left:80px;" title="(re-)Annotate peaks with annotator service" onclick="annotate_peaks(this);">Run Annotator</button>
+	<button class="buttonlike" title="Update" id="update_input" onclick="update_spectrum(this,true);">Update Properties</button><span></span>
+	<button class="buttonlike" style="margin-left:120px;" title="(re-)Annotate peaks with annotator service" onclick="annotate_peaks(this);">Run Annotator</button><span></span>
      </span>
     </div>
 
     <h2 class="rep">Peak Annotations
-    <button class="buttonlike" style="float:right;" title="Update peak annotations based on user input table" onclick="user_annotations(this);">Save Annotations</button>
+    <button class="buttonlike" style="float:right;" title="Update peak annotations based on user input table" id="save_input" onclick="user_annotations(this);">Save Annotations</button>
     </h2>
     <div id="annotation_form">
-      <p>Please load spectrum data to see annotation form.</p>
+      <p>Please load annotated spectrum data to see annotation form.</p>
     </div>
   </div>
 
   <div class="hideit" id="explore_div">
+    <div id="quickplot" class="site-content">
+      <h3 style="background:#666;margin:0;" class="dataset-title" id="quickplot_title">QuickPlot</h3>
+      <div class="dataset-content">
+	<canvas id="quickplot_canvas"></canvas>
+	<br>
+	<a style="background:#666;float:right" class="dataset-title" onclick="toggle_box('quickplot');">Dismiss</a>
+      </div>
+    </div>
+
     <div class="ms2chart_wrapper">
       <canvas class="ms2chart" id="viewspectrum_canvas"></canvas>
     </div>
@@ -113,12 +145,12 @@
     <h2 class="rep">Settings</h2>
     <div class="user_input">
       <span>m/z minimum: </span><span><input size="20" id="xmin_input"></span>
-      <span>m/z maximum: </span><span><input size="20" id="xmax_input"></span>
-      <span>Y maximum: </span><span><input size="20" id="ymax_input"></span>
-      <span>Mask isolation win: </span><span><input size="20" id="mask_isolation_width_input"></span>
       <label for="show_sequence_input">Show sequence: </label><span><input type="checkbox" id="show_sequence_input" checked></span>
+      <span>m/z maximum: </span><span><input size="20" id="xmax_input"></span>
       <label for="show_b_and_y_flags_input">Show b/y flags: </label><span><input type="checkbox" id="show_b_and_y_flags_input" checked></span>
+      <span>Y maximum: </span><span><input size="20" id="ymax_input"></span>
       <label for="showppm_input">Show delta ppm: </label><span><input type="checkbox" id="showppm_input" checked></span>
+      <span>Mask isolation win: </span><span><input size="20" id="mask_isolation_width_input"></span>
       <label for="show_unknown_input">Label unknown peaks: </label><span><input type="checkbox" id="show_unknown_input"></span>
       <span></span>
       <span>
