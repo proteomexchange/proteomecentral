@@ -13,6 +13,14 @@ var _coreints;
 var _mzs = [];
 
 function init() {
+    history.replaceState({}, "", document.location.href);
+    window.addEventListener("popstate", (event) => {
+	if (event.state) {
+	    reset_forms();
+	    init3();
+	}
+    });
+
     fetch("./proxi_config.json")
 	.then(response => response.json())
 	.then(config => {
@@ -30,6 +38,7 @@ function init() {
 }
 
 function init2() {
+    _settings['default_title'] = document.title;
     _settings['usi_url'] = _api['spectra'] + '?resultType=full&usi=';
     _settings['mztolerance'] = 20;
     // always PPM.... _settings['mztolerance_units'] = 'ppm';
@@ -41,11 +50,7 @@ function init2() {
 	    document.getElementById(setting+"_setting_button").disabled = true;
     }
 
-    // remove::
-    var tab_colors = {
-	'_': 'tab:gray',
-    }
-
+    // missing?  '_': 'tab:gray'
     _ion_colors['a'] = "#2ca02c"; // tab:green
     _ion_colors['b'] = "#1f77b4"; // tab:blue
     _ion_colors['c'] = "#008B8B"; // dark cyan
@@ -63,13 +68,22 @@ function init2() {
     Chart.register(ChartDataLabels);
     tpp_dragElement(document.getElementById("quickplot"));
 
+    init3();
+}
+
+function init3() {
+    show_input('import_menu');
+
     const params = new URLSearchParams(window.location.search);
     if (params.has('usi')) {
 	document.getElementById("usi_input").value = params.get('usi');
+	if (params.has('provider')) {
+	    var button = document.getElementById("usiprovider_input");
+            button.value = params.get('provider');
+            set_usi_url(button);
+	}
 	validate_usi(document.getElementById("usi_button"),true);
     }
-    else
-	show_input('import_menu');
 }
 
 function reset_forms(exclude='NONE_OF_THE_ABOVE') {
@@ -89,6 +103,9 @@ function reset_forms(exclude='NONE_OF_THE_ABOVE') {
         _chartdata.destroy();
 
     document.getElementById("annotation_form").innerHTML = '<p>Please load annotated spectrum data to see annotation form.</p>';
+    document.title = _settings['default_title'];
+
+    history.replaceState({}, "", "//"+ window.location.hostname + window.location.pathname);
 }
 
 
@@ -114,12 +131,14 @@ function set_usi_url(button) {
         break;
     case "ProteomeCentral":
 	where = _api['spectra'];
+        break;
+    default:
+	button.value = "ProteomeCentral";
     }
 
     _settings['usi_url'] = where + '?resultType=full&usi=';
     addCheckBox(button,true);
 }
-
 
 
 function validate_usi(button,alsofetch) {
@@ -129,7 +148,7 @@ function validate_usi(button,alsofetch) {
 	reset_forms('usi');
     }
     else {
-	usi = "mzspec:PXD123456:foo:scan:1:";
+	usi = "mzspec:PXD000000:test:scan:1:";
         var plus = '';
         for (var pi in _peptidoforms) {
             usi += plus + _peptidoforms[pi].peptidoform_string;
@@ -233,6 +252,9 @@ function fetch_usi(usi,button) {
                 return user_msg(rdata.detail?rdata.detail:rdata.title,500,false);
 	    }
 
+            document.title = "Quetzal ["+usi+"]";
+            history.replaceState({ usi: usi },document.title, "//"+ window.location.hostname + window.location.pathname + '?usi='+usi+"&provider="+document.getElementById("usiprovider_input").value);
+
 	    user_msg("Successfully loaded spectrum "+usi,200);
 	    user_log(null,"Successfully loaded spectrum with "+rdata[0].mzs.length+" peaks");
 	    user_log(null,"---- Attributes ----");
@@ -282,13 +304,11 @@ function fetch_usi(usi,button) {
 
 function allowDrop(event) {
     event.preventDefault();
-    //event.target.classList.add("drophere");
-    event.target.style.background = "#def";
+    event.target.classList.add("drophere");
 }
 function stopDrop(event) {
     event.preventDefault();
-    //event.target.classList.remove("drophere");
-    event.target.style.background = "revert";
+    event.target.classList.remove("drophere");
 }
 function dropFile(event) {
     stopDrop(event);
@@ -379,7 +399,6 @@ function import_dta(button) {
 }
 
 
-
 function update_spectrum(button,clear_annots=false) {
     button.classList.remove('blue');
 
@@ -445,14 +464,6 @@ function show_spectrum() {
     chart['options']['scales']['y']['grid'] = {};
     chart['options']['scales']['y']['grid']['display'] = false;
 
-    // //// for speed???
-    //chart['options']['scales']['xAxes'] = {};
-    //chart['options']['scales']['xAxes']['type'] = "time";
-    //chart['options']['scales']['x']['time'] = { 'unit': "day", 'displayFormats': { 'day': "DD-MM-YYYY" } };
-    // distribution: "series", // Careful with this, this creates another problem when you pan the chart. Issue: #361
-    //chart['options']['scales']['y']['ticks'] = {'beginAtZero': true };
-    // ////
-
     chart['options']['plugins'] = {};
     chart['options']['plugins']['tooltip'] = {'enabled':true};
     chart['options']['plugins']['decimation'] = {'enabled':true};
@@ -460,23 +471,30 @@ function show_spectrum() {
     chart['options']['plugins']['title'] = {};
     chart['options']['plugins']['title']['display'] = true;
     chart['options']['plugins']['title']['text'] = _spectrum['origin'];
-    if (_spectrum['mz'])
-	chart['options']['plugins']['title']['text'] += " Exp.m/z:"+_spectrum['mz'];
-
     chart['options']['plugins']['title']['color'] = '#2c99ce';
     chart['options']['plugins']['title']['padding'] = 0;
 
     chart['options']['plugins']['subtitle'] = {};
     chart['options']['plugins']['subtitle']['display'] = true;
     chart['options']['plugins']['subtitle']['text'] = _spectrum['name'];
-    if (_peptidoforms[0].ion_mz) {
-        chart['options']['plugins']['subtitle']['text'] += " m/z:"+_peptidoforms[0].ion_mz.toFixed(4);
-	if (_spectrum['mz'])
-	    chart['options']['plugins']['subtitle']['text'] += " ("+(1000000/_peptidoforms[0].ion_mz*(_peptidoforms[0].ion_mz-Number(_spectrum['mz']))).toFixed(1)+" ppm)";
-    }
-
     chart['options']['plugins']['subtitle']['color'] = '#000';
     chart['options']['plugins']['subtitle']['padding'] = {'bottom':50};
+
+    // inline plugin to display m/z and massdiff
+    chart['plugins'] = [{}];
+    chart['plugins'][0]['afterDraw'] = function(chart, args, options) {
+	chart.ctx.fillStyle = '#2c99ce';
+	if (_spectrum['mz'])
+	    chart.ctx.fillText("Exp.m/z: "+_spectrum['mz'],0,10);
+
+	chart.ctx.fillStyle = '#000';
+	if (_peptidoforms[0].ion_mz) {
+	    var txt = "m/z: "+_peptidoforms[0].ion_mz.toFixed(4);
+	    if (_spectrum['mz'])
+		txt += " ("+(1000000/_peptidoforms[0].ion_mz*(_peptidoforms[0].ion_mz-Number(_spectrum['mz']))).toFixed(1)+" ppm)";
+	    chart.ctx.fillText(txt,24,23);
+	}
+    };
 
     chart['options']['plugins']['zoom'] = {};
     chart['options']['plugins']['zoom']['pan'] = {};
@@ -522,6 +540,7 @@ function show_spectrum() {
     if (_chartdata)
 	_chartdata.destroy();
     _chartdata = new Chart("viewspectrum_canvas", chart);
+
 }
 
 function add_datapoint(index,scale=1.0) {
@@ -533,7 +552,7 @@ function add_datapoint(index,scale=1.0) {
     datapoint['showLine'] = true;
     datapoint['parsing'] = false;
     datapoint['pointRadius'] = 0;
-    datapoint['borderColor'] = color;  //(point['mz'] == data['parentmz'] ? '#2a2' : '#999');
+    datapoint['borderColor'] = color;
     datapoint['pointBackgroundColor'] = datapoint['borderColor'];
     datapoint['data'] = [];
     datapoint['data'].push({'x':_spectrum[0]['mzs'][index], 'y':scale*_spectrum[0]['intensities'][index]});
@@ -807,7 +826,7 @@ function prepare_lorikeet_data() {
 
 
 function isSorted(arr) {
-    for(var i = 0 ; i < arr.length - 1 ; i++)
+    for(var i=0; i<arr.length-1; i++)
 	if (arr[i] > arr[i+1])
 	    return false;
     return true;
@@ -1249,7 +1268,7 @@ function add_annotation_form(mztol=null) {
 		span.className = "buttonlike";
 		span.title = "Clear annotation values for this row";
 		span.setAttribute('onclick', "document.getElementById('peak_annotation_"+idx+"').value='';document.getElementById('peak_annotation_ppm_"+idx+"').value='';document.getElementById('save_input').classList.add('blue')");
-                span.appendChild(document.createTextNode('\u{1F7A9}'));
+		span.innerHTML = "&times;"
 
             }
             else {
@@ -1744,7 +1763,7 @@ function tpp_dragElement(ele) {
 }
 
 
-// unused:
+///////////////////////////////////////////////////////////////////////// unused:
 function generateRandomId() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let randomId = '';

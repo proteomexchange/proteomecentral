@@ -124,12 +124,9 @@ input[type=checkbox] {
 
 .drophere {
     background: #def;
-    font-size:70px;
-    left:50px;top:50px;
-    position:relative;
-    color:black;
-    font-weight:bold;
-    content:"Drop Here";
+    background-position: center;
+    background-repeat: no-repeat;
+    background-image:url("../images/download.png");
 }
 
 .buttonlike {
@@ -182,6 +179,7 @@ input[type=checkbox] {
     min-height:0px;
 }
 #useralerts > div {
+    font-size: large;
     padding: 20px;
     margin-bottom: 5px;
     opacity: 0.9;
@@ -189,14 +187,13 @@ input[type=checkbox] {
 }
 
 .bigx {
-    font-size: xx-large;
+    font-size: xxx-large;
     float: right;
     cursor: pointer;
     line-height: 20px;
-    color: #fff;
 }
 .bigx:hover {
-    color: #000;
+    filter: invert(1) grayscale(1) contrast(9);
 }
 
 
@@ -287,4 +284,3 @@ button:disabled, button[disabled]:hover, .loading {
     background: #002664;
     border-bottom: 1px solid #444;
 }
-
