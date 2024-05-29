@@ -688,9 +688,10 @@ definitions:
       name:
         type: "string"
       value:
+        x-nullable: True
         type:
-          - string
-          - number
+          - "string"
+          - "number"
       cv_param_group:
         type: "string"
       value_accession:
