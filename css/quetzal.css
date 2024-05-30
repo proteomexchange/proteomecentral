@@ -147,7 +147,10 @@ input[type=checkbox] {
     cursor:pointer;
     background:#f26722;
 }
-
+.buttonlike.on {
+    color: #2c99ce;
+    background:#fff;
+}
 
 .cmdout {
     margin-left: 20px;
@@ -160,7 +163,7 @@ input[type=checkbox] {
     background: #fbfbfb;
 }
 
-#USIexamples {
+#USIexamples, #usercredentials, #mzPAFhelp {
     z-index: 50;
     position: absolute;
     top: 150px;

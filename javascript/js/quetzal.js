@@ -21,6 +21,8 @@ function init() {
 	}
     });
 
+    _api['auth'] = "https://www.ebi.ac.uk/pride/private/ws/archive/v2/getAAPTokenWeb";
+
     fetch("./proxi_config.json")
 	.then(response => response.json())
 	.then(config => {
@@ -40,7 +42,8 @@ function init() {
 function init2() {
     _settings['default_title'] = document.title;
     _settings['usi_url'] = _api['spectra'] + '?resultType=full&usi=';
-    _settings['mztolerance'] = 20;
+    _settings['mztolerance'] = 10;
+    _settings['auth'] = null;
     // always PPM.... _settings['mztolerance_units'] = 'ppm';
 
     for (var setting in _settings) {
@@ -67,7 +70,7 @@ function init2() {
 
     Chart.register(ChartDataLabels);
     tpp_dragElement(document.getElementById("quickplot"));
-
+    tpp_dragElement(document.getElementById("mzPAFhelp"));
     init3();
 }
 
@@ -90,6 +93,7 @@ function reset_forms(exclude='NONE_OF_THE_ABOVE') {
     for (var what of ['usi','dta','pform','charge','precmz','xmin','xmax','ymax','mask_isolation_width'])
 	if (what != exclude)
 	    document.getElementById(what+"_input").value = '';
+    document.getElementById("peakmztol_input").value = '10';
 
     _spectrum = {};
     _peptidoforms = [];
@@ -98,10 +102,13 @@ function reset_forms(exclude='NONE_OF_THE_ABOVE') {
     clear_element("annot_div");
     clear_element("useralerts");
     toggle_box("quickplot",false,true);
+    toggle_box("usercredentials",false,true);
     toggle_box("USIexamples",false,true);
     if (_chartdata)
         _chartdata.destroy();
 
+    document.getElementById("resetzoom_button").classList.remove('blue');
+    document.getElementById("spectrum_preview").innerHTML = '<br><br>Press the Preview button above to generate image.<br><br>';
     document.getElementById("annotation_form").innerHTML = '<p>Please load annotated spectrum data to see annotation form.</p>';
     document.title = _settings['default_title'];
 
@@ -109,8 +116,80 @@ function reset_forms(exclude='NONE_OF_THE_ABOVE') {
 }
 
 
+function deauth_user(button) {
+    button.classList.remove('blue');
+
+    if (!_settings['auth'])
+	return;
+
+    _settings['auth'] = null;
+
+    document.getElementById("user_input").value = '';
+    document.getElementById("pwd_input").value = '';
+    document.getElementById("usercredentials_button").innerHTML = "Enter Access Credentials";
+
+    user_log(null, "Auth token destroyed");
+    user_msg("You have been logged out of PRIDE",200);
+    addCheckBox(button,true);
+}
+
+function auth_user(button) {
+    button.classList.remove('blue');
+
+    var user = document.getElementById("user_input").value.trim();
+    var pwd = document.getElementById("pwd_input").value.trim();
+
+    document.getElementById("user_input").value = user;
+    document.getElementById("pwd_input").value = pwd;
+
+    if (user == "" || pwd == "")
+        return user_msg("Enter a username and password to gain access to restricted data in PRIDE",404);;
+
+    user_log(null, "Authenticating user: "+user,'run');
+    stuff_is_running(button,true);
+
+    var creds = { "Credentials": { "username": user, "password": pwd } }
+    fetch(_api['auth'], {
+        method: 'post',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(creds)
+    })
+        .then(response => {
+	    if (response.ok)
+		return response.text();
+
+            return response.text().then(text => {
+		throw text+" ("+response.status+")";
+            })
+	})
+        .then(data => {
+	    _settings['auth'] = data;
+	    user_log(null, "Auth token acquired");
+            user_msg(user+" authenticated successfully",200);
+	    stuff_is_running(button,false);
+	    addCheckBox(button,true);
+
+            document.getElementById("usercredentials_button").innerHTML = "Logged in as: "+user;
+	    document.getElementById("logout_button").classList.add('blue');
+        })
+	.catch(error => {
+            stuff_is_running(button,false);
+            user_log(null,"ERROR authenticating user::",'error');
+            user_log(null,error);
+            console.error(error);
+            user_msg("ERROR authenticating user: "+error,500,false);
+        });
+}
+
+
+
 function set_usi_url(button) {
     var where = _api['spectra'];
+    toggle_box("usercredentials",false,true);
+    document.getElementById("usercredentials_button").style.visibility = "hidden";
 
     //switch (document.getElementById("usiprovider_input").value) {
     switch (button.value) {
@@ -129,6 +208,15 @@ function set_usi_url(button) {
     case "PRIDE":
         where = "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra";
         break;
+    case "PRIDE_private":
+        where = "https://www.ebi.ac.uk/pride/molecules/ws/spectrum?resultType=FULL&usi="; // FFS...
+
+	document.getElementById("usercredentials_button").style.visibility = "";
+        if (!_settings['auth']) {
+	    user_msg("Please enter your PRIDE credentials to view access-restricted data.",404,false);
+	    toggle_box("usercredentials",true);
+	}
+        break;
     case "ProteomeCentral":
 	where = _api['spectra'];
         break;
@@ -136,7 +224,10 @@ function set_usi_url(button) {
 	button.value = "ProteomeCentral";
     }
 
-    _settings['usi_url'] = where + '?resultType=full&usi=';
+    if (!where.includes('resultType'))
+	where += '?resultType=full&usi=';
+    _settings['usi_url'] = where;
+
     addCheckBox(button,true);
 }
 
@@ -235,21 +326,55 @@ function fetch_usi(usi,button) {
 
     stuff_is_running(button,true);
 
+    const myHeaders = new Headers();
+    myHeaders.append("Accept", "application/json");
+    if (document.getElementById("usercredentials_button").style.visibility != "hidden") {
+	if (!_settings['auth']) {
+            stuff_is_running(button,false);
+            toggle_box("usercredentials",true);
+            return user_msg("Please enter your PRIDE credentials to view access-restricted data, and resubmit.",404,false);
+	}
+	else
+	    myHeaders.append('Authorization', 'Bearer '+_settings['auth']);
+    }
+
     var rcode = -1;
-    fetch(_settings["usi_url"]+encodeURIComponent(usi))
+    fetch(_settings["usi_url"]+encodeURIComponent(usi), {
+        method: 'get',
+        headers: myHeaders
+    })
 	.then(response => {
-	    //stuff_is_running(button,false);
 	    rcode = response.status; // must capture it before json parsing
-	    return response;
+	    return response.json();
 	})
-	.then(response => response.json())
 	.then(rdata => {
 	    if (rcode != 200) {
 		stuff_is_running(button,false);
-		user_log(null, "Error: "+rdata.title,'error');
-		user_log(null, "Trace: "+rdata.detail);
-		console.log("["+rdata.status+"] "+rdata.title+" :: "+rdata.detail);
-                return user_msg(rdata.detail?rdata.detail:rdata.title,500,false);
+		if (rdata.title) {
+		    user_log(null, "Error: "+rdata.title,'error');
+		    user_log(null, "Trace: "+rdata.detail);
+		    console.log("["+rdata.status+"] "+rdata.title+" :: "+rdata.detail);
+                    return user_msg(rdata.detail?rdata.detail:rdata.title,500,false);
+		}
+                else if (rdata.error) {
+                    user_log(null, "Error: "+rdata.error,'error');
+                    return user_msg(rdata.error,500,false);
+		}
+		else {
+                    user_log(null, "Error in: "+rdata,'error');
+                    return user_msg("There was an error...",500,false);
+		}
+	    }
+
+	    // not so "Proud"...
+	    if (!rdata.mzs && rdata.masses) {
+		user_log(null,"Non-PROXI spectrum format detected; attempting to convert data...","warn");
+		var fixpride = {};
+		fixpride.mzs = rdata.masses;
+		fixpride.intensities = rdata.intensities;
+		fixpride.attributes = rdata.properties;
+		rdata = [];
+		rdata[0] = fixpride;
 	    }
 
             document.title = "Quetzal ["+usi+"]";
@@ -426,7 +551,7 @@ function update_spectrum(button,clear_annots=false) {
     for (var i in zs) {
 	_peptidoforms[i] = {};
 	_peptidoforms[i].peptidoform_string = seqs[i];
-	_peptidoforms[i].peptide_sequence = seqs[i];  //// fix this to striped sequence!!!
+	_peptidoforms[i].peptide_sequence = seqs[i];  // validate_usi fixes this later...
 	_peptidoforms[i].charge = zs[i];
     }
     if (clear_annots)
@@ -517,6 +642,9 @@ function show_spectrum() {
     chart['options']['plugins']['zoom']['limits']['x']['min'] = 'original';
     chart['options']['plugins']['zoom']['limits']['x']['max'] = 'original';
     chart['options']['plugins']['zoom']['limits']['y'] = {'min':0, 'max':'original'};
+    chart['options']['plugins']['zoom']['zoom']['onZoomComplete'] = function ({ chart }) {
+        document.getElementById("resetzoom_button").classList.add('blue');
+    }
 
     chart['options']['plugins']['datalabels'] = {};
     chart['options']['plugins']['datalabels']['rotation'] = '270';
@@ -567,6 +695,7 @@ function reset_x() {
     if (!_chartdata)
 	return;
     _chartdata.resetZoom();
+    document.getElementById("resetzoom_button").classList.remove('blue');
 }
 
 function user_msg(what,code=400,remove=true) {
@@ -976,7 +1105,8 @@ function generate_figure(button,format,download=false) {
 
     _spectrum[0]['extended_data']['user_parameters'] = user_parameters;
 
-    var url = _api['annotate'];
+    var mztol = Number(document.getElementById("peakmztol_input").value.trim());
+    var url = _api['annotate']+"?tolerance="+mztol;
     fetch(url, {
         method: 'post',
         headers: {
@@ -1106,6 +1236,8 @@ function review_spectrum_attributes() {
             att.value = charge;
             addMS1000041 = false;
         }
+	else if (!att.value)
+	    att.value = "n/a";
     }
 
     if (addMS1003169) {
@@ -1126,7 +1258,10 @@ function review_spectrum_attributes() {
 }
 
 
-function annotate_peaks(button) {
+function annotate_peaks(button,wasauto=true) {
+    if (button)
+	button.classList.remove('blue');
+
     if (!_spectrum[0] || !_spectrum[0].mzs || !_spectrum[0].intensities)
         return user_msg("Unable to annotate.  No spectrum has been loaded.",500,true);
 
@@ -1137,15 +1272,29 @@ function annotate_peaks(button) {
 
     var pform = _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : '';
 
-    var url = _api['annotate'];
-    var mztol = null;
+    var url = _api['annotate']+"?tolerance=";
+    var mztol = Number(document.getElementById("peakmztol_input").value.trim());
     for (var att of _spectrum[0]['attributes']) {
 	if (att.accession == "MS:10000512" &&
 	    att.value.startsWith("ITMS")) {
-	    url += "?tolerance=500";
-	    mztol = '500ppm';
+	    user_log(null, "(Low-res m/z detected (ITMS))");
+	    if (wasauto)
+		mztol = 500;
+	    else if (mztol<300)
+		user_msg("Warning: MS/MS spectrum appears to be of low resolution. You may want to increase the peak match tolerance and re-run the annotator.",404);
 	}
     }
+
+    if (isNaN(mztol) || mztol<1) {
+	user_log(null,"(Warning: invalid peak match tolerance ["+mztol+"]. Setting to 10ppm)",'warn');
+	user_msg("Warning: invalid peak match tolerance ("+mztol+"). Setting to 10ppm.",404);
+	mztol = 10;
+    }
+    else
+        user_log(null,"(Using peak match tolerance of "+mztol+"ppm)");
+
+    document.getElementById("peakmztol_input").value = mztol;
+    url += mztol;
 
     fetch(url, {
 	method: 'post',
@@ -1294,18 +1443,7 @@ function add_ion_table() {
     tr.appendChild(td);
     table.appendChild(tr);
 
-    tr = document.createElement("tr");
-    td = document.createElement("th");
-    td.colSpan = '2';
-    //td.appendChild(document.createTextNode('Series'));
-    tr.appendChild(td);
-
-    for (var idx in _peptidoforms[0].peptide_sequence) {
-	td = document.createElement("th");
-	td.appendChild(document.createTextNode(_peptidoforms[0].peptide_sequence[idx]));
-	tr.appendChild(td);
-    }
-    table.appendChild(tr);
+    table.appendChild(get_peptide_row());
 
     for (var series of ['a','b','c','x','y','z']) {
 	var first = true;
@@ -1356,19 +1494,47 @@ function add_ion_table() {
         }
     }
 
-    tr = document.createElement("tr");
-    td = document.createElement("th");
-    td.colSpan = '2';
-    tr.appendChild(td);
-    for (var idx in _peptidoforms[0].peptide_sequence) {
-        td = document.createElement("th");
-        td.appendChild(document.createTextNode(_peptidoforms[0].peptide_sequence[idx]));
-        tr.appendChild(td);
-    }
-    table.appendChild(tr);
+    table.appendChild(get_peptide_row());
 
     clear_element("ion_div");
     document.getElementById("ion_div").appendChild(table);
+}
+
+function get_peptide_row() {
+    var tr = document.createElement("tr");
+    var td = document.createElement("th");
+    tr.appendChild(td);
+
+
+    td = document.createElement("th");
+    if (_peptidoforms[0].terminal_modifications && _peptidoforms[0]['terminal_modifications']['nterm']) {
+	td.appendChild(document.createTextNode('n'));
+        td.style.background = '#ec1';
+	td.style.textAlign = 'right';
+        var mod = _peptidoforms[0]['terminal_modifications']['nterm'];
+        td.title = mod.residue_string;
+        td.title += " ("+mod.delta_mass+")";
+    }
+    tr.appendChild(td);
+
+    for (var idx in _peptidoforms[0].peptide_sequence) {
+        td = document.createElement("th");
+        td.appendChild(document.createTextNode(_peptidoforms[0].peptide_sequence[idx]));
+
+        if (_peptidoforms[0].residue_modifications && _peptidoforms[0]['residue_modifications'][Number(idx)+1]) {
+            td.style.background = '#ec1';
+            var mod = _peptidoforms[0]['residue_modifications'][Number(idx)+1];
+            td.title = mod.residue_string;
+            if (mod.delta_mass > 0.0)
+                td.title += " ("+mod.delta_mass+")";
+            else if (mod.labile_delta_mass > 0.0)
+                td.title += " (labile:"+mod.labile_delta_mass+")";
+        }
+
+        tr.appendChild(td);
+    }
+
+    return tr;
 }
 
 
@@ -1413,8 +1579,8 @@ function add_annotation_table(mztol=null) {
     tr.style.position = 'sticky';
     tr.style.top = '0';
     tr.style.zIndex = '5';
-    mztol = mztol ?  " [mztol="+mztol+"]" : '';
-    for (var col of ["m/z", "intensity", "norm", "interpretation(s)"+mztol].concat(_ion_list)) {
+    mztol = mztol ?  " [mztol="+mztol+"ppm]" : '';
+    for (var col of ["m/z", "intensity", "norm", "interpretation"+mztol].concat(_ion_list)) {
 	td = document.createElement("th");
 	td.appendChild(document.createTextNode(col));
 	tr.appendChild(td);

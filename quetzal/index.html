@@ -58,12 +58,32 @@
 	<option value="MassIVE">MassIVE</option>
 	<option value="PeptideAtlas">PeptideAtlas</option>
 	<option value="PRIDE">PRIDE</option>
+	<option value="PRIDE_private">PRIDE (private)</option>
 	<option value="ProteomeCentral" selected>ProteomeCentral</option>
       </select>
 
-      <span onclick="toggle_box('USIexamples');" id="USIexamples_button" title="Examples from Box 1 of the Quetzal manuscript (in press)" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
+       <span onclick="toggle_box('usercredentials');" id="usercredentials_button" class="buttonlike" style="visibility:hidden;" title="Show/hide Login/out form">Enter Access Credentials</span>
+
+     <span onclick="toggle_box('USIexamples');" id="USIexamples_button" title="Examples from Box 1 of the Quetzal manuscript (in press)" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
       <br><br>
     </div>
+
+
+    <div id="usercredentials">
+      <div id="dataset-primary" class="site-content">
+        <h1 style="margin:0;" class="dataset-title">User Access</h1>
+        <div class="dataset-content">
+	  <span class="dataset-secthead">Please enter your PRIDE credentials to gain access to private data that may be available to you</span>
+	  <input size="50" id="user_input" placeholder="PRIDE username" type="text"><br>
+	  <input size="50" id="pwd_input" oninput="document.getElementById('login_button').classList.add('blue')" placeholder="PRIDE password" type="password">
+	  <button id="logout_button" class="buttonlike" style="float:right;" title="Log out of PRIDE" onclick="deauth_user(this);">Log Out</button><br>
+	  <button id="login_button" class="buttonlike" title="Login to PRIDE" onclick="auth_user(this);">Login</button>
+          <br>
+          <a style="float:right" class="dataset-title" onclick="toggle_box('usercredentials');">Dismiss</a>
+        </div>
+      </div>
+    </div>
+
 
     <div id="USIexamples">
       <div id="dataset-primary" class="site-content">
@@ -108,12 +128,16 @@
       <span>Precursor m/z: </span><span><input size="15" id="precmz_input" oninput="document.getElementById('update_input').classList.add('blue')"></span><span></span><span></span>
       <span></span>
       <span>
-	<button class="buttonlike" title="Update" id="update_input" onclick="update_spectrum(this,true);">Update Properties</button><span></span>
-	<button class="buttonlike" style="margin-left:120px;" title="(re-)Annotate peaks with annotator service" onclick="annotate_peaks(this);">Run Annotator</button><span></span>
-     </span>
+	<button class="buttonlike" title="Update" id="update_input" onclick="update_spectrum(this,true);">Update Properties</button>
+      </span>
+      <span></span>
+      <span>
+	<button class="buttonlike" style="margin-left:120px;" title="(re-)Annotate peaks with annotator service" id="annotate_input" onclick="annotate_peaks(this,false);">Run Annotator</button>
+	with <input size="4" maxlength="4" value="10" id="peakmztol_input" oninput="document.getElementById('annotate_input').classList.add('blue')"> ppm tolerance</span>
     </div>
 
     <h2 class="rep">Peak Annotations
+     <span onclick="toggle_box('mzPAFhelp');" id="mzPAFhelp_button" title="Explain annotation format" class="examples">Help</span>
     <button class="buttonlike" style="float:right;" title="Update peak annotations based on user input table" id="save_input" onclick="user_annotations(this);">Save Annotations</button>
     </h2>
     <div id="annotation_form">
@@ -134,7 +158,7 @@
     <div class="ms2chart_wrapper">
       <canvas class="ms2chart" id="viewspectrum_canvas"></canvas>
     </div>
-    <button class="buttonlike" title="Reset Zoom" onclick="reset_x();">Reset Zoom</button>
+    <button id="resetzoom_button" class="buttonlike" title="Reset Zoom" onclick="reset_x();">Reset Zoom</button>
     <div style="margin-top:20px;" id="ion_div"></div>
     <div style="margin-top:20px;" id="annot_div"></div>
 
@@ -170,6 +194,20 @@
   <div class="hideit" id="viewlog_div">
     <pre id="command_output" class="cmdout"></pre>
   </div>
+
+
+  <div id="mzPAFhelp">
+    <div id="dataset-primary" class="site-content">
+      <h1 style="margin:0;" class="dataset-title">Annotation Guide</h1>
+      <div class="dataset-content">
+        <span class="dataset-secthead">Annotations are given in mzPAF (PSI format).  Below is a quick guide to help interpret them:</span>
+	<img src="./mzpaf.png">
+        <br>
+        <a style="float:right" class="dataset-title" onclick="toggle_box('mzPAFhelp');">Dismiss</a>
+      </div>
+    </div>
+  </div>
+
 
 </div>
 
