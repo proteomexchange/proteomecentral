@@ -183,8 +183,15 @@ class ProxiAnnotator:
                     annotator.plot(annotated_spectrum, peptidoform=peptidoform, charge=precursor_charge)
 
                 if create_peak_network:
+                    sequencing_parameters = {
+                        'fragmentation_type': 'HCD',
+                        'tolerance': 10.0,
+                        'precursor_mz': precursor_mz,
+                        'precursor_charge': precursor_charge,
+                        'labels': []
+                    }
                     sequencer = SpectrumSequencer()
-                    sequencer.create_peak_network(annotated_spectrum)
+                    sequencer.create_peak_network(annotated_spectrum, sequencing_parameters=sequencing_parameters)
 
 
                 n_annotated_spectra += 1
