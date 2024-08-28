@@ -1306,8 +1306,9 @@
         var itraqWholeLabel = 145.1069;
         var itraqIons = [113.107325, 114.11068, 115.107715, 116.111069, 117.114424, 118.111459, 119.114814, 121.121524];
 
-        var tmtWholeLabel = 230.1702;
-        var tmtIons = [126.127726, 127.124761, 127.131081, 128.128116, 128.134436, 129.131471, 129.137790, 130.134825, 130.141145, 131.138180, 131.144500, 132.141535, 132.147855, 133.14489, 133.15121, 134.148245, 134.154565, 135.1516]; // tmt-18
+        var tmtWholeLabel = 305.2149; // tmtPro + n-term
+        var tmtIons = [126.127726, 127.124761, 127.131081, 127.134003, 128.128116, 128.131038, 128.134436, 128.137358, 129.131471, 129.134393, 129.137791, 129.140713, 130.134826, 130.137748, 130.141146, 130.144068, 131.138181, 131.141103, 131.144501, 131.147423, 132.141536, 132.144458, 132.147856, 132.150778, 133.144891, 133.147813, 133.151211, 133.154133, 134.148246, 134.151171, 134.154566, 134.157491, 135.151601, 135.154526, 135.160846]; // tmt-35
+
         var reporterSeries = [];
         reporterSeries.push({color: "#2f4f4f", ions: itraqIons, wholeLabel: itraqWholeLabel});  // DarkSlateBlue
         reporterSeries.push({color: "#556b2f", ions: tmtIons, wholeLabel: tmtWholeLabel});  // DarkOliveGreen
@@ -1386,7 +1387,7 @@
             var mzRounded = matches[i][0].toFixed(1);
             labels.push(mzRounded + " (" + rank + "%)");
         }
-        // Get a match for the whole label.
+        // Get a match for the whole label
         var match = getMatchingPeakForMz(container, peaks, seriesInfo.wholeLabel);
         if(match.bestPeak)
         {
