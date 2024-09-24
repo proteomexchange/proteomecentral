@@ -11,17 +11,6 @@
   <script src="../javascript/js/chartJS/chartjs-plugin-zoom.min.js"></script>
   <script src="../javascript/js/chartJS/chartjs-plugin-datalabels@2.0.0"></script>
 
-  <!-- script src="../javascript/js/lorikeet/jquery.min.js"></script>
-  <script src="../javascript/js/lorikeet/jquery-ui.slider.min.js"></script>
-  <script src="../javascript/js/lorikeet/jquery.flot.js"></script>
-  <script src="../javascript/js/lorikeet/jquery.flot.selection.js"></script>
-  <script src="../javascript/js/lorikeet/specview.js"></script>
-  <script src="../javascript/js/lorikeet/peptide.js"></script>
-  <script src="../javascript/js/lorikeet/aminoacid.js"></script>
-  <script src="../javascript/js/lorikeet/ion.js"></script>
-  <link rel="stylesheet" type="text/css" href="../javascript/css/lorikeet.css">
-  <link rel="stylesheet" type="text/css" href="../javascript/css/jquery-ui.slider.min.css" -->
-
   <title>QUETZAL: Peptide Spectrum Peak Annotation Utility</title>
 </head>
 
@@ -97,8 +86,14 @@
 	  <i>Complex HCD spectrum of a TMT-labeled phosphopeptide (Figure 1 in paper)</i>
 	  <hr>
           <a onclick="pick_box_example(this);">mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2</a><br>
-	  <i>Complex spectrum that includes many prominent internal fragmentation ions (Figure 2 in paper)</i>
+	  <i>Complex spectrum that includes many prominent internal fragmentation ions (Figure 3 in paper)</i>
+	  <hr>
+          <a onclick="pick_box_example(this);">mzspec:PXD013868:02131_H01_P022361_I00_U04_R1:scan:28179:KDS[Phospho]EDEY[Phospho]EEDAEEDEEER/2</a><br>
+	  <i>A close-but-false positive identification (Figure 4 in paper)</i>
 	  <br>
+          <a onclick="pick_box_example(this);">mzspec:PXD013868:02131_H01_P022361_I00_U04_R1:scan:28179:GKDS[Phospho]EDE[Cation:Al[III]]YEEDAEEDEEER/2</a><br>
+          <i>A more correct interpretation of the previous spectrum (Figure 5 in paper)</i>
+	  <hr>
 	  <a style="float:right" class="dataset-title" onclick="toggle_box('USIexamples');">Dismiss</a>
 	</div>
       </div>
@@ -125,15 +120,21 @@
     <div class="user_input">
       <span>Peptidoform(s): </span><input size="90" id="pform_input" style="grid-column: 2 / 5;" oninput="document.getElementById('update_input').classList.add('blue')">
       <span >Charge(s): </span><span><input size="15" id="charge_input" oninput="document.getElementById('update_input').classList.add('blue')"></span><span></span><span></span>
-      <span>Precursor m/z: </span><span><input size="15" id="precmz_input" oninput="document.getElementById('update_input').classList.add('blue')"></span><span></span><span></span>
+      <span>Precursor m/z: </span><span><input size="15" id="precmz_input" oninput="document.getElementById('update_input').classList.add('blue')"></span><span></span>
+      <span>
+	<button class="buttonlike" style="margin-left:120px;" title="(re-)Annotate peaks with annotator service" id="annotate_input" onclick="annotate_peaks(this,false);">Run Annotator</button>
+	with <input size="4" maxlength="4" value="10" id="peakmztol_input" oninput="document.getElementById('annotate_input').classList.add('blue')"> ppm tolerance
+      </span>
+
       <span></span>
       <span>
 	<button class="buttonlike" title="Update" id="update_input" onclick="update_spectrum(this,true);">Update Properties</button>
       </span>
       <span></span>
-      <span>
-	<button class="buttonlike" style="margin-left:120px;" title="(re-)Annotate peaks with annotator service" id="annotate_input" onclick="annotate_peaks(this,false);">Run Annotator</button>
-	with <input size="4" maxlength="4" value="10" id="peakmztol_input" oninput="document.getElementById('annotate_input').classList.add('blue')"> ppm tolerance</span>
+      <span style="text-align:right;">
+	<input type="checkbox" id="create_peak_network_input">
+	<label for="create_peak_network_input"> Create peak network</label>
+      </span>
     </div>
 
     <h2 class="rep">Peak Annotations
@@ -200,7 +201,9 @@
     <div id="dataset-primary" class="site-content">
       <h1 style="margin:0;" class="dataset-title">Annotation Guide</h1>
       <div class="dataset-content">
-        <span class="dataset-secthead">Annotations are given in mzPAF (PSI format).  Below is a quick guide to help interpret them:</span>
+        <span class="dataset-secthead">Annotations are given in 
+	  <a title="Learn more about mzPAF" target="PSI" href="https://www.psidev.info/mzPAF">mzPAF</a>
+	  (PSI format).  Below is a quick guide to help interpret them:</span>
 	<img src="./mzpaf.png">
         <br>
         <a style="float:right" class="dataset-title" onclick="toggle_box('mzPAFhelp');">Dismiss</a>
