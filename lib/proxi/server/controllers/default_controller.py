@@ -32,10 +32,9 @@ def tsv_generator(list_of_lists):
 
 
 def get_dataset(identifier) -> str:
-    datasets = ProxiDatasets()
-    status_code,message = datasets.fetch_dataset_from_PC(identifier)
+    status_code, message, dataset = master_datasets.fetch_dataset_from_PC(identifier)
     if status_code == 200:
-        return(ast.literal_eval(repr(datasets.dataset)))
+        return(ast.literal_eval(repr(dataset)))
     else:
         return(message,status_code)
 
