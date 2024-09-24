@@ -113,16 +113,17 @@ class ProxiDatasets:
         message = http_response.reason
         payload = http_response.read()
         connection.close()
+        dataset = None
 
         if status_code == 200:
             try:
                 payload = payload.decode('utf-8', 'replace')
-                self.dataset = json.loads(payload)
+                dataset = json.loads(payload)
                 message = { "status": status_code }
             except Exception as error:
                 status_code = 500
                 message = { "status": status_code, "title": "Internal JSON parsing error", "detail": "Unable to parse JSON from internal call", "type": "about:blank" }
-            return(status_code, message)
+            return(status_code, message, dataset)
 
         if status_code == 404:
             title = 'Dataset not available'
@@ -140,9 +141,9 @@ class ProxiDatasets:
                     detail = value
             message = { "status": status_code, "title": title, "detail": detail, "type": "about:blank" }
             self.dataset = None
-            return(status_code, message)
+            return(status_code, message, dataset)
 
-        return(status_code, { "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" } )
+        return(status_code, { "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" }, dataset )
 
 
 
@@ -532,7 +533,7 @@ class ProxiDatasets:
                     value_lower = value.lower()
                     if column_name in corrections and value_lower in corrections[column_name]:
                         value = corrections[column_name][value_lower]
-                        eprint(f"-- Correct {value_lower} to {corrections[column_name][value_lower]}")
+                        #eprint(f"-- Correct {value_lower} to {corrections[column_name][value_lower]}")
 
                     cell_items[value] = True
 
