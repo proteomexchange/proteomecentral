@@ -211,7 +211,8 @@ function set_usi_url(button) {
     case "PRIDE_private":
         where = "https://www.ebi.ac.uk/pride/molecules/ws/spectrum?resultType=FULL&usi="; // FFS...
 
-	document.getElementById("usercredentials_button").style.visibility = "";
+	button = document.getElementById("usercredentials_button");
+	button.style.visibility = "";
         if (!_settings['auth']) {
 	    user_msg("Please enter your PRIDE credentials to view access-restricted data.",404,false);
 	    toggle_box("usercredentials",true);
@@ -239,8 +240,8 @@ function validate_usi(button,alsofetch) {
 	reset_forms('usi');
     }
     else {
-	usi = "mzspec:PXD000000:test:scan:1:";
-        var plus = '';
+	usi = "mzspec:PXD000000:test:scan:1";
+        var plus = ':';
         for (var pi in _peptidoforms) {
             usi += plus + _peptidoforms[pi].peptidoform_string;
             usi += '/' + _peptidoforms[pi].charge;
@@ -378,7 +379,7 @@ function fetch_usi(usi,button) {
 	    }
 
             document.title = "Quetzal ["+usi+"]";
-            history.replaceState({ usi: usi },document.title, "//"+ window.location.hostname + window.location.pathname + '?usi='+usi+"&provider="+document.getElementById("usiprovider_input").value);
+            history.replaceState({ usi: usi },document.title, "//"+ window.location.hostname + window.location.pathname + '?usi='+encodeURIComponent(usi)+"&provider="+document.getElementById("usiprovider_input").value);
 
 	    user_msg("Successfully loaded spectrum "+usi,200);
 	    user_log(null,"Successfully loaded spectrum with "+rdata[0].mzs.length+" peaks");
@@ -534,26 +535,30 @@ function update_spectrum(button,clear_annots=false) {
 
     var pforms = document.getElementById("pform_input").value.trim();
     var charges = document.getElementById("charge_input").value.trim();
-    if (pforms == "" || charges == "") {
-        user_log(null, "Unable to annotate: please enter a peptidoform and precursor charge state",'error');
-        show_input('edit_menu');
-	stuff_is_running(button,false);
-	return user_msg("Unable to annotate: please enter a peptidoform and precursor charge state",500,false);
-    }
-
     document.getElementById("pform_input").value = pforms;
     document.getElementById("charge_input").value = charges;
 
-    var zs = charges.split("+");
-    var seqs = zs.length > 1 ? pforms.split("+") : [pforms];
-
     _peptidoforms = [];
-    for (var i in zs) {
-	_peptidoforms[i] = {};
-	_peptidoforms[i].peptidoform_string = seqs[i];
-	_peptidoforms[i].peptide_sequence = seqs[i];  // validate_usi fixes this later...
-	_peptidoforms[i].charge = zs[i];
+    if (pforms == "") {
+	user_msg("No peptidoform present; will annotate in sequence-free mode.  Use the Edit form to add one.",404,false);
+        user_log(null, "No peptidoform present; will call annotator in sequence-free mode.",'warn');
     }
+    else if (charges == "") {
+        user_msg("No charge present; cannot use peptidoform to annotate without a charge. Use the Edit form if this is an error.",404,false);
+        user_log(null, "No charge present; cannot use peptidoform to annotate without a charge; will call annotator in sequence-free mode.",'warn');
+    }
+    else {
+	var zs = charges.split("+");
+	var seqs = zs.length > 1 ? pforms.split("+") : [pforms];
+
+	for (var i in zs) {
+	    _peptidoforms[i] = {};
+	    _peptidoforms[i].peptidoform_string = seqs[i];
+	    _peptidoforms[i].peptide_sequence = seqs[i];  // validate_usi fixes this later...
+	    _peptidoforms[i].charge = zs[i];
+	}
+    }
+
     if (clear_annots)
 	_spectrum[0]['interpretations'] = [];
 
@@ -613,7 +618,7 @@ function show_spectrum() {
 	    chart.ctx.fillText("Exp.m/z: "+_spectrum['mz'],0,10);
 
 	chart.ctx.fillStyle = '#000';
-	if (_peptidoforms[0].ion_mz) {
+	if (_peptidoforms[0] && _peptidoforms[0].ion_mz) {
 	    var txt = "m/z: "+_peptidoforms[0].ion_mz.toFixed(4);
 	    if (_spectrum['mz'])
 		txt += " ("+(1000000/_peptidoforms[0].ion_mz*(_peptidoforms[0].ion_mz-Number(_spectrum['mz']))).toFixed(1)+" ppm)";
@@ -784,15 +789,18 @@ function process_spectrum_data() {
     }
 
     var precmz = null;
+    var charge = null;
     if (data && data.attributes && data.attributes.length>0) {
         for (var att of data.attributes) {
+            if (att.accession == "MS:1000041") charge= att.value;
             if (att.accession == "MS:1000744") precmz = att.value;  // preferred
             if (att.accession == "MS:1000827" && !precmz) precmz = att.value;
 	}
     }
     if (precmz)
 	document.getElementById("precmz_input").value = precmz;
-
+    if (charge && document.getElementById("charge_input").value == '')
+	document.getElementById("charge_input").value = charge;
 
     var has_annots = false;
     for (var annot of data.interpretations)
@@ -805,7 +813,7 @@ function process_spectrum_data() {
 
 }
 
-
+// unused...
 function prepare_lorikeet_data() {
     var data = _spectrum[0]; // just consider the first one  FIXME??
 
@@ -1221,12 +1229,14 @@ function review_spectrum_attributes() {
     var spec_data = _spectrum[0];
     var pform = _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : '';
     var charge = _peptidoforms[0] ? _peptidoforms[0].charge : 1;
+    var precmz =  _spectrum['mz'] ? _spectrum['mz'] : null;
 
     if (!spec_data["attributes"])
         spec_data["attributes"] = [];
 
     var addMS1003169 = true;
     var addMS1000041 = true;
+    var addMS1000827 = precmz ? true:false;
     for (var att of spec_data['attributes']) {
 	if (att.accession == "MS:1003169") {
             att.value = pform;
@@ -1235,6 +1245,10 @@ function review_spectrum_attributes() {
         else if (att.accession == "MS:1000041") {
             att.value = charge;
             addMS1000041 = false;
+        }
+        else if (att.accession == "MS:1000827" && precmz) {
+            att.value = precmz;
+            addMS1000827 = false;
         }
 	else if (!att.value)
 	    att.value = "n/a";
@@ -1254,6 +1268,13 @@ function review_spectrum_attributes() {
         att.value = charge;
         spec_data["attributes"].push(att);
     }
+    if (addMS1000827) {
+        var att = {};
+        att.accession = 'MS:1000827';
+        att.name = 'isolation window target m/z';
+        att.value = precmz;
+        spec_data["attributes"].push(att);
+    }
 
 }
 
@@ -1270,9 +1291,24 @@ function annotate_peaks(button,wasauto=true) {
 
     review_spectrum_attributes();
 
+    var addextended = false;
+    var user_parameters = {};
+    if (document.getElementById("create_peak_network_input").checked) {
+        user_parameters["create_peak_network"] = true;
+	addextended = true;
+    }
+    // NEED THIS?? :: else
+    //user_parameters[field] = false;
+    // also: need for figure??
+    if(addextended) {
+	_spectrum[0]['extended_data'] = {};
+	_spectrum[0]['extended_data']['user_parameters'] = user_parameters;
+    }
+
     var pform = _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : '';
 
-    var url = _api['annotate']+"?tolerance=";
+    //var url = _api['annotate']+"?tolerance=";
+    var url = _api['annotate']+"?resultType=full&tolerance=";
     var mztol = Number(document.getElementById("peakmztol_input").value.trim());
     for (var att of _spectrum[0]['attributes']) {
 	if (att.accession == "MS:10000512" &&
@@ -1306,6 +1342,7 @@ function annotate_peaks(button,wasauto=true) {
     })
 	.then(response => response.json())
 	.then(annot_data => {
+            _spectrum[0]['extended_data'] = null;
             add_to_user_log(annot_data.status.log);
             if (annot_data.status.status == "ERROR")
                 throw annot_data.status.error_code + " :: " + annot_data.status.description;
@@ -1383,7 +1420,9 @@ function extract_ion_series() {
     }
 
     show_spectrum();
-    add_ion_table();
+
+    if (_peptidoforms[0])
+	add_ion_table();
 }
 
 
@@ -1875,6 +1914,7 @@ function addCheckBox(ele,remove=true) {
     var check = document.createElement("span");
     check.className = 'alert';
     check.innerHTML = '&check;';
+    check.style.position = 'absolute';
     ele.parentNode.insertBefore(check, ele.nextSibling);
 
     if (remove)
