@@ -15,7 +15,7 @@ try:
     from universal_spectrum_identifier import UniversalSpectrumIdentifier
     from spectrum import Spectrum
     from spectrum_annotator import SpectrumAnnotator
-    from spectrum_sequencer import SpectrumSequencer
+    #from spectrum_sequencer import SpectrumSequencer
 except:
     proxi_instance = os.environ.get('PROXI_INSTANCE')
     if proxi_instance:
@@ -30,7 +30,7 @@ except:
     from universal_spectrum_identifier import UniversalSpectrumIdentifier
     from spectrum import Spectrum
     from spectrum_annotator import SpectrumAnnotator
-    from spectrum_sequencer import SpectrumSequencer
+    #from spectrum_sequencer import SpectrumSequencer
 
 
 
@@ -179,8 +179,8 @@ class ProxiAnnotator:
                         'precursor_charge': precursor_charge,
                         'labels': []
                     }
-                    sequencer = SpectrumSequencer()
-                    sequencer.create_peak_network(annotated_spectrum, sequencing_parameters=sequencing_parameters)
+                    #sequencer = SpectrumSequencer()
+                    #sequencer.create_peak_network(annotated_spectrum, sequencing_parameters=sequencing_parameters)
 
 
                 n_annotated_spectra += 1
