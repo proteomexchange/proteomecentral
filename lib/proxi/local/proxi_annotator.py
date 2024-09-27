@@ -9,36 +9,25 @@ def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 test_mode = False
 
-try:
-    from proforma_peptidoform import ProformaPeptidoform
-    from universal_spectrum_identifier import UniversalSpectrumIdentifier
-except:
-    proxi_instance = os.environ.get('PROXI_INSTANCE')
-    if proxi_instance:
-        sys.path.append(f"/net/dblocal/data/SpectralLibraries/python/{proxi_instance}/SpectralLibraries/lib")
-    else:
-        if test_mode:
-            sys.path.append("C:\local\Repositories\GitHub\SpectralLibraries\lib")
-        else:
-            print("ERROR: Environment variable PROXI_INSTANCE must be set")
-            exit()
-    from proforma_peptidoform import ProformaPeptidoform
-    from universal_spectrum_identifier import UniversalSpectrumIdentifier
 
 try:
+    from proforma_peptidoform import ProformaPeptidoform
+    from universal_spectrum_identifier import UniversalSpectrumIdentifier
     from spectrum import Spectrum
     from spectrum_annotator import SpectrumAnnotator
     from spectrum_sequencer import SpectrumSequencer
 except:
     proxi_instance = os.environ.get('PROXI_INSTANCE')
     if proxi_instance:
-        sys.path.append(f"/proteomics/sw/python/apps/RunAssessor/lib")
+        sys.path.append(f"/proteomics/sw/python/apps/quetzal-annotator/quetzal-annotator")
     else:
         if test_mode:
-            sys.path.append("C:\local\Repositories\GitHub\RunAssessor\lib")
+            sys.path.append("C:\local\Repositories\GitHub\quetzal-annotator\quetzal-annotator")
         else:
             print("ERROR: Environment variable PROXI_INSTANCE must be set")
             exit()
+    from proforma_peptidoform import ProformaPeptidoform
+    from universal_spectrum_identifier import UniversalSpectrumIdentifier
     from spectrum import Spectrum
     from spectrum_annotator import SpectrumAnnotator
     from spectrum_sequencer import SpectrumSequencer
