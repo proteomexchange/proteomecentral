@@ -451,6 +451,31 @@ function dropFile(event) {
 }
 
 
+
+function import_posted_spectrum(spectrum) {
+    // console.log(JSON.stringify(spectrum,null,2));
+
+    stuff_is_running(null,true);
+    reset_forms();
+
+    var dta = document.getElementById("dta_input");
+    dta.value = "";
+
+    if (spectrum.peptidoform)
+	dta.value += "PEPTIDOFORMS "+ spectrum.peptidoform + "\n";
+    if (spectrum.charge)
+	dta.value += "CHARGES "+ spectrum.charge + "\n";
+    if (spectrum.precmz)
+	dta.value += "PRECURSORMZ "+ spectrum.precmz + "\n";
+
+    if (spectrum.mzs && spectrum.intensities)
+	for (var i in spectrum.mzs)
+	    dta.value += spectrum.mzs[i] + "  " + spectrum.intensities[i] + "\n";
+
+    import_dta(null);
+}
+
+
 function import_dta(button) {
     var dta = document.getElementById("dta_input").value.trim();
     if (dta == "")
@@ -526,7 +551,8 @@ function import_dta(button) {
 
 
 function update_spectrum(button,clear_annots=false) {
-    button.classList.remove('blue');
+    if (button)
+	button.classList.remove('blue');
 
     if (!_spectrum[0] || !_spectrum[0].mzs || !_spectrum[0].intensities)
         return user_msg("Unable to update spectrum data.  No spectrum has been loaded.",500,true);
@@ -563,7 +589,8 @@ function update_spectrum(button,clear_annots=false) {
 	_spectrum[0]['interpretations'] = [];
 
     validate_usi(button,false);
-    addCheckBox(button,true);
+    if (button)
+	addCheckBox(button,true);
 }
 
 
@@ -1099,6 +1126,7 @@ function generate_figure(button,format,download=false) {
 	    user_parameters[field] = Number(val);
 	document.getElementById(field+"_input").value = val;
     }
+    user_parameters["dissociation_type"] = document.getElementById("dissociation_type_input").value;
 
     for (var field of ["show_sequence", "show_b_and_y_flags", "showppm", "show_unknown"]) {
 	if (document.getElementById(field+"_input").checked)
@@ -1291,19 +1319,11 @@ function annotate_peaks(button,wasauto=true) {
 
     review_spectrum_attributes();
 
-    var addextended = false;
-    var user_parameters = {};
-    if (document.getElementById("create_peak_network_input").checked) {
-        user_parameters["create_peak_network"] = true;
-	addextended = true;
-    }
-    // NEED THIS?? :: else
-    //user_parameters[field] = false;
-    // also: need for figure??
-    if(addextended) {
-	_spectrum[0]['extended_data'] = {};
-	_spectrum[0]['extended_data']['user_parameters'] = user_parameters;
-    }
+    _spectrum[0]['extended_data'] = {};
+    _spectrum[0]['extended_data']['user_parameters'] = {};
+    _spectrum[0]['extended_data']['user_parameters']["dissociation_type"] = document.getElementById("dissociation_type_input").value;
+    if (document.getElementById("create_peak_network_input").checked)
+	_spectrum[0]['extended_data']['user_parameters']["create_peak_network"] = true;
 
     var pform = _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : '';
 

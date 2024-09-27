@@ -119,7 +119,14 @@
     <h2 class="rep">Spectrum Properties</h2>
     <div class="user_input">
       <span>Peptidoform(s): </span><input size="90" id="pform_input" style="grid-column: 2 / 5;" oninput="document.getElementById('update_input').classList.add('blue')">
-      <span >Charge(s): </span><span><input size="15" id="charge_input" oninput="document.getElementById('update_input').classList.add('blue')"></span><span></span><span></span>
+      <span >Charge(s): </span><span><input size="15" id="charge_input" oninput="document.getElementById('update_input').classList.add('blue')"></span>
+      <span>Fragmentation: </span>
+      <span><select id="dissociation_type_input" class="buttonlike" oninput="document.getElementById('update_input').classList.add('blue')">
+	  <option value="HCD" selected>HCD</option>
+	  <option value="CID">CID</option>
+	  <option value="EThcD">EThcD</option>
+	  <option value="ETD">ETD</option>
+      </select></span>
       <span>Precursor m/z: </span><span><input size="15" id="precmz_input" oninput="document.getElementById('update_input').classList.add('blue')"></span><span></span>
       <span>
 	<button class="buttonlike" style="margin-left:120px;" title="(re-)Annotate peaks with annotator service" id="annotate_input" onclick="annotate_peaks(this,false);">Run Annotator</button>
@@ -174,7 +181,7 @@
       <label for="show_b_and_y_flags_input">Show b/y flags: </label><span><input type="checkbox" id="show_b_and_y_flags_input" checked></span>
       <span>Y maximum: </span><span><input size="20" id="ymax_input"></span>
       <label for="showppm_input">Show delta ppm: </label><span><input type="checkbox" id="showppm_input" checked></span>
-      <span>Mask isolation win: </span><span><input size="20" id="mask_isolation_width_input"></span>
+      <span>Mask isolation width: </span><span><input size="20" id="mask_isolation_width_input"></span>
       <label for="show_unknown_input">Label unknown peaks: </label><span><input type="checkbox" id="show_unknown_input"></span>
       <span></span>
       <span>
