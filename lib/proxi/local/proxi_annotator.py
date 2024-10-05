@@ -211,6 +211,10 @@ class ProxiAnnotator:
             update_response(response, status='ERROR', status_code=400, error_code='NoValidSpectra', description=f"Unable to annotate any of the {n_spectra} input spectra",
                             log_entry=f"Completed annotation process")
 
+        #eprint("======= Annotated result =========")
+        #eprint(json.dumps(response, indent=2, sort_keys=True))
+        #eprint("============================")
+
         return(response, response['status']['status_code'])
 
 
