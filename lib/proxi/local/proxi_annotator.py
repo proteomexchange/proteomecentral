@@ -147,7 +147,7 @@ class ProxiAnnotator:
                 interpretations = None
                 if 'interpretations' in spectrum:
                     interpretations = spectrum['interpretations']
-                annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], interpretations=interpretations, precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None)
+                annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], interpretations=interpretations, precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None, attributes=spectrum['attributes'])
                 user_parameters = {}
                 if 'extended_data' in spectrum and isinstance(spectrum['extended_data'],dict):
                     eprint("INFO-150: found extended_data in spectrum")
