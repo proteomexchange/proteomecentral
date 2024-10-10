@@ -147,7 +147,13 @@ class ProxiAnnotator:
                 interpretations = None
                 if 'interpretations' in spectrum:
                     interpretations = spectrum['interpretations']
-                annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], interpretations=interpretations, precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=None, attributes=spectrum['attributes'])
+
+                #### Attempt to pull the USI out of the PROXI spectrum
+                usi_string = None
+                if 'usi' in spectrum:
+                    usi_string = spectrum['usi']
+
+                annotated_spectrum.fill(mzs=spectrum['mzs'], intensities=spectrum['intensities'], interpretations=interpretations, precursor_mz=precursor_mz, charge_state=precursor_charge, usi_string=usi_string, attributes=spectrum['attributes'])
                 user_parameters = {}
                 if 'extended_data' in spectrum and isinstance(spectrum['extended_data'],dict):
                     eprint("INFO-150: found extended_data in spectrum")
