@@ -87,6 +87,11 @@
     text-align: right;
 }
 
+.user_input.settings {
+    grid-template-columns: 150px max-content 150px max-content 150px max-content !important;
+}
+
+
 .hideit {
     display: none;
 }
@@ -163,7 +168,7 @@ input[type=checkbox] {
     background: #fbfbfb;
 }
 
-#USIexamples, #usercredentials, #mzPAFhelp {
+#USIexamples, #RecentUSIs, #usercredentials, #mzPAFhelp {
     z-index: 50;
     position: absolute;
     top: 150px;

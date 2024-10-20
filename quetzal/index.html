@@ -51,9 +51,10 @@
 	<option value="ProteomeCentral" selected>ProteomeCentral</option>
       </select>
 
-       <span onclick="toggle_box('usercredentials');" id="usercredentials_button" class="buttonlike" style="visibility:hidden;" title="Show/hide Login/out form">Enter Access Credentials</span>
+      <span onclick="toggle_box('usercredentials');" id="usercredentials_button" class="buttonlike" style="visibility:hidden;" title="Show/hide Login/out form">Enter Access Credentials</span>
 
-     <span onclick="toggle_box('USIexamples');" id="USIexamples_button" title="Examples from Box 1 of the Quetzal manuscript (in press)" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
+      <span onclick="toggle_box('USIexamples');" id="USIexamples_button" title="Examples from Box 1 of the Quetzal manuscript (in press)" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
+      <span onclick="toggle_box('RecentUSIs');" id="RecentUSIs_button" title="Last 10 USIs viewed" class="examples">Recent USIs&nbsp;&nbsp;&nbsp;⇣</span>
       <br><br>
     </div>
 
@@ -78,7 +79,6 @@
       <div id="dataset-primary" class="site-content">
 	<h1 style="margin:0;" class="dataset-title">Example use cases (USIs)</h1>
 	<div class="dataset-content">
-
 	  <a onclick="pick_box_example(this);">mzspec:PXD005336:Varlitinib_01410_A01_P014203_B00_A00_R1:scan:19343:LLSILSR/2</a><br>
 	  <i>Simple HCD spectrum of LLSILSR</i>
 	  <hr>
@@ -96,6 +96,16 @@
 	  <hr>
 	  <a style="float:right" class="dataset-title" onclick="toggle_box('USIexamples');">Dismiss</a>
 	</div>
+      </div>
+    </div>
+
+    <div id="RecentUSIs">
+      <div id="dataset-primary" class="site-content">
+        <h1 style="margin:0;" class="dataset-title">Recently Opened USIs</h1>
+        <div class="dataset-content">
+          <span id="recentusis_span" class="dataset-secthead">You have no recently viewed USIs (on this browser)</span>
+          <a style="float:right" class="dataset-title" onclick="toggle_box('RecentUSIs');">Dismiss</a>
+        </div>
       </div>
     </div>
 
@@ -121,7 +131,7 @@
       <span>Peptidoform(s): </span><input size="90" id="pform_input" style="grid-column: 2 / 5;" oninput="document.getElementById('update_input').classList.add('blue')">
       <span >Charge(s): </span><span><input size="15" id="charge_input" oninput="document.getElementById('update_input').classList.add('blue')"></span>
       <span>Fragmentation: </span>
-      <span><select id="dissociation_type_input" class="buttonlike" oninput="document.getElementById('update_input').classList.add('blue')">
+      <span><select id="dissociation_type_input" class="buttonlike" oninput="document.getElementById('annotate_input').classList.add('blue')">
 	  <option value="HCD" selected>HCD</option>
 	  <option value="CID">CID</option>
 	  <option value="EThcD">EThcD</option>
@@ -174,15 +184,23 @@
 
   <div class="hideit" id="export_div">
     <h2 class="rep">Settings</h2>
-    <div class="user_input">
+    <div class="user_input settings">
       <span>m/z minimum: </span><span><input size="20" id="xmin_input"></span>
       <label for="show_sequence_input">Show sequence: </label><span><input type="checkbox" id="show_sequence_input" checked></span>
-      <span>m/z maximum: </span><span><input size="20" id="xmax_input"></span>
       <label for="show_b_and_y_flags_input">Show b/y flags: </label><span><input type="checkbox" id="show_b_and_y_flags_input" checked></span>
+
+      <span>m/z maximum: </span><span><input size="20" id="xmax_input"></span>
+      <label for="show_coverage_table_input">Show coverage table: </label><span><input type="checkbox" id="show_coverage_table_input" checked></span>
+      <label for="show_precursor_mzs_input">Show precursor mzs: </label><span><input type="checkbox" id="show_precursor_mzs_input" checked></span>
+
       <span>Y maximum: </span><span><input size="20" id="ymax_input"></span>
-      <label for="showppm_input">Show delta ppm: </label><span><input type="checkbox" id="showppm_input" checked></span>
+      <label for="label_neutral_losses_input">Label neutral losses: </label><span><input type="checkbox" id="label_neutral_losses_input" checked></span>
+      <label for="label_internal_fragments_input">Label internal fragments: </label><span><input type="checkbox" id="label_internal_fragments_input" checked></span>
+
       <span>Mask isolation width: </span><span><input size="20" id="mask_isolation_width_input"></span>
-      <label for="show_unknown_input">Label unknown peaks: </label><span><input type="checkbox" id="show_unknown_input"></span>
+      <label for="label_unknown_peaks_input">Label unknown peaks: </label><span><input type="checkbox" id="label_unknown_peaks_input"></span>
+      <label for="show_usi_input">Show Title/USI: </label><span><input type="checkbox" id="show_usi_input" checked></span>
+
       <span></span>
       <span>
 	<button class="buttonlike" title="Generate annotated spectrum with current settings" onclick="generate_figure(this,'svg',false);">Preview</button>

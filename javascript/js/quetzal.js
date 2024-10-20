@@ -56,10 +56,10 @@ function init2() {
     // missing?  '_': 'tab:gray'
     _ion_colors['a'] = "#2ca02c"; // tab:green
     _ion_colors['b'] = "#1f77b4"; // tab:blue
-    _ion_colors['c'] = "#008B8B"; // dark cyan
+    _ion_colors['c'] = "#FF8C00"; // dark orange
     _ion_colors['x'] = "#4B0082"; // indigo
     _ion_colors['y'] = "#d62728"; // tab:red
-    _ion_colors['z'] = "#FF8C00"; // dark orange
+    _ion_colors['z'] = "#008B8B"; // dark cyan
     _ion_colors['I'] = "#ff7f0e"; // tab:orange
     _ion_colors['prec'] = "#e377c2"; // tab:pink
     _ion_colors['rep'] = "#9467bd"; // tab:purple
@@ -71,6 +71,8 @@ function init2() {
     Chart.register(ChartDataLabels);
     tpp_dragElement(document.getElementById("quickplot"));
     tpp_dragElement(document.getElementById("mzPAFhelp"));
+
+    list_recent_usis(10);
     init3();
 }
 
@@ -85,6 +87,8 @@ function init3() {
             button.value = params.get('provider');
             set_usi_url(button);
 	}
+        if (params.has('fragmentation'))
+	    document.getElementById("dissociation_type_input").value = params.get('fragmentation');
 	validate_usi(document.getElementById("usi_button"),true);
     }
 }
@@ -104,6 +108,7 @@ function reset_forms(exclude='NONE_OF_THE_ABOVE') {
     toggle_box("quickplot",false,true);
     toggle_box("usercredentials",false,true);
     toggle_box("USIexamples",false,true);
+    toggle_box("RecentUSIs",false,true);
     if (_chartdata)
         _chartdata.destroy();
 
@@ -381,6 +386,8 @@ function fetch_usi(usi,button) {
             document.title = "Quetzal ["+usi+"]";
             history.replaceState({ usi: usi },document.title, "//"+ window.location.hostname + window.location.pathname + '?usi='+encodeURIComponent(usi)+"&provider="+document.getElementById("usiprovider_input").value);
 
+	    add_recent_usi(usi);
+
 	    user_msg("Successfully loaded spectrum "+usi,200);
 	    user_log(null,"Successfully loaded spectrum with "+rdata[0].mzs.length+" peaks");
 	    user_log(null,"---- Attributes ----");
@@ -407,6 +414,7 @@ function fetch_usi(usi,button) {
 	    }
 	    user_log(null,"--------------------");
 	    rdata['origin'] = usi;
+	    rdata[0]['usi'] = usi;
 
 	    rdata[0]['interpretations'] = [];
 	    for (var i in rdata[0].mzs)
@@ -422,7 +430,6 @@ function fetch_usi(usi,button) {
 	    user_log(null,"ERROR fetching the USI::",'error');
 	    user_log(null,error);
 	    console.error(error);
-
             user_msg("ERROR fetching the USI: "+error,500,false);
 	});
 
@@ -471,6 +478,9 @@ function import_posted_spectrum(spectrum) {
     if (spectrum.mzs && spectrum.intensities)
 	for (var i in spectrum.mzs)
 	    dta.value += spectrum.mzs[i] + "  " + spectrum.intensities[i] + "\n";
+    else if (spectrum.peaks)
+	for (var peak of spectrum.peaks)
+	    dta.value += peak[0] + "  " + peak[1] + "\n";
 
     import_dta(null);
 }
@@ -1106,7 +1116,7 @@ function generate_figure(button,format,download=false) {
 
     user_log(null, "Generating "+format+" figure...",'run');
 
-    // check if empty spectrum, annotations....TODO
+    // check if empty annotations....TODO
     // verify format
 
     review_spectrum_attributes();
@@ -1128,7 +1138,8 @@ function generate_figure(button,format,download=false) {
     }
     user_parameters["dissociation_type"] = document.getElementById("dissociation_type_input").value;
 
-    for (var field of ["show_sequence", "show_b_and_y_flags", "showppm", "show_unknown"]) {
+    for (var field of ["show_sequence", "show_b_and_y_flags", "show_coverage_table", "show_precursor_mzs",
+		       "label_neutral_losses", "label_internal_fragments", "label_unknown_peaks", "show_usi"]) {
 	if (document.getElementById(field+"_input").checked)
             user_parameters[field] = true;
 	else
@@ -1193,7 +1204,7 @@ function generate_figure(button,format,download=false) {
 	    stuff_is_running(button,false);
             user_log(null,"ERROR annotating:",'error');
             user_log(null,error);
-
+	    console.error(error);
             user_msg("ERROR annotating: "+error,500,false);
         });
 }
@@ -1221,7 +1232,7 @@ function toggle_box(box,open=false,close=false) {
 }
 
 
-// for use with "examples" pop-up
+// for use with "examples" and "recents" pop-ups
 function pick_box_example(anchor) {
     document.getElementById('usi_input').value = anchor.innerHTML;
     var button = document.getElementById("usiprovider_input");
@@ -1230,6 +1241,55 @@ function pick_box_example(anchor) {
 	set_usi_url(button);
     }
     validate_usi(document.getElementById("usi_button"),true);
+}
+
+
+function add_recent_usi(usi) {
+    if (!localStorage.USIcount)
+        localStorage.USIcount = 0;
+    localStorage.USIcount = Number(localStorage.USIcount) + 1;
+    localStorage.setItem("USI_"+localStorage.USIcount, usi);
+    list_recent_usis(10);
+}
+
+function list_recent_usis(max) {
+    if (!localStorage.USIcount)
+	return;
+
+    var span = document.getElementById("recentusis_span");
+    span.innerHTML = '';
+    span.className = '';
+    var seen = {};
+    var count = 1;
+    var i = Number(localStorage.USIcount);
+
+    var list = document.createElement("ol");
+    list.style.paddingInlineStart = '10px';
+    span.append(list);
+    while (i>0) {
+        var dausi = localStorage.getItem("USI_"+i);
+	if (dausi) {
+	    if (seen[dausi])
+		localStorage.removeItem("USI_"+i);
+	    else {
+		var item = document.createElement("li");
+		var link = document.createElement("a");
+		link.setAttribute('onclick', 'pick_box_example(this)');
+		link.title = 'click to open';
+                link.append(dausi);
+		item.append(link);
+		item.append(document.createElement("hr"));
+		list.append(item);
+
+		seen[dausi] = true;
+		count += 1;
+	    }
+
+	}
+	if (count == max)
+	    break;
+	i-= 1;
+    }
 }
 
 
@@ -1321,13 +1381,13 @@ function annotate_peaks(button,wasauto=true) {
 
     _spectrum[0]['extended_data'] = {};
     _spectrum[0]['extended_data']['user_parameters'] = {};
-    _spectrum[0]['extended_data']['user_parameters']["dissociation_type"] = document.getElementById("dissociation_type_input").value;
+    if (!wasauto)
+	_spectrum[0]['extended_data']['user_parameters']["dissociation_type"] = document.getElementById("dissociation_type_input").value;
     if (document.getElementById("create_peak_network_input").checked)
 	_spectrum[0]['extended_data']['user_parameters']["create_peak_network"] = true;
 
     var pform = _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : '';
 
-    //var url = _api['annotate']+"?tolerance=";
     var url = _api['annotate']+"?resultType=full&tolerance=";
     var mztol = Number(document.getElementById("peakmztol_input").value.trim());
     for (var att of _spectrum[0]['attributes']) {
@@ -1368,6 +1428,19 @@ function annotate_peaks(button,wasauto=true) {
                 throw annot_data.status.error_code + " :: " + annot_data.status.description;
 
 	    _spectrum[0]['interpretations'] = annot_data['annotated_spectra'][0]['interpretations'];
+	    // in case some peaks have gone "missing"...
+	    _spectrum[0]['mzs'] = annot_data['annotated_spectra'][0]['mzs'];
+	    _spectrum[0]['intensities'] = annot_data['annotated_spectra'][0]['intensities'];
+
+	    if (annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes'] &&
+		annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes']['used dissociation type']) {
+		var frag = annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes']['used dissociation type'];
+		if (frag != document.getElementById("dissociation_type_input").value)
+		    user_msg("Peaks annotated using dissociation type = "+frag,404);
+		document.getElementById("dissociation_type_input").value = frag;
+		user_log(null, "Peaks annotated using dissociation type = "+frag);
+		_spectrum[0]['_ions_annotated'] = frag;
+	    }
 
 	    add_annotation_form(mztol);
 	    stuff_is_running(button,false);
@@ -1376,7 +1449,7 @@ function annotate_peaks(button,wasauto=true) {
 	    stuff_is_running(button,false);
             user_log(null,"ERROR annotating:",'error');
             user_log(null,error);
-
+	    console.error(error);
             user_msg("ERROR annotating: "+error,500,false);
 	});
 }
@@ -1498,7 +1571,9 @@ function add_ion_table() {
     var td = document.createElement("td");
     td.colSpan = '99';
     td.className = "rep";
-    td.appendChild(document.createTextNode('Ion Series'));
+    td.append('Ion Series');
+    if (_spectrum[0]['_ions_annotated'])
+	td.append(' ('+_spectrum[0]['_ions_annotated']+')');
     tr.appendChild(td);
     table.appendChild(tr);
 
