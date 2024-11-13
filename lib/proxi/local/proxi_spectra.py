@@ -28,6 +28,7 @@ try:
     from universal_spectrum_identifier import UniversalSpectrumIdentifier
     from SpectrumLibraryCollection import SpectrumLibraryCollection
     from SpectrumLibrary import SpectrumLibrary
+    from LibrarySpectrum import LibrarySpectrum
 except:
     proxi_instance = os.environ.get('PROXI_INSTANCE')
     if proxi_instance:
@@ -42,6 +43,7 @@ except:
     from universal_spectrum_identifier import UniversalSpectrumIdentifier
     from SpectrumLibraryCollection import SpectrumLibraryCollection
     from SpectrumLibrary import SpectrumLibrary
+    from LibrarySpectrum import LibrarySpectrum
 
 
 #### A workaround from Joshua to compensate for threading problems with SQLAlchemy and SQLite
@@ -223,7 +225,7 @@ class ProxiSpectra:
 
 
     ############################################################################################
-    #### Fetch a PXL spectrum from ProteomeCentral's cgi/spectra system for now at least
+    #### Fetch a spectrum with a USI with a PXL using local library code
     def fetch_from_local_libraries(self,resultType, pageSize = None, pageNumber = None, usi = None, accession = None, msRun = None, fileName = None, scan = None, responseContentType = None):
 
         if usi is None:
@@ -232,28 +234,30 @@ class ProxiSpectra:
             return(status_code, message)
 
         usi = UniversalSpectrumIdentifier(usi)
-        basedir = os.path.dirname(os.path.abspath(__file__))+"/.."
+        index_number = usi.index
+
+        basedir = "/net/dblocal/data/SpectralLibraries/python/devED/SpectralLibraries"
         spec_lib_collection = SpectrumLibraryCollection(basedir + "/spectralLibraries/SpectrumLibraryCollection.sqlite")
         library = spec_lib_collection.get_library(identifier=usi.collection_identifier, version_tag=usi.ms_run_name)
 
         library_file = basedir + "/spectralLibraries/" + library.original_filename
-        index_number = usi.index
-
         if not os.path.isfile(library_file):
-            eprint(f"ERROR: File '{library_file}' not found or not a file")
-            return()
+            status_code = 500
+            message = { "status": status_code, "title": "Library file not found", "detail": "File '{library_file}' not found or not a file", "type": "about:blank" }
+            return(status_code, message)
 
         spectrum_library = SpectrumLibrary()
         spectrum_library.filename = library_file
 
         spectrum_buffer = spectrum_library.get_spectrum(spectrum_index_number=index_number)
-        spectrum = Spectrum()
+        spectrum = LibrarySpectrum()
         spectrum.parse(spectrum_buffer, spectrum_index=index_number)
-        buffer = spectrum.write(format='JSON')
-        eprint(buffer)
+        json_buffer = spectrum.write(format='json')
 
-        spectrum = json.loads(buffer)
+        spectrum = json.loads(json_buffer)
         self.spectra = [ spectrum ]
+        status_code = 200
+        message = self.spectra
         return(status_code, message)
 
 
