@@ -26,6 +26,8 @@ test_mode = False
 try:
     from proforma_peptidoform import ProformaPeptidoform
     from universal_spectrum_identifier import UniversalSpectrumIdentifier
+    from SpectrumLibraryCollection import SpectrumLibraryCollection
+    from SpectrumLibrary import SpectrumLibrary
 except:
     proxi_instance = os.environ.get('PROXI_INSTANCE')
     if proxi_instance:
@@ -38,6 +40,8 @@ except:
             exit()
     from proforma_peptidoform import ProformaPeptidoform
     from universal_spectrum_identifier import UniversalSpectrumIdentifier
+    from SpectrumLibraryCollection import SpectrumLibraryCollection
+    from SpectrumLibrary import SpectrumLibrary
 
 
 #### A workaround from Joshua to compensate for threading problems with SQLAlchemy and SQLite
@@ -134,7 +138,8 @@ class ProxiSpectra:
         #### So far, the USI must contain a PXL or a PXD. If it has a PXL, route it appropriately
         match = re.search(":PXL",usi)
         if match:
-            status_code, message = self.fetch_from_local_spectra_cgi(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
+            #status_code, message = self.fetch_from_local_spectra_cgi(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
+            status_code, message = self.fetch_from_local_libraries(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
             return(status_code, message)
 
         #### If it is a MS2PIP, route it appropriately
@@ -215,6 +220,41 @@ class ProxiSpectra:
             return(status_code, message)
 
         return(status_code, { "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" } )
+
+
+    ############################################################################################
+    #### Fetch a PXL spectrum from ProteomeCentral's cgi/spectra system for now at least
+    def fetch_from_local_libraries(self,resultType, pageSize = None, pageNumber = None, usi = None, accession = None, msRun = None, fileName = None, scan = None, responseContentType = None):
+
+        if usi is None:
+            status_code = 501
+            message = { "status": status_code, "title": "USI is required here", "detail": "This endpoint as currently implemented requires a USI string as input", "type": "about:blank" }
+            return(status_code, message)
+
+        usi = UniversalSpectrumIdentifier(usi)
+        basedir = os.path.dirname(os.path.abspath(__file__))+"/.."
+        spec_lib_collection = SpectrumLibraryCollection(basedir + "/spectralLibraries/SpectrumLibraryCollection.sqlite")
+        library = spec_lib_collection.get_library(identifier=usi.collection_identifier, version_tag=usi.ms_run_name)
+
+        library_file = basedir + "/spectralLibraries/" + library.original_filename
+        index_number = usi.index
+
+        if not os.path.isfile(library_file):
+            eprint(f"ERROR: File '{library_file}' not found or not a file")
+            return()
+
+        spectrum_library = SpectrumLibrary()
+        spectrum_library.filename = library_file
+
+        spectrum_buffer = spectrum_library.get_spectrum(spectrum_index_number=index_number)
+        spectrum = Spectrum()
+        spectrum.parse(spectrum_buffer, spectrum_index=index_number)
+        buffer = spectrum.write(format='JSON')
+        eprint(buffer)
+
+        spectrum = json.loads(buffer)
+        self.spectra = [ spectrum ]
+        return(status_code, message)
 
 
     ############################################################################################
