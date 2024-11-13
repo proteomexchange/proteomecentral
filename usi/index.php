@@ -7,6 +7,7 @@
   $SUBTITLE="";
   include("$DOCUMENT_ROOT/includes/header.inc.php");
 ?>
+<script src="../javascript/js/utils.js"></script>
 <script src="../javascript/js/usi.js"></script>
 <script src="../javascript/js/lorikeet/jquery.min.js"></script>
 <script src="../javascript/js/lorikeet/jquery-ui.slider.min.js"></script>
@@ -40,6 +41,7 @@
 </select -->
 
 <span onclick="toggle_box('NBTexamples');" id="NBTexamples_button" title="Examples from Box 1 of the USI manuscript (submitted)" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
+<span onclick="toggle_box('RecentUSIs');" id="RecentUSIs_button" title="Last 10 USIs viewed" class="examples">Recent USIs&nbsp;&nbsp;&nbsp;⇣</span>
 
 <span style="margin-left:150px;" onclick="check_usi();" id="usi_stat">&nbsp;&nbsp;Look Up USI&nbsp;&nbsp;</span>
 <span style="margin-left:50px;" onclick="validate_usi(false);" id="usi_valid">&nbsp;&nbsp;Validate USI&nbsp;&nbsp;</span>
@@ -131,6 +133,16 @@ Case 5: Reporting spectra of unidentified peptides with the potential to lead to
 </div>
 </div>
 
+
+<div id="RecentUSIs">
+  <div id="dataset-primary" class="site-content">
+    <h1 style="margin:0;" class="dataset-title">Recently Opened USIs</h1>
+    <div class="dataset-content">
+      <span id="recentusis_span" class="dataset-secthead">You have no recently viewed USIs (on this browser)</span>
+      <a style="float:right" class="dataset-title" onclick="toggle_box('RecentUSIs');">Dismiss</a>
+    </div>
+  </div>
+</div>
 
 
 <!-- END main content -->

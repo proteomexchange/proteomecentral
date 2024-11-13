@@ -13,6 +13,36 @@ var _coreints;
 var _mzs = [];
 
 function init() {
+    // Allow window to listen for a postMessage
+    window.addEventListener("message", (e) => {
+        if (!e.data.source || e.data.source != "QUETZAL Annotation request")
+	    return;
+
+        var spectrum = e.data.spectrum || null;
+        if (spectrum) {
+	    user_msg("<b>Received spectrum</b> from: "+e.origin, 200);
+	    user_log(null,"Received spectrum via POST from: "+e.origin, 'run');
+            import_posted_spectrum(spectrum);
+
+	    var response = {};
+            response.source = "QUETZAL Annotation response";
+	    if (e.data.spectrum_id)
+		response.spectrum_id = e.data.spectrum_id;
+	    response.status = true;
+
+	    window.opener.postMessage(response,"*");
+        }
+	else {
+            user_msg("<b>Empty spectrum</b> from: "+e.origin, 500, false);
+            user_log(null,"Empty spectrum from: "+e.origin, 'error');
+	}
+    });
+    window.addEventListener('beforeunload', (e) => {
+        var response = {};
+        response.source = "QUETZAL Window closed";
+        window.opener.postMessage(response,"*");
+    });
+
     history.replaceState({}, "", document.location.href);
     window.addEventListener("popstate", (event) => {
 	if (event.state) {
@@ -386,7 +416,8 @@ function fetch_usi(usi,button) {
             document.title = "Quetzal ["+usi+"]";
             history.replaceState({ usi: usi },document.title, "//"+ window.location.hostname + window.location.pathname + '?usi='+encodeURIComponent(usi)+"&provider="+document.getElementById("usiprovider_input").value);
 
-	    add_recent_usi(usi);
+	    pc_addRecentItem("USI",usi);
+            list_recent_usis(10);
 
 	    user_msg("Successfully loaded spectrum "+usi,200);
 	    user_log(null,"Successfully loaded spectrum with "+rdata[0].mzs.length+" peaks");
@@ -1244,51 +1275,27 @@ function pick_box_example(anchor) {
 }
 
 
-function add_recent_usi(usi) {
-    if (!localStorage.USIcount)
-        localStorage.USIcount = 0;
-    localStorage.USIcount = Number(localStorage.USIcount) + 1;
-    localStorage.setItem("USI_"+localStorage.USIcount, usi);
-    list_recent_usis(10);
-}
-
 function list_recent_usis(max) {
-    if (!localStorage.USIcount)
+    var usis = pc_getRecentItems("USI",max);
+    if (usis.length < 1)
 	return;
 
     var span = document.getElementById("recentusis_span");
     span.innerHTML = '';
     span.className = '';
-    var seen = {};
-    var count = 1;
-    var i = Number(localStorage.USIcount);
 
     var list = document.createElement("ol");
     list.style.paddingInlineStart = '10px';
     span.append(list);
-    while (i>0) {
-        var dausi = localStorage.getItem("USI_"+i);
-	if (dausi) {
-	    if (seen[dausi])
-		localStorage.removeItem("USI_"+i);
-	    else {
-		var item = document.createElement("li");
-		var link = document.createElement("a");
-		link.setAttribute('onclick', 'pick_box_example(this)');
-		link.title = 'click to open';
-                link.append(dausi);
-		item.append(link);
-		item.append(document.createElement("hr"));
-		list.append(item);
-
-		seen[dausi] = true;
-		count += 1;
-	    }
-
-	}
-	if (count == max)
-	    break;
-	i-= 1;
+    for (var dausi of usis) {
+	var item = document.createElement("li");
+	var link = document.createElement("a");
+	link.setAttribute('onclick', 'pick_box_example(this)');
+	link.title = 'click to open';
+        link.append(dausi);
+	item.append(link);
+	item.append(document.createElement("hr"));
+	list.append(item);
     }
 }
 
@@ -2024,43 +2031,6 @@ function stuff_is_running(button=null,isit=true) {
 
     if (button)
 	button.disabled = isit ? true : '';
-}
-
-
-// from w3schools (mostly)
-function tpp_dragElement(ele) {
-    ele.style.cursor = "move";
-    var posx1 = 0, posx2 = 0, posy1 = 0, posy2 = 0;
-    if (document.getElementById(ele.id + "header"))
-	document.getElementById(ele.id + "header").onmousedown = dragMouseDown;
-    else
-	ele.onmousedown = dragMouseDown;
-
-    function dragMouseDown(e) {
-	e = e || window.event;
-	e.preventDefault();
-	posx2 = e.clientX;
-	posy2 = e.clientY;
-	document.onmouseup = closeDragElement;
-	document.onmousemove = elementDrag;
-    }
-
-    function elementDrag(e) {
-	e = e || window.event;
-	e.preventDefault();
-	posx1 = posx2 - e.clientX;
-	posy1 = posy2 - e.clientY;
-	posx2 = e.clientX;
-	posy2 = e.clientY;
-	ele.style.top  = (ele.offsetTop  - posy1) + "px";
-	ele.style.left = (ele.offsetLeft - posx1) + "px";
-	ele.style.right = 'initial';
-    }
-
-    function closeDragElement() {
-	document.onmouseup = null;
-	document.onmousemove = null;
-    }
 }
 
 

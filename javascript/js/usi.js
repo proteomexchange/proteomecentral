@@ -61,6 +61,8 @@ function init() {
 
 function init2() {
     tpp_dragElement(document.getElementById("quickplot"));
+    list_recent_usis(10);
+
     const params = new URLSearchParams(window.location.search);
     if (params.has('usi')) {
 	document.getElementById("usi_input").value = params.get('usi');
@@ -534,6 +536,9 @@ function get_usi_from(where) {
 			s.fileName = "PREDICTED SPECTRUM FOR: "+s.fileName;
 
 		    if (has_spectrum) {
+			pc_addRecentItem("USI",usi);
+			list_recent_usis(10);
+
 			usi_data[p].lori_data = s;
 
 			var cell = document.getElementById(p+"_spectrum");
@@ -930,6 +935,31 @@ function reload(provider) {
     _done--;
     document.getElementById("usi_stat").classList.add("running");
     get_usi_from([provider]);
+}
+
+
+function list_recent_usis(max) {
+    var usis = pc_getRecentItems("USI",max);
+    if (usis.length < 1)
+        return;
+
+    var span = document.getElementById("recentusis_span");
+    span.innerHTML = '';
+    span.className = '';
+
+    var list = document.createElement("ol");
+    list.style.paddingInlineStart = '10px';
+    span.append(list);
+    for (var dausi of usis) {
+        var item = document.createElement("li");
+        var link = document.createElement("a");
+        link.setAttribute('onclick', 'pick_box_example(this)');
+        link.title = 'click to open';
+        link.append(dausi);
+        item.append(link);
+        item.append(document.createElement("hr"));
+        list.append(item);
+    }
 }
 
 

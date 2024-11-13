@@ -36,7 +36,7 @@ a:hover {
  vertical-align: baseline;
 }
 
-#NBTexamples {
+#NBTexamples, #RecentUSIs {
   z-index: 50;
   position: absolute;
   top: 200px;

@@ -495,7 +495,7 @@ function add_resultset_table(data) {
 	    if (fnum == 6)
 		td.innerHTML = value;
 	    else {
-		span.innerHTML = hightlight(value);
+		span.innerHTML = highlight(value);
 		td.appendChild(span);
 	    }
 
@@ -514,7 +514,7 @@ function add_resultset_table(data) {
 }
 
 
-function hightlight(string) {
+function highlight(string) {
     if (_api.query['search']) {
 	for (var val of _api.query['search'].split(',')) {
 	    var reg = new RegExp('('+val+')', 'gi');
