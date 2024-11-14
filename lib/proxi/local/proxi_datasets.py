@@ -1,24 +1,17 @@
 #!/usr/bin/env python3
 
-#### Define eprint() to print to stderr
-from __future__ import print_function
 import sys
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
-
-#### Import some standard libraries
 import os
 import argparse
 import os.path
-import re
 import json
 import ast
 import http.client
 import pymysql
 import socket
-import copy
 from datetime import datetime, timezone
 import timeit
+def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 DEBUG = True
 
@@ -67,8 +60,7 @@ class ProxiDatasets:
 
 
 
-
-    #### Get configs
+    #### Get configuration information
     def get_config(self):
         config = {}
         config_file = os.path.dirname(os.path.abspath(__file__)) + "/../../conf/system.conf"
@@ -94,7 +86,6 @@ class ProxiDatasets:
 
         self.status = 'OK'
         return config
-
 
 
 
@@ -147,12 +138,10 @@ class ProxiDatasets:
 
 
 
-
     #### Print the contents of the dataset object
     def show(self):
         print("Dataset:")
         print(json.dumps(ast.literal_eval(repr(self.dataset)),sort_keys=True,indent=2))
-
 
 
 
@@ -166,7 +155,6 @@ class ProxiDatasets:
         if current_timestamp - self.last_refresh_timestamp > refresh_interval:
             eprint(f"INFO: After more than {refresh_interval} seconds, it is time to refresh the data from the RDBMS")
             self.refresh_data()
-
 
 
 
@@ -263,7 +251,6 @@ class ProxiDatasets:
 
 
 
-
     #### Store raw datasets as obtained from RDBMS
     def store_raw_datasets(self):
         if self.raw_datasets is None:
@@ -282,7 +269,6 @@ class ProxiDatasets:
 
         self.status = 'OK'
         return self.status
-
 
 
 
@@ -313,7 +299,6 @@ class ProxiDatasets:
 
         self.status = 'OK'
         return self.status
-
 
 
 
@@ -471,7 +456,6 @@ class ProxiDatasets:
 
 
 
-
     #### Scrub the data of known problems to create a clean dataset to work with
     def scrub_data(self, rows):
 
@@ -552,7 +536,6 @@ class ProxiDatasets:
     
 
 
-
     #### Compute the available facets
     def compute_facets(self, rows):
 
@@ -621,6 +604,7 @@ class ProxiDatasets:
         return(facet_data, row_match_index)
 
 
+
 #### If this class is run from the command line, perform a short little test to see if it is working correctly
 def main():
 
@@ -675,5 +659,5 @@ def main():
     print('Message='+str(message))
     print(proxi_datasets.dataset)
 
-if __name__ == "__main__": main()
 
+if __name__ == "__main__": main()
