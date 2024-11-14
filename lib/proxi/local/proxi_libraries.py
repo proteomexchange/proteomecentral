@@ -9,13 +9,14 @@ import json
 import ast
 from datetime import datetime, timezone
 import timeit
+import socket
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 DEBUG = True
 
 BASE = '/net/dblocal/data/SpectralLibraries/python/devED/SpectralLibraries'
 
-if False:
+if socket.gethostname() == 'WALDORF':
     BASE = 'C:\local\Repositories\GitHub\SpectralLibraries'
     sys.path.append("C:\local\Repositories\GitHub\SpectralLibraries\lib")
 
@@ -431,8 +432,18 @@ class ProxiLibraries:
             t1 = timeit.default_timer()
             eprint(f"{timestamp} (------) INFO: Libraries currently do not need scrubbing")
 
+        # No scrubbing is needed at this time
         self.scrubbed_rows = rows
-        self.scrubbed_lower_string_rows = rows
+
+        # But do create lower_string_rows
+        self.scrubbed_lower_string_rows = []
+        irow = 0
+        for row in rows:
+            lower_string = ''
+            for key, value in row.items():
+                if not key.endswith('datetime') and value is not None:
+                    lower_string += str(value).lower() + ' '
+            self.scrubbed_lower_string_rows.append(lower_string)
 
         if DEBUG:
             timestamp = str(datetime.now().isoformat())
@@ -554,11 +565,12 @@ def main():
             t1 = timeit.default_timer()
             eprint(f"{timestamp} ({(t1-t0):.4f}): Call list_datasets()")
             t0 = t1
-        status_code, message, mimetype = proxi_libraries.list_libraries('compact', pageSize=10, keywords='hair') # works
+        #status_code, message, mimetype = proxi_libraries.list_libraries('compact', pageSize=10, keywords='hair') # works
         #status_code, message, mimetype = proxi_libraries.list_libraries('compact', pageSize=10, accession='PXL000010') # works
         #status_code, message, mimetype = proxi_libraries.list_libraries('compact', pageSize=10, fragmentation_type='ion trap') # works
         #status_code, message, mimetype = proxi_libraries.list_libraries('compact', pageSize=10, fragmentation_type='ETD') # works
         #status_code, message, mimetype = proxi_libraries.list_libraries('compact', pageSize=2, source='NIST') # works
+        status_code, message, mimetype = proxi_libraries.list_libraries('compact', pageSize=10, search='skin') # works
 
         if verbose > 0:
             timestamp = str(datetime.now().isoformat())
