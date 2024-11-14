@@ -55,13 +55,17 @@ def list_datasets(resultType, pageSize = None, pageNumber = None, species = None
         return(message, status_code)
 
 
-def get_libraries(pageSize = None, pageNumber = None, resultType = None) -> str:
+def get_libraries(resultType, pageSize = None, pageNumber = None, species = None, accession = None, fragmentation_type = None, lab_head_full_name = None, search = None, keywords = None, year = None, source = None, outputFormat = None) -> str:
+
     libraries = ProxiLibraries()
-    status_code,message = libraries.get_libraries()
-    if status_code == 200:
-        return(ast.literal_eval(repr(libraries.libraries_list)))
+    status_code, message, mimetype = libraries.list_libraries(resultType, pageSize=pageSize, pageNumber=pageNumber, species=species, accession=accession, fragmentation_type=fragmentation_type, lab_head_full_name=lab_head_full_name, search=search, keywords=keywords, year=year, source=source, outputFormat=outputFormat)
+
+    if outputFormat is not None and outputFormat.lower() == 'tsv':
+        flask_response = flask.Response(response=tsv_generator(message), status=status_code, mimetype=mimetype)
+        flask_response.headers['Content-Disposition'] = 'attachment; filename=ProteomeCentral_Libraries_search.tsv'
+        return(flask_response)
     else:
-        return(message,status_code)
+        return(message, status_code)
 
 
 def get_peptides(resultType, pageSize = None, pageNumber = None, passThreshold = None, peptideSequence = None, proteinAccession = None, modification = None, peptidoform = None) -> str:
