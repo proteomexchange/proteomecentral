@@ -200,6 +200,55 @@ paths:
         enum:
         - "compact"
         - "full"
+      - name: "species"
+        in: "query"
+        description: "Filter the list of libraries by species, multiple species search\
+          \ can be performed by [human, mouse]."
+        required: false
+        type: "string"
+      - name: "accession"
+        in: "query"
+        description: "Filter the list of libraries by accession, multiple accessions\
+          \ search can be performed by [PXLD00001, PXL00002]"
+        required: false
+        type: "string"
+      - name: "fragmentation_type"
+        in: "query"
+        description: "Filter the list of libraries by fragmentation type, multiple types\
+          \ search can be performed by [LTQ, QTOF]"
+        required: false
+        type: "string"
+      - name: "lab_head_full_name"
+        in: "query"
+        description: "Filter the list of datasets by lab head information"
+        required: false
+        type: "string"
+      - name: "search"
+        in: "query"
+        description: "Search different keywords into all library fields, multiple\
+          \ terms search can be performed by [liver, brain]"
+        required: false
+        type: "string"
+      - name: "keywords"
+        in: "query"
+        description: "Search the keywords list for exact matches"
+        required: false
+        type: "string"
+      - name: "year"
+        in: "query"
+        description: "Search the keywords list for exact matches"
+        required: false
+        type: "string"
+      - name: "source"
+        in: "query"
+        description: "Select records based on the exact name of the library source"
+        required: false
+        type: "string"
+      - name: "outputFormat"
+        in: "query"
+        description: "Output format desired. By default JSON, but TSV is also valid input"
+        required: false
+        type: "string"
       responses:
         200:
           description: "Protein entity containing the summary of a protein across\
