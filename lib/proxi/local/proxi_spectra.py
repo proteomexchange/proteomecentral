@@ -18,18 +18,20 @@ import http.client
 import urllib.parse
 import requests
 from requests.auth import HTTPBasicAuth
+import socket
 
 from ms2pip import predict_single
 
-test_mode = False
-
-try:
+if socket.gethostname() == 'WALDORF':
+    sys.path.append("C:\local\Repositories\GitHub\SpectralLibraries\lib")
+    BASEDIR = "C:/local/Repositories/GitHub/SpectralLibraries"
     from proforma_peptidoform import ProformaPeptidoform
     from universal_spectrum_identifier import UniversalSpectrumIdentifier
     from SpectrumLibraryCollection import SpectrumLibraryCollection
     from SpectrumLibrary import SpectrumLibrary
     from LibrarySpectrum import LibrarySpectrum
-except:
+else:
+    BASEDIR = "/net/dblocal/data/SpectralLibraries/python/devED/SpectralLibraries"
     proxi_instance = os.environ.get('PROXI_INSTANCE')
     if proxi_instance:
         sys.path.append(f"/net/dblocal/data/SpectralLibraries/python/{proxi_instance}/SpectralLibraries/lib")
@@ -236,11 +238,10 @@ class ProxiSpectra:
         usi = UniversalSpectrumIdentifier(usi)
         index_number = usi.index
 
-        basedir = "/net/dblocal/data/SpectralLibraries/python/devED/SpectralLibraries"
-        spec_lib_collection = SpectrumLibraryCollection(basedir + "/spectralLibraries/SpectrumLibraryCollection.sqlite")
+        spec_lib_collection = SpectrumLibraryCollection(BASEDIR + "/spectralLibraries/SpectrumLibraryCollection.sqlite")
         library = spec_lib_collection.get_library(identifier=usi.collection_identifier, version_tag=usi.ms_run_name)
 
-        library_file = basedir + "/spectralLibraries/" + library.original_filename
+        library_file = BASEDIR + "/spectralLibraries/" + library.original_filename
         if not os.path.isfile(library_file):
             status_code = 500
             message = { "status": status_code, "title": "Library file not found", "detail": "File '{library_file}' not found or not a file", "type": "about:blank" }
@@ -468,7 +469,7 @@ class ProxiSpectra:
 def main():
 
     spectra = ProxiSpectra()
-    example = 2
+    example = 1
 
     if example == 0:
         spectra.set_to_example()
@@ -478,7 +479,8 @@ def main():
         resultType = 'compact'
         #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2')
         #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2')
-        result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXL000006:02-14-2019:index:1250')
+        #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXL000006:02-14-2019:index:1250')
+        result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXL000031:2015-11-06:index:0:ELVIS/2')
         #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01283_A02_P013187_S00_N09_R1:scan:30190:ELVISYLPPGM[L-methionine sulfoxide]ASK/2')
         #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01284_E04_P013188_B00_N29_R1.mzML:scan:31291:DQNGTWEM[Oxidation]ESNENFEGYM[Oxidation]K/2')
     
