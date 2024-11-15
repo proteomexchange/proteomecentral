@@ -39,7 +39,7 @@ class ProxiLibraries:
             [ 'Species', 'species' ],
             [ 'Fragmentation Type', 'fragmentation_type' ],
             [ 'Lab Head', 'lab_head_full_name' ],
-            [ 'Release Date', 'version_tag' ],
+            [ 'Release Date', 'release_date' ],
             [ 'N Spectra', 'n_entries' ],
             [ 'Keywords', 'keywords' ]
         ]
@@ -479,7 +479,7 @@ class ProxiLibraries:
 
                 # When rows are dicts, and special workaround for year
                 if facet_name == 'year':
-                    values_str = row['version_tag'][0:4]
+                    values_str = row['release_date'][0:4]
                     #### Store the accession in a special index component
                     row_match_index['accession'][row['id_name']] = { irow: True }
                 else:
