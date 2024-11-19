@@ -239,7 +239,11 @@ class ProxiSpectra:
         index_number = usi.index
 
         spec_lib_collection = SpectrumLibraryCollection(BASEDIR + "/spectralLibraries/SpectrumLibraryCollection.sqlite")
-        library = spec_lib_collection.get_library(identifier=usi.collection_identifier, version_tag=usi.ms_run_name)
+        result = spec_lib_collection.get_library(identifier=usi.collection_identifier, version_tag=usi.ms_run_name)
+        if result.status != 'OK':
+            message = { "status": result.status, "title": result.error_code, "detail": result.message, "type": "about:blank" }
+            return(result.http_status, message)
+        library = result.data
 
         library_file = BASEDIR + "/spectralLibraries/" + library.original_filename
         if not os.path.isfile(library_file):
