@@ -100,17 +100,18 @@ def main():
     }
 
     #### Define the defined PROXI endpoints
-    proxi_endpoints = [ 'datasets', 'spectra', 'psms', 'peptidoforms', 'proteins' ]
+    proxi_endpoints = [ 'datasets', 'libraries', 'spectra', 'psms', 'peptidoforms', 'proteins' ]
 
     #### Define example example suffixes
     proxi_endpoint_suffixes = {
         #'datasets': '?resultType=full&accession=PXD000561',
         'datasets': '/PXD000561',
+        'libraries': '?resultType=full&accession=PXL000018',
         'jPOST-datasets': '?resultType=full&accession=PXD005159',
         'spectra': '?usi=mzspec:PXD003226:PurifiedHumanCentrosomes_R1:scan:47993:TPEILTVNSIGQLK/2&resultType=full',
         'PeptideAtlas-spectra': '?usi=mzspec:PXD000561:Adult_Urinarybladder_bRP_Elite_71_f14:scan:1872:FSGSSSGADR/2&resultType=full',
         'PRIDE-spectra': '?pageSize=10&pageNumber=1&resultType=full',
-        'ProteomeCentral-spectra': '?resultType=full&usi=mzspec:PXL000006:02-14-2019:index:1250',
+        'ProteomeCentral-spectra': '?resultType=full&usi=mzspec:PXL000006:2014-11-26:index:1250',
         'jPOST-spectra': '?usi=mzspec:PXD005159:150211tk04-whole_2m8h-3.wizd:scan:2&resultType=full',
         'psms': '?resultType=compact&accession=PXD005942',
         'MassIVE-psms': '?resultType=compact&accession=PXD002346',
@@ -133,6 +134,10 @@ def main():
         row_list = []
         if provider in proxi_provider_urls:
             for endpoint in proxi_endpoints:
+                # some special logic...
+                if endpoint is 'libraries' and provider is not 'ProteomeCentral':
+                    continue
+
                 suffix = ''
                 if f"{provider}-{endpoint}" in proxi_endpoint_suffixes:
                     suffix = proxi_endpoint_suffixes[f"{provider}-{endpoint}"]
