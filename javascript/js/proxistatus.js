@@ -1,4 +1,4 @@
-var proxi_status_url = "https://proteomecentral.proteomexchange.org/cgi/PROXI_status";
+var proxi_status_url = "cgi/PROXI_status";
 var tables_rendered = false;
 
 function main() {
@@ -15,9 +15,8 @@ function get_proxi_stream() {
     xhr1.onprogress = function(e) {
 	var response = xhr1.responseText.split("\n");
 	var table_info = response.shift();
-	if (!tables_rendered) {
+	if (!tables_rendered)
 	    render_tables(table_info);
-	}
 
 	for (var r in response) {
 	  if ( response[r].length > 4 ) {
@@ -33,6 +32,8 @@ function get_proxi_stream() {
 		document.getElementById(rowid+"_msg").className = "code"+rjson.code;
 
 		document.getElementById(rowid+"_time").innerHTML = rjson.elapsed;
+		document.getElementById(rowid+"_time").className = rjson.elapsed < 1.0 ? 'code200' : rjson.elapsed < 3.0 ? 'code404' : rjson.elapsed < 5.0 ? 'code-200' : 'code500';
+
 		document.getElementById(rowid+"_turl").innerHTML = "<a target='proxtest' href='"+rjson.url+"'>"+rjson.display_url+"</a>";
 		//document.getElementById("debug").innerHTML += rowid + ", ";
 	    }
@@ -45,42 +46,86 @@ function get_proxi_stream() {
     }
 
     xhr1.onloadend = function() {
+	var stat = document.getElementById("stat");
 	if ( xhr1.status == 200 ) {
-	    document.getElementById("stat").innerHTML = "&nbsp;&nbsp;Done!&nbsp;&nbsp;";
-	    document.getElementById("stat").className = "code200";
+	    stat.innerHTML = "Done!";
+	    stat.className = "code200";
 	}
 	else {
 	    document.getElementById("main").innerHTML = "<h2>There was an error processing your request. Please try again later.</h2>";
-	    document.getElementById("stat").innerHTML = "&nbsp;&nbsp;Error...&nbsp;&nbsp;";
-	    document.getElementById("stat").className = "code500";
+	    stat.innerHTML = "Error...";
+	    stat.className = "code500";
 	}
         document.getElementById("debug").innerHTML += "<br/><a href='"+proxi_status_url+"'>Raw stream</a><br/>";
     };
     return;
 }
 
-
 function render_tables(table_info) {
     var proxi_rows = JSON.parse(table_info);
-    var thtml = "<table class='prox'>";
-    for (var i in proxi_rows.table_list) {
-	var pname = proxi_rows.table_list[i].provider_name;
-	thtml += "<tr><td colspan='5'><br/><br/></td></tr>";
 
-	thtml += "<tr><td class='rep' colspan='5'>&nbsp;&nbsp;"+pname+"&nbsp;&nbsp;<a target='proxtest' href='"+proxi_rows.table_list[i].ui+"'>"+proxi_rows.table_list[i].ui+"</a></td></tr>";
+    var table = document.createElement("table");
+    table.className = "prox";
 
-//	thtml += "<tr><td class='rep' colspan='5'>&nbsp;&nbsp;"+pname+"</td></tr>";
+    for (let row of proxi_rows.table_list) {
+	var tr = document.createElement("tr");
+	var td = document.createElement("td");
+	td.colSpan='5';
+	td.append(document.createElement("br"));
+	td.append(document.createElement("br"));
+	tr.append(td);
+	table.append(tr);
+
+        var pname = row.provider_name;
+
+	tr = document.createElement("tr");
+        td = document.createElement("td");
+	td.className = "rep";
+	td.style.paddingLeft = '25px';
+        td.colSpan='5';
+	td.append(pname);
+
+	var link = document.createElement("a");
+	link.target = 'proxtest';
+	link.href = row.ui;
+	link.append(row.ui);
+        td.append(link);
+        tr.append(td);
+        table.append(tr);
+
+        tr = document.createElement("tr");
+	for (var head of ['Endpoint', 'Response Code', 'Message', 'Elapsed Time', 'Tested URL']) {
+            td = document.createElement("th");
+	    td.append(head);
+            tr.append(td);
+	}
+        table.append(tr);
 
 
-	thtml += "<tr><th>Endpoint</th><th>Response Code</th><th>Message</th><th>Elapsed Time</th><th>Tested URL</th></tr>";
-	for (var r in proxi_rows.table_list[i].row_list) {
-	    var rname = proxi_rows.table_list[i].row_list[r];
-	    thtml += "<tr class='rowdata'><td>/"+rname+"</td><td id='"+pname+rname+"_code'>---</td><td id='"+pname+rname+"_msg'>---</td><td id='"+pname+rname+"_time'>---</td><td id='"+pname+rname+"_turl'>---</td></tr>";
+	for (var rname of row.row_list) {
+            tr = document.createElement("tr");
+            tr.className = "rowdata";
 
+            td = document.createElement("td");
+            td.append('/'+rname);
+            tr.append(td);
 
+            for (var field of ['_code', '_msg', '_time', '_turl']) {
+		td = document.createElement("td");
+		td.id = pname+rname+field;
+		if (field == '_time')
+		    td.style.textAlign = 'right';
+		td.append("~~~");
+		tr.append(td);
+	    }
+            table.append(tr);
 	}
     }
-    thtml += "</table><br/><br/>";
-    document.getElementById("main").innerHTML = thtml;
+
+    document.getElementById("main").innerHTML = '';
+    document.getElementById("main").append(table);
+    document.getElementById("main").append(document.createElement("br"));
+    document.getElementById("main").append(document.createElement("br"));
+
     tables_rendered = true;
 }
