@@ -8,7 +8,6 @@
   include("$DOCUMENT_ROOT/includes/header.inc.php");
 ?>
 <link rel="stylesheet" href="css/proxistatus.css">
-<script src="javascript/js/he-master/he.js"></script>
 <script src="javascript/js/proxistatus.js"></script>
 
 <body onload="main();">

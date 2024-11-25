@@ -24,9 +24,9 @@ function get_proxi_stream() {
 		var rjson = JSON.parse(response[r]);
 		var rowid = rjson.provider_name + rjson.endpoint;
 		document.getElementById(rowid+"_code").innerHTML = rjson.code;
-		document.getElementById(rowid+"_msg").innerHTML = he.encode(rjson.message);
+		document.getElementById(rowid+"_msg").innerHTML = rjson.message;
 
-		if (rjson.code == 200 && he.encode(rjson.message) != "OK")
+		if (rjson.code == 200 && rjson.message != "OK")
 		    rjson.code = -200;
 		document.getElementById(rowid+"_code").className = "code"+rjson.code;
 		document.getElementById(rowid+"_msg").className = "code"+rjson.code;
