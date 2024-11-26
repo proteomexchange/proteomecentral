@@ -828,7 +828,7 @@ function show_input(who) {
     if (typeof who === 'string')
 	who = document.getElementById(who);
 
-    for (var input of ['import_menu', 'edit_menu', 'explore_menu','export_menu','viewlog_menu']) {
+    for (var input of ['import_menu', 'edit_menu', 'explore_menu','export_menu','about_menu','viewlog_menu']) {
 	if (who.id == input) {
 	    document.getElementById(who.id.replace("_menu","")+"_div").classList.replace("hideit", "specinput");
 	    who.classList.add("current");

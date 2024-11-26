@@ -157,6 +157,14 @@ input[type=checkbox] {
     background:#fff;
 }
 
+.textbox {
+    max-width: 1000px;
+    line-height: 1.5em;
+    text-align: justify;
+    font-size: large;
+    padding: 1px 20px;
+}
+
 .cmdout {
     margin-left: 20px;
     max-height: 70vh;

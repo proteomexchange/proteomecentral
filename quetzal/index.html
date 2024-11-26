@@ -25,6 +25,7 @@
     <span onclick="show_input(this);" id="edit_menu">Edit</span>
     <span onclick="show_input(this);" id="explore_menu">Explore</span>
     <span onclick="show_input(this);" id="export_menu">Export</span>
+    <span onclick="show_input(this);" id="about_menu">About</span>
     <span onclick="show_input(this);" id="viewlog_menu">Log / Errors</span>
   </div>
 
@@ -54,7 +55,7 @@
 
       <span onclick="toggle_box('usercredentials');" id="usercredentials_button" class="buttonlike" style="visibility:hidden;" title="Show/hide Login/out form">Enter Access Credentials</span>
 
-      <span onclick="toggle_box('USIexamples');" id="USIexamples_button" title="Examples from Box 1 of the Quetzal manuscript (in press)" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
+      <span onclick="toggle_box('USIexamples');" id="USIexamples_button" title="Examples from Box 1 of the Quetzal manuscript (under review)" class="examples">Example USIs&nbsp;&nbsp;&nbsp;⇣</span>
       <span onclick="toggle_box('RecentUSIs');" id="RecentUSIs_button" title="Last 10 USIs viewed" class="examples">Recent USIs&nbsp;&nbsp;&nbsp;⇣</span>
       <br><br>
     </div>
@@ -217,6 +218,19 @@
     </span>
 
   </div>
+
+
+  <div class="hideit" id="about_div">
+    <h2 class="rep">What is Quetzal?</h2>
+    <div class="textbox">
+      <p><strong>Quetzal</strong> is a peptide fragment ion spectrum annotation tool to assist researchers in annotating and examining tandem mass spectra to ensure that they correctly support study conclusions.</p>
+      <p>Quetzal annotates spectra using the new Human Proteome Organization (<a href="https://hupo.org/">HUPO</a>) Proteomics Standards Initiative (<a href="https://psidev.info/">PSI</a>) <a href="https://psidev.info/mzPAF/">mzPAF</a> standard for fragment ion peak annotation. Quetzal includes a Python-based codebase, a web-service endpoint that provides annotation services, and a user-friendly web-based application for annotating spectra and producing publication-quality figures.</p>
+      <p>You can view a <strong>usage guide</strong>, more information, and code at our <a href="https://github.com/Quetzal-Annotator/quetzal-annotator">GitHub page</a>.</p>
+      <p>A publication is currently under review.</p>
+      <p>Detailed information on <strong>mzPAF</strong> can be found in <a href="https://pubs.acs.org/doi/10.1021/acs.analchem.4c04091">this recent publication</a>. A quick <a href="javascript:toggle_box('mzPAFhelp');">help guide</a> is also available.</p>
+    </div>
+  </div>
+
 
   <div class="hideit" id="viewlog_div">
     <pre id="command_output" class="cmdout"></pre>

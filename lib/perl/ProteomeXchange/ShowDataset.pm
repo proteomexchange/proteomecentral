@@ -187,7 +187,7 @@ sub listDatasets {
       ~;
     
 
-    #### Or if output mode is 'xml', then wite results in XML
+    #### Or if output mode is 'xml', then write results in XML
   } elsif ($outputMode=~ /xml/i) {
     print "Content-type:text/xml\r\n\r\n";
     my $writer = new XML::Writer(DATA_MODE => 1, DATA_INDENT => 4,ENCODING=>'UTF-8',);
@@ -1090,7 +1090,7 @@ sub showDataset {
     #### Show the dataset information window
     print qq~
        <div id="main">
-       <a class="linkback" href="../$teststr"> &lt;&lt;&lt; Full experiment listing </a>
+       <a class="linkback" href="../$teststr"> &#x2B9D; Full datasets listing </a>
        <div id="dataset-primary" class="site-content">
        <h1 class="dataset-title">$fullDatasetIDstr</h1>
     ~;
