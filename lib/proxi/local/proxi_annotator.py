@@ -109,13 +109,18 @@ class ProxiAnnotator:
                     peptidoform_string = ''
 
             #### Loop over attributes, extracting information from that
+            backup_precursor_mz = None
             for attribute in spectrum['attributes']:
                 if attribute['name'] == 'proforma peptidoform sequence' or attribute['accession'] == 'MS:1003169':
                     peptidoform_string = attribute['value']
                 if attribute['name'] == 'charge state' or attribute['accession'] == 'MS:1000041':
                     precursor_charge = int(attribute['value'])
-                if attribute['name'] == 'selected ion m/z' or attribute['accession'] == 'MS:1000827':
+                if attribute['name'] == 'selected ion m/z' or attribute['accession'] == 'MS:1000040':
                     precursor_mz = float(attribute['value'])
+                if attribute['name'] == 'isolation window target m/z' or attribute['accession'] == 'MS:1000827':
+                    backup_precursor_mz = float(attribute['value'])
+            if precursor_mz is None and backup_precursor_mz is not None:
+                precursor_mz = backup_precursor_mz
 
             if peptidoform_string is None:
                 update_response(response, log_entry=f"Entry {i_spectrum - 1} does not have required attribute MS:1003169 - 'proforma peptidoform sequence'")
@@ -128,7 +133,7 @@ class ProxiAnnotator:
                 continue
 
             if precursor_mz is None:
-                update_response(response, log_entry=f"Entry {i_spectrum - 1} does not have the desirable attribute MS:1000827 - 'selected ion m/z' but will continue anyway without it")
+                update_response(response, log_entry=f"Entry {i_spectrum - 1} does not have the desirable attribute MS:1000040 - 'selected ion m/z' but will continue anyway without it")
 
             if peptidoform_string == '':
                 update_response(response, log_entry=f"WARNING: The 'proforma peptidoform sequence' for spectrum {i_spectrum - 1} is EMPTY. This is permitted and will result in a 'blind annotation', just labeling peaks that can be inferred in the absence of a known analyte. If this was not the intent, please provide a valid ProForma peptidoform")
