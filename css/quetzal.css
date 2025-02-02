@@ -13,7 +13,7 @@
 }
 .topbanner::after {
     font-size:45px;
-    right:30px;top:0px;
+    right:80px;top:0px;
     position:absolute;
     color:rgba(0,38,100,0.7);
     font-weight:bold;
@@ -23,6 +23,14 @@
 }
 .crawl {
     animation: 50s left-right linear infinite;
+}
+
+.putabirbonit {
+    max-height: 88px;
+    position: fixed;
+    right: 10px;
+    top: 0px;
+    z-index:96;
 }
 
 .pagemenu {
@@ -79,8 +87,8 @@
 
 .user_input {
     display: grid;
-    grid-gap: 5px;
     grid-template-columns: 150px max-content 150px max-content;
+    column-gap: 5px;
     align-items:baseline;
 }
 .user_input > span:nth-child(odd), .user_input > label:nth-child(odd) {
@@ -91,6 +99,12 @@
     grid-template-columns: 150px max-content 150px max-content 150px max-content !important;
 }
 
+.helpgrid {
+    display: grid;
+    grid-gap: 5px;
+    grid-template-columns: max-content max-content max-content;
+    align-items:baseline;
+}
 
 .hideit {
     display: none;
@@ -176,7 +190,7 @@ input[type=checkbox] {
     background: #fbfbfb;
 }
 
-#USIexamples, #RecentUSIs, #usercredentials, #mzPAFhelp {
+#USIexamples, #RecentUSIs, #usercredentials, #mzPAFhelp, #ProFormaHelp, #FeedbackHelp, #ExploreHelp, #inputPeaksHelp {
     z-index: 50;
     position: absolute;
     top: 150px;
@@ -212,6 +226,11 @@ input[type=checkbox] {
     filter: invert(1) grayscale(1) contrast(9);
 }
 
+.smallerx {
+    float: right;
+    line-height: 10px !important;
+    font-size: smaller;
+}
 
 .alert {
   display:inline-block;
@@ -288,15 +307,17 @@ button:disabled, button[disabled]:hover, .loading {
 
 .ms2chart_wrapper {
     width:90vw;
-    margin-left:10px;
     background: white;
 }
 .ms2chart {
     height:0px;
     padding: 10px;
 }
-
-.ms2chart_controls {
-    background: #002664;
-    border-bottom: 1px solid #444;
+.ms2chart_toolbar {
+    visibility: hidden;
+    width: 100%;
+    padding: 0;
+    background-color:#000;
+    text-align:center;
+    border-bottom: 2px solid #444;
 }

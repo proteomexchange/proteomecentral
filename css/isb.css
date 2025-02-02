@@ -1,4 +1,4 @@
-#dataset-primary {
+#dataset-primary, .dataset-box {
     max-width: 900px;
     background-color: #fff;
     border: 2px solid #2c99ce; //f26722;
@@ -78,7 +78,7 @@
 .linkback:hover {
     background: #f26722;
     border-color: #000;
-    color: #fff;
+    color: #fff !important;
 }
 
 #more:hover, #less:hover {

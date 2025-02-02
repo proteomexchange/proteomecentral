@@ -1,5 +1,7 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="text/x-icon" href="../images/quetzal_tiny.png"/>
   <link rel="stylesheet" href="../css/isb.css">
   <link rel="stylesheet" href="../css/usi.css">
   <link rel="stylesheet" href="../css/quetzal.css">
@@ -17,6 +19,8 @@
 
 <body onload="init()">
   <div id="pagebanner" class="topbanner" banner-bg-text="QUETZAL"></div>
+
+  <img class="putabirbonit" src="../images/quetzal_color.png"/>
 
   <div id="useralerts"></div>
 
@@ -62,7 +66,7 @@
 
 
     <div id="usercredentials">
-      <div id="dataset-primary" class="site-content">
+      <div class="dataset-box site-content">
         <h1 style="margin:0;" class="dataset-title">User Access</h1>
         <div class="dataset-content">
 	  <span class="dataset-secthead">Please enter your PRIDE credentials to gain access to private data that may be available to you</span>
@@ -78,23 +82,22 @@
 
 
     <div id="USIexamples">
-      <div id="dataset-primary" class="site-content">
-	<h1 style="margin:0;" class="dataset-title">Example use cases (USIs)</h1>
+      <div class="dataset-box site-content">
+	<h1 style="margin:0;" class="dataset-title">Example use cases (USIs)
+          <a class="smallerx" title="dismiss window" onclick="toggle_box('USIexamples');">&#10006;</a>
+	</h1>
 	<div class="dataset-content">
 	  <a onclick="pick_box_example(this);">mzspec:PXD005336:Varlitinib_01410_A01_P014203_B00_A00_R1:scan:19343:LLSILSR/2</a><br>
 	  <i>Simple HCD spectrum of LLSILSR</i>
 	  <hr>
-          <a onclick="pick_box_example(this);">mzspec:PXD020762:20160211_S1to9_1ug_HCD_MS2_Fr2_01:scan:17354:[TMT6plex]-VGS[Phospho]AAQLK[TMT6plex]/2</a><br>
-	  <i>Complex HCD spectrum of a TMT-labeled phosphopeptide (Figure 1 in paper)</i>
+          <a onclick="pick_box_example(this);">mzspec:PXD025716:PBMC_29_Rep_3:scan:16281:KLAELFTSW/2</a><br>
+	  <i>Orbitrap CID spectrum of a non-tryptic HLA peptide (Figure 1 in Quetzal paper)</i>
+	  <hr>
+          <a onclick="pick_box_example(this);">mzspec:PXD021265:Animal_20190611_OP_HStmt_Kroenke_Phospho_fr09:scan:10121:[TMT6plex]-SIGS[Phospho]DSQGR/2</a><br>
+	  <i>Complex HCD spectrum of a TMT-labeled phosphopeptide (Figure 2 in paper)</i>
 	  <hr>
           <a onclick="pick_box_example(this);">mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2</a><br>
-	  <i>Complex spectrum that includes many prominent internal fragmentation ions (Figure 3 in paper)</i>
-	  <hr>
-          <a onclick="pick_box_example(this);">mzspec:PXD013868:02131_H01_P022361_I00_U04_R1:scan:28179:KDS[Phospho]EDEY[Phospho]EEDAEEDEEER/2</a><br>
-	  <i>A close-but-false positive identification (Figure 4 in paper)</i>
-	  <br>
-          <a onclick="pick_box_example(this);">mzspec:PXD013868:02131_H01_P022361_I00_U04_R1:scan:28179:GKDS[Phospho]EDE[Cation:Al[III]]YEEDAEEDEEER/2</a><br>
-          <i>A more correct interpretation of the previous spectrum (Figure 5 in paper)</i>
+	  <i>Complex spectrum that includes many prominent internal fragmentation ions (Figure 4 in paper)</i>
 	  <hr>
 	  <a style="float:right" class="dataset-title" onclick="toggle_box('USIexamples');">Dismiss</a>
 	</div>
@@ -102,8 +105,10 @@
     </div>
 
     <div id="RecentUSIs">
-      <div id="dataset-primary" class="site-content">
-        <h1 style="margin:0;" class="dataset-title">Recently Opened USIs</h1>
+      <div class="dataset-box site-content">
+        <h1 style="margin:0;" class="dataset-title">Recently Opened USIs
+          <a class="smallerx" title="dismiss window" onclick="toggle_box('RecentUSIs');">&#10006;</a>
+	</h1>
         <div class="dataset-content">
           <span id="recentusis_span" class="dataset-secthead">You have no recently viewed USIs (on this browser)</span>
           <a style="float:right" class="dataset-title" onclick="toggle_box('RecentUSIs');">Dismiss</a>
@@ -122,16 +127,42 @@
     <div>
       <br>Enter peak (and optional annotation) data, or drag/drop a TSV file below:<br>
       <textarea cols="100" rows="25" id="dta_input" ondrop="dropFile(event)" ondragover="allowDrop(event)" ondragleave="stopDrop(event)"></textarea>
+      <span onclick="toggle_box('inputPeaksHelp');" id="inputPeaksHelp_button" title="Explain input format for peak list" style="vertical-align:top;" class="examples">Input Format Help</span>
       <br><br>
     </div>
+
+    <div id="inputPeaksHelp" style="max-width:400px;">
+      <div class="dataset-box site-content">
+	<h1 style="margin:0;" class="dataset-title">Peak List Format
+          <a class="smallerx" title="dismiss window" onclick="toggle_box('inputPeaksHelp');">&#10006;</a>
+	</h1>
+	<div class="dataset-content">
+	  <p>A peak list consists of rows with <strong>at least two columns</strong> (m/z and intensity), with an <strong>optional</strong> third column containing peak annotations.</p>
+	  <p>Columns can be separated by one or more space characters (including combinations, e.g. tabs and spaces), and empty values are not allowed.</p>
+	  <p>Furthermore, the following special spectrum and interpretation keywords are also recognized:
+	    <ul>
+	      <li>PRECURSORMZ</li>
+	      <li>m/z</li>
+	      <li>PEPTIDOFORMS</li>
+	      <li>Peptide</li>
+	      <li>CHARGES</li>
+	      <li>Charge</li>
+	    </ul>
+	    If any of these strings is present as the first column in a given line, the value is taken from the second column.</p>
+          <span class="dataset-secthead">Note: Spectrum and interpretation information may either be provided here or in the <i>Edit</i> section.</span>
+	</div>
+      </div>
+    </div>
+
   </div>
 
 
   <div class="hideit" id="edit_div">
     <h2 class="rep">Spectrum Properties</h2>
     <div class="user_input">
-      <span>Peptidoform(s): </span><input size="90" id="pform_input" style="grid-column: 2 / 5;" oninput="document.getElementById('update_input').classList.add('blue')">
-      <span >Charge(s): </span><span><input size="15" id="charge_input" oninput="document.getElementById('update_input').classList.add('blue')"></span>
+      <span>Peptidoform(s): </span><span style="grid-column: 2 / 5;"><input size="90" id="pform_input" oninput="document.getElementById('update_input').classList.add('blue')">
+	<span onclick="toggle_box('ProFormaHelp');" id="ProFormaHelp_button" title="Explain Proteoform and Peptidoform Notation" class="examples">Syntax Help</span></span>
+      <span>Charge(s): </span><span><input size="15" id="charge_input" oninput="document.getElementById('update_input').classList.add('blue')"></span>
       <span>Fragmentation: </span>
       <span><select id="dissociation_type_input" class="buttonlike" oninput="document.getElementById('annotate_input').classList.add('blue')">
 	  <option value="HCD" selected>HCD</option>
@@ -139,26 +170,40 @@
 	  <option value="EThcD">EThcD</option>
 	  <option value="ETD">ETD</option>
       </select></span>
-      <span>Precursor m/z: </span><span><input size="15" id="precmz_input" oninput="document.getElementById('update_input').classList.add('blue')"></span><span></span>
+
+      <span>Precursor m/z: </span><span><input size="15" id="precmz_input" oninput="document.getElementById('update_input').classList.add('blue')"></span>
+      <span>Isobaric labeling: </span>
+      <span><select id="isobaric_labeling_mode_input" class="buttonlike" oninput="document.getElementById('annotate_input').classList.add('blue')">
+	  <option value="automatic" selected>Auto</option>
+	  <option value="TMT">TMT</option>
+	  <option value="iTRAQ">iTRAQ</option>
+	  <option value="none">none</option>
+      </select></span>
+
+      <span>Target m/z: </span><span style="border-right:2px solid #aaa;background:#ddd;"><input size="15" id="isotarget_input" oninput="document.getElementById('annotate_input').classList.add('blue')"></span><span></span>
       <span>
 	<button class="buttonlike" style="margin-left:120px;" title="(re-)Annotate peaks with annotator service" id="annotate_input" onclick="annotate_peaks(this,false);">Run Annotator</button>
 	with <input size="4" maxlength="4" value="10" id="peakmztol_input" oninput="document.getElementById('annotate_input').classList.add('blue')"> ppm tolerance
       </span>
+
+      <span>Upper offset: </span><span style="border-right:2px solid #aaa;background:#ddd;"><input size="15" id="isoupper_input" oninput="document.getElementById('annotate_input').classList.add('blue')"></span>
+      <span style="text-align:left;"> Isolation window</span>
+      <span></span>
+
+      <span>Lower offset: </span><span style="border-right:2px solid #aaa;background:#ddd;"><input size="15" id="isolower_input" oninput="document.getElementById('annotate_input').classList.add('blue')"></span><span></span><span></span>
 
       <span></span>
       <span>
 	<button class="buttonlike" title="Update" id="update_input" onclick="update_spectrum(this,true);">Update Properties</button>
       </span>
       <span></span>
-      <span style="text-align:right;">
-	<input type="checkbox" id="create_peak_network_input">
-	<label for="create_peak_network_input"> Create peak network</label>
-      </span>
+      <span></span>
     </div>
 
     <h2 class="rep">Peak Annotations
-     <span onclick="toggle_box('mzPAFhelp');" id="mzPAFhelp_button" title="Explain annotation format" class="examples">Help</span>
-    <button class="buttonlike" style="float:right;" title="Update peak annotations based on user input table" id="save_input" onclick="user_annotations(this);">Save Annotations</button>
+      <span onclick="toggle_box('mzPAFhelp');" id="mzPAFhelp_button" title="Explain annotation format" style="font-size:small;" class="examples">Help</span>
+      <span onclick="toggle_box('FeedbackHelp');" id="FeedbackHelp_button" title="Provide feedback on peak annotations" style="font-size:small;" class="examples">Feedback</span>
+      <button class="buttonlike" style="float:right;" title="Update peak annotations based on user input table" id="save_input" onclick="user_annotations(this);">Save Annotations</button>
     </h2>
     <div id="annotation_form">
       <p>Please load annotated spectrum data to see annotation form.</p>
@@ -167,7 +212,10 @@
 
   <div class="hideit" id="explore_div">
     <div id="quickplot" style="border-color:#2c99ce;" class="site-content">
-      <h3 style="margin:0;" class="dataset-title" id="quickplot_title">QuickPlot</h3>
+      <h3 style="margin:0;" class="dataset-title">
+	<span id="quickplot_title">QuickPlot</span>
+	<a class="smallerx" title="dismiss window" style="line-height:0 !important;" onclick="toggle_box('quickplot');">&#10006;</a>
+      </h3>
       <div class="dataset-content">
 	<canvas id="quickplot_canvas"></canvas>
 	<br>
@@ -175,10 +223,48 @@
       </div>
     </div>
 
+    <div id="ExploreHelp" style="position:fixed; border-color:#2c99ce;" class="dataset-box site-content">
+      <h3 style="margin:0;" class="dataset-title">Quick Guide
+        <a class="smallerx" title="dismiss window" style="line-height:0 !important;" onclick="toggle_box('ExploreHelp');">&#10006;</a>
+      </h3>
+      <div class="dataset-content helpgrid">
+	<strong>Example</strong><strong>Display</strong><strong>Description</strong>
+	<span>a4</span><span id="helpquide_a">a4</span><span>backbone a-ion</span>
+	<span>b10^3</span><span id="helpquide_b">b10+++</span><span>triply charged b-ion</span>
+	<span>c2</span><span id="helpquide_c">c2</span><span>c-ion</span>
+	<span>x1</span><span id="helpquide_x">x1</span><span>x-ion</span>
+	<span>y9-H2O^2</span><span id="helpquide_y">y9++</span><span>doubly charged y-ion with a water loss</span>
+	<span>z6+i</span><span id="helpquide_z">z6</span><span>first isotope of z-ion</span>
+	<span>IQ</span><span id="helpquide_I">Q</span><span>immonium ion of Q</span>
+	<span>p</span><span id="helpquide_prec">p</span><span>precursor ion</span>
+	<span>r[TMT127N]</span><span id="helpquide_rep">TMT</span><span>isobaric (TMT reporter) ion</span>
+	<span>m4:6</span><span id="helpquide_int">m</span><span>internal "middle" ion spanning amino acids four to six</span>
+	<span>f{C6H13O6}</span><span id="helpquide_mol">C6H13O6</span><span>molecular formula</span>
+	<span>?</span><span id="helpquide_?">?</span><span>unexplained peak</span>
+      </div>
+      <a style="float:right" class="dataset-title" onclick="toggle_box('ExploreHelp');">Dismiss</a>
+    </div>
+
+
     <div class="ms2chart_wrapper">
       <canvas class="ms2chart" id="viewspectrum_canvas"></canvas>
+      <span class="infotext">Use Mouse drag to zoom; hold down <strong>Control</strong> key to pan</span>
+      <div id="viewspectrum_toolbar" class="ms2chart_toolbar">
+        <span class="buttonlike" title="Pan Left Faster" onclick="chart_ctrl('panleftfast');">&#11164;&#11164;
+        </span><span class="buttonlike" title="Pan Left" onclick="chart_ctrl('panleft');">&#11164;
+        </span><span class="buttonlike" title="Pan Right" onclick="chart_ctrl('panright');">&#11166;
+        </span><span class="buttonlike" title="Pan Right Faster" onclick="chart_ctrl('panrightfast');">&#11166;&#11166;
+        </span><span class="buttonlike" title="Zoom in" onclick="chart_ctrl('zoomin');">&#8853; Zoom in
+        </span><span class="buttonlike" title="Zoom out" onclick="chart_ctrl('zoomout');">&#8854; Zoom out
+        </span><span class="buttonlike blue" title="Enable X pan/zoom" id="togglezpmodex_button" onclick="chart_ctrl('zpmodex');"> X
+        </span><span class="buttonlike" title="Enable Y pan/zoom" id="togglezpmodey_button" onclick="chart_ctrl('zpmodey');"> Y
+        </span><span class="buttonlike" title="Reset Zoom and axes to intial settings" id="resetzoom_button" onclick="chart_ctrl('reset');">&#8634;&nbsp;&nbsp;Reset Zoom
+        </span><span class="buttonlike" title="Show/Hide peak labels" id="togglelabels_button" onclick="chart_ctrl('labels');">&#10761;&nbsp;&nbsp;Ion Labels
+	</span><span class="buttonlike" title="quick guide and info" id="ExploreHelp_toolbarbutton" onclick="toggle_box('ExploreHelp');">&#10068; Help
+	</span>
+      </div>
     </div>
-    <button id="resetzoom_button" class="buttonlike" title="Reset Zoom" onclick="reset_x();">Reset Zoom</button>
+
     <div style="margin-top:20px;" id="ion_div"></div>
     <div style="margin-top:20px;" id="annot_div"></div>
 
@@ -187,7 +273,7 @@
   <div class="hideit" id="export_div">
     <h2 class="rep">Settings</h2>
     <div class="user_input settings">
-      <span>m/z minimum: </span><span><input size="20" id="xmin_input"></span>
+      <span>m/z minimum: </span><span><input size="20" id="xmin_input" placeholder="0"></span>
       <label for="show_sequence_input">Show sequence: </label><span><input type="checkbox" id="show_sequence_input" checked></span>
       <label for="show_b_and_y_flags_input">Show b/y flags: </label><span><input type="checkbox" id="show_b_and_y_flags_input" checked></span>
 
@@ -195,16 +281,20 @@
       <label for="show_coverage_table_input">Show coverage table: </label><span><input type="checkbox" id="show_coverage_table_input" checked></span>
       <label for="show_precursor_mzs_input">Show precursor mzs: </label><span><input type="checkbox" id="show_precursor_mzs_input" checked></span>
 
-      <span>Y maximum: </span><span><input size="20" id="ymax_input"></span>
+      <span>Y maximum: </span><span><input size="20" id="ymax_input" placeholder="100"></span>
       <label for="label_neutral_losses_input">Label neutral losses: </label><span><input type="checkbox" id="label_neutral_losses_input" checked></span>
       <label for="label_internal_fragments_input">Label internal fragments: </label><span><input type="checkbox" id="label_internal_fragments_input" checked></span>
 
       <span>Mask isolation width: </span><span><input size="20" id="mask_isolation_width_input"></span>
       <label for="label_unknown_peaks_input">Label unknown peaks: </label><span><input type="checkbox" id="label_unknown_peaks_input"></span>
+      <label for="show_mass_deltas_input">Show mass deltas: </label><span><input type="checkbox" id="show_mass_deltas_input" checked></span>
+
+      <span>Min. labeling percent: </span><span><input size="20" id="minimum_labeling_percent_input" placeholder="0"></span>
+      <span></span><span></span>
       <label for="show_usi_input">Show Title/USI: </label><span><input type="checkbox" id="show_usi_input" checked></span>
 
       <span></span>
-      <span>
+      <span style="grid-column: 2 / 4;">
 	<button class="buttonlike" title="Generate annotated spectrum with current settings" onclick="generate_figure(this,'svg',false);">Preview</button>
 	<button class="buttonlike" title="create svg" onclick="generate_figure(this,'svg',true);">Download SVG</button>
 	<button class="buttonlike" title="create pdf" onclick="generate_figure(this,'pdf',true);">Download PDF</button>
@@ -224,8 +314,8 @@
     <h2 class="rep">What is Quetzal?</h2>
     <div class="textbox">
       <p><strong>Quetzal</strong> is a peptide fragment ion spectrum annotation tool to assist researchers in annotating and examining tandem mass spectra to ensure that they correctly support study conclusions.</p>
-      <p>Quetzal annotates spectra using the new Human Proteome Organization (<a href="https://hupo.org/">HUPO</a>) Proteomics Standards Initiative (<a href="https://psidev.info/">PSI</a>) <a href="https://psidev.info/mzPAF/">mzPAF</a> standard for fragment ion peak annotation. Quetzal includes a Python-based codebase, a web-service endpoint that provides annotation services, and a user-friendly web-based application for annotating spectra and producing publication-quality figures.</p>
-      <p>You can view a <strong>usage guide</strong>, more information, and code at our <a href="https://github.com/Quetzal-Annotator/quetzal-annotator">GitHub page</a>.</p>
+      <p><i>Quetzal</i> annotates spectra using the new Human Proteome Organization (<a href="https://hupo.org/">HUPO</a>) Proteomics Standards Initiative (<a href="https://psidev.info/">PSI</a>) <a href="https://psidev.info/mzPAF/">mzPAF</a> standard for fragment ion peak annotation. <i>Quetzal</i> includes a Python-based codebase, a web-service endpoint that provides annotation services, and a user-friendly web-based application for annotating spectra and producing publication-quality figures.</p>
+      <p>You can view a <a href="https://github.com/Quetzal-Annotator/quetzal-annotator">usage guide, more information, and code at our GitHub page</a>.</p>
       <p>A publication is currently under review.</p>
       <p>Detailed information on <strong>mzPAF</strong> can be found in <a href="https://pubs.acs.org/doi/10.1021/acs.analchem.4c04091">this recent publication</a>. A quick <a href="javascript:toggle_box('mzPAFhelp');">help guide</a> is also available.</p>
     </div>
@@ -238,15 +328,64 @@
 
 
   <div id="mzPAFhelp">
-    <div id="dataset-primary" class="site-content">
-      <h1 style="margin:0;" class="dataset-title">Annotation Guide</h1>
+    <div class="dataset-box site-content">
+      <h1 style="margin:0;" class="dataset-title">Annotation Guide
+	<a class="smallerx" title="dismiss window" onclick="toggle_box('mzPAFhelp');">&#10006;</a>
+      </h1>
       <div class="dataset-content">
         <span class="dataset-secthead">Annotations are given in 
 	  <a title="Learn more about mzPAF" target="PSI" href="https://www.psidev.info/mzPAF">mzPAF</a>
 	  (PSI format).  Below is a quick guide to help interpret them:</span>
-	<img src="./mzpaf.png">
+	<img style="height:650px;" src="./mzpaf.png">
         <br>
         <a style="float:right" class="dataset-title" onclick="toggle_box('mzPAFhelp');">Dismiss</a>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="ProFormaHelp">
+    <div class="dataset-box site-content">
+      <h1 style="margin:0;" class="dataset-title">ProForma Guide
+        <a class="smallerx" title="dismiss window" onclick="toggle_box('ProFormaHelp');">&#10006;</a>
+      </h1>
+      <div class="dataset-content">
+        <span class="dataset-secthead">Peptidoforms are given in
+          <a title="Learn more about ProForma" target="PSI" href="https://github.com/HUPO-PSI/ProForma">ProForma 2.0</a>
+          (PSI format).  Below is a quick guide to help build one:</span>
+        <br>
+	<div class="helpgrid">
+          <strong>ProForma Example</strong><strong> </strong><strong>Comment</strong>
+          <span>EMEVEESPEK</span><span> </span><span>Peptide with no modifications</span>
+          <span>EM[Oxidation]EVEES[UNIMOD:21]PEK</span><span> </span><span>Modifications using common ontologies*</span>
+          <span>EM[+15.9949]EVEES[+79.9663]PEK</span><span> </span><span>...can also be specified directly</span>
+          <span>[iTRAQ4plex]-EMEVNESPEK-[Methyl]</span><span> </span><span>Use a dash for terminal modifications</span>
+	</div>
+	<br>
+        <span class="dataset-secthead">* Note that it is preferrable to use
+          <a title="Unimod.org" target="unimod" href="https://unimod.org">Unimod</a>
+	  names when specifying PTMs</span>
+        <a style="float:right" class="dataset-title" onclick="toggle_box('ProFormaHelp');">Dismiss</a>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="FeedbackHelp">
+    <div class="dataset-box site-content">
+      <h1 style="margin:0;" class="dataset-title">Peak Annotation Feedback
+        <a class="smallerx" title="dismiss window" onclick="toggle_box('FeedbackHelp');">&#10006;</a>
+      </h1>
+      <div class="dataset-content">
+        <p>Do you think <i>Quetzal</i> made a mistake in its annotations?  Do you have a better/alternate interpretation that you wish to contribute?</p>
+	<p>Below are two options via which you can share your feedback with the <i>Quetzal</i> team:</p>
+        <span class="dataset-secthead">Quick feedback on a specific peak or peaks</span>
+	<p>To send an alternate interpretation and/or provide feedback on one or a few peaks, please edit that peak's annotation using the form, adding the string <strong>Comment:</strong> anywhere in the annotation*, and choose to <strong>Save Annotations</strong>. This will trigger a manual review mechanism on our part.  You can even include an email address if you wish to be contacted further; submissions are anonymous otherwise.</p>
+	<p>* Note that you will need to re-edit the annotation to remove the Comment and attached report before generating an image.</p>
+        <span class="dataset-secthead">Detailed Feedback</span>
+	<p>For a deeper or more complex matter, please file an issue on our 
+          <a target="QGH" href="https://github.com/Quetzal-Annotator/quetzal-annotator/issues">Github portal</a> (click on the "New issue" button; a GitHub account is necessary).
+	  This will be investigated, tracked, and resolved in direct interaction with the development team.</p>
       </div>
     </div>
   </div>

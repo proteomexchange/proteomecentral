@@ -1,12 +1,14 @@
 var _api = {};
 _api['base_url'] = "/api/proxi/v0.1/";
 
-var _ion_list = ['a','b','c','x','y','z','I','prec','rep','int','mol',"?",'other'];
+var _backbone_ions = ['a','b','c','x','y','z'];
+var _ion_list = _backbone_ions.concat(['I','prec','rep','int','mol',"?",'other']);
 var _ion_colors = {};
 var _settings = {}
 var _spectrum = {};
 var _peptidoforms = [];
 var _chartdata = null;
+var _maxint;
 var _totint;
 var _totints;
 var _coreints;
@@ -99,8 +101,16 @@ function init2() {
     _ion_colors['other'] = "#7f7f7f"; // tab:gray
 
     Chart.register(ChartDataLabels);
-    tpp_dragElement(document.getElementById("quickplot"));
-    tpp_dragElement(document.getElementById("mzPAFhelp"));
+    for (var popup of ['quickplot','mzPAFhelp', 'ProFormaHelp', 'FeedbackHelp', 'ExploreHelp','inputPeaksHelp'])
+	tpp_dragElement(document.getElementById(popup));
+
+    for (var ioncolor in _ion_colors) {
+	if (document.getElementById("helpquide_"+ioncolor)) {
+	    document.getElementById("helpquide_"+ioncolor).style.color = 'white';
+	    document.getElementById("helpquide_"+ioncolor).style.background = _ion_colors[ioncolor];
+	    document.getElementById("helpquide_"+ioncolor).style.padding = '5px';
+	}
+    }
 
     list_recent_usis(10);
     init3();
@@ -124,7 +134,7 @@ function init3() {
 }
 
 function reset_forms(exclude='NONE_OF_THE_ABOVE') {
-    for (var what of ['usi','dta','pform','charge','precmz','xmin','xmax','ymax','mask_isolation_width'])
+    for (var what of ['usi','dta','pform','charge','precmz','xmin','xmax','ymax','mask_isolation_width','minimum_labeling_percent'])
 	if (what != exclude)
 	    document.getElementById(what+"_input").value = '';
     document.getElementById("peakmztol_input").value = '10';
@@ -139,6 +149,9 @@ function reset_forms(exclude='NONE_OF_THE_ABOVE') {
     toggle_box("usercredentials",false,true);
     toggle_box("USIexamples",false,true);
     toggle_box("RecentUSIs",false,true);
+    toggle_box("ExploreHelp",false,true);
+    toggle_box("viewspectrum_toolbar",false,true);
+
     if (_chartdata)
         _chartdata.destroy();
 
@@ -529,19 +542,20 @@ function import_dta(button) {
     var mzs = [];
     var ints = [];
     var annots = [];
-    var maxint = 0;
+    _maxint = 0;
     for (var line of dta.split("\n")) {
+	line = line.replace(":",' ');
 	var pair = line.trim().split(/\s+/);
 	var skip = false;
 
-        if (pair[0] == "PEPTIDOFORMS")
+        if (pair[0] == "PEPTIDOFORMS" || pair[0] == "Peptide")
 	    document.getElementById("pform_input").value = pair[1];
-        else if (pair[0] == "CHARGES") {
-            document.getElementById("charge_input").value = pair[1];
+        else if (pair[0] == "CHARGES" || pair[0] == "Charge") {
+            document.getElementById("charge_input").value = Number(pair[1]);
 	    rdata['charge'] = Number(pair[1]);
 	}
-        else if (pair[0] == "PRECURSORMZ") {
-            document.getElementById("precmz_input").value = pair[1];
+        else if (pair[0] == "PRECURSORMZ" || pair[0] == "m/z") {
+            document.getElementById("precmz_input").value = Number(pair[1]);
 	    rdata['mz'] = Number(pair[1]);
 	}
 
@@ -554,8 +568,8 @@ function import_dta(button) {
 	    mzs.push(Number(pair[0]));
 	    ints.push(Number(pair[1]));
 
-            if (Number(pair[1]) > maxint)
-                maxint = Number(pair[1]);
+            if (Number(pair[1]) > _maxint)
+                _maxint = Number(pair[1]);
 
 	    if (pair[2])
 		annots.push(pair[2]);
@@ -568,7 +582,7 @@ function import_dta(button) {
     rdata[0]['intensities'] = ints;
     rdata[0]['interpretations'] = annots;
 
-    rdata['max_intensity'] = maxint;
+    rdata['max_intensity'] = _maxint;
     rdata['name'] = "NO_MATCH";
     rdata['origin'] = "Peak List import";
 
@@ -642,7 +656,7 @@ function show_spectrum() {
     chart['type'] = 'scatter';
     chart['options'] = {};
     chart['options']['aspectRatio'] = 2.5;
-    chart['options']['animation'] = false;
+    chart['options']['animation'] = true;
     chart['options']['spanGaps'] = true;
     //chart['options']['responsive'] = false;
 
@@ -658,13 +672,30 @@ function show_spectrum() {
     chart['options']['scales']['x']['title']['text'] = 'm/z';
     chart['options']['scales']['x']['grid'] = {};
     chart['options']['scales']['x']['grid']['display'] = false;
+    chart['options']['scales']['x']['border'] = {};
+    chart['options']['scales']['x']['border']['color'] = '#999';
+    chart['options']['scales']['x']['border']['z'] = 3;
+
     chart['options']['scales']['y'] = {};
+    chart['options']['scales']['y']['position'] ='right';
+    chart['options']['scales']['y']['min'] = 0;
     chart['options']['scales']['y']['grid'] = {};
     chart['options']['scales']['y']['grid']['display'] = false;
+    chart['options']['scales']['y']['ticks'] = {};
+    chart['options']['scales']['y']['ticks']['callback'] = (val) => (val.toExponential());
+    // 0-1 relative scale
+    chart['options']['scales']['y2'] = {};
+    chart['options']['scales']['y2']['display'] = false;
+    chart['options']['scales']['y2']['position'] ='left';
+    chart['options']['scales']['y2']['min'] = 0;
+    chart['options']['scales']['y2']['grid'] = {};
+    chart['options']['scales']['y2']['grid']['display'] = true;
+    chart['options']['scales']['y2']['ticks'] = {};
+    chart['options']['scales']['y2']['ticks']['callback'] = (val) => (100*val/_maxint).toFixed(1)+"%";
 
     chart['options']['plugins'] = {};
-    chart['options']['plugins']['tooltip'] = {'enabled':true};
-    chart['options']['plugins']['decimation'] = {'enabled':true};
+    chart['options']['plugins']['tooltip'] = {'enabled':false};
+//    chart['options']['plugins']['decimation'] = {'enabled':true};
     chart['options']['plugins']['legend'] = {'display':false};
     chart['options']['plugins']['title'] = {};
     chart['options']['plugins']['title']['display'] = true;
@@ -672,9 +703,12 @@ function show_spectrum() {
     chart['options']['plugins']['title']['color'] = '#2c99ce';
     chart['options']['plugins']['title']['padding'] = 0;
 
+    var subt = _spectrum['name'];
+    if (subt.includes("/"))
+	subt = subt.replace("/",' ') + "+";
     chart['options']['plugins']['subtitle'] = {};
     chart['options']['plugins']['subtitle']['display'] = true;
-    chart['options']['plugins']['subtitle']['text'] = _spectrum['name'];
+    chart['options']['plugins']['subtitle']['text'] = subt;
     chart['options']['plugins']['subtitle']['color'] = '#000';
     chart['options']['plugins']['subtitle']['padding'] = {'bottom':50};
 
@@ -689,26 +723,28 @@ function show_spectrum() {
 	if (_peptidoforms[0] && _peptidoforms[0].ion_mz) {
 	    var txt = "m/z: "+_peptidoforms[0].ion_mz.toFixed(4);
 	    if (_spectrum['mz'])
-		txt += " ("+(1000000/_peptidoforms[0].ion_mz*(_peptidoforms[0].ion_mz-Number(_spectrum['mz']))).toFixed(1)+" ppm)";
+		txt += " ("+(1000000/_peptidoforms[0].ion_mz*(Number(_spectrum['mz'])-_peptidoforms[0].ion_mz)).toFixed(1)+" ppm)";
 	    chart.ctx.fillText(txt,24,23);
 	}
     };
 
     chart['options']['plugins']['zoom'] = {};
     chart['options']['plugins']['zoom']['pan'] = {};
-    chart['options']['plugins']['zoom']['pan']['enabled'] = false;
+    chart['options']['plugins']['zoom']['pan']['enabled'] = true;
     chart['options']['plugins']['zoom']['pan']['mode'] = 'x';
+    chart['options']['plugins']['zoom']['pan']['modifierKey'] = 'ctrl';
     chart['options']['plugins']['zoom']['pan']['threshold'] = 0.2;
     chart['options']['plugins']['zoom']['pan']['scaleMode'] = 'y';
     chart['options']['plugins']['zoom']['zoom'] = {};
-    //chart['options']['plugins']['zoom']['zoom']['wheel'] = {'enabled':true, 'speed':0.1};
+    chart['options']['plugins']['zoom']['zoom']['mode'] = 'x';
+    chart['options']['plugins']['zoom']['zoom']['wheel'] = {};
+    chart['options']['plugins']['zoom']['zoom']['wheel']['enabled'] = true;
+    chart['options']['plugins']['zoom']['zoom']['wheel']['speed'] = 0.1;
     chart['options']['plugins']['zoom']['zoom']['drag'] = {};
     chart['options']['plugins']['zoom']['zoom']['drag']['enabled'] = true;
     chart['options']['plugins']['zoom']['zoom']['drag']['backgroundColor'] = 'rgba(44,153,206,0.3)';
     chart['options']['plugins']['zoom']['zoom']['drag']['borderColor'] = 'rgba(44,153,206,1)';
     chart['options']['plugins']['zoom']['zoom']['drag']['borderWidth'] = 1;
-    chart['options']['plugins']['zoom']['zoom']['mode'] = 'x';
-    chart['options']['plugins']['zoom']['zoom']['scaleMode'] = 'y';
     chart['options']['plugins']['zoom']['limits'] = {};
     //chart['options']['plugins']['zoom']['limits']['x'] = {'min': data['mzmin'], 'max': data['mzmax']};
     chart['options']['plugins']['zoom']['limits']['x'] = {};
@@ -716,7 +752,10 @@ function show_spectrum() {
     chart['options']['plugins']['zoom']['limits']['x']['max'] = 'original';
     chart['options']['plugins']['zoom']['limits']['y'] = {'min':0, 'max':'original'};
     chart['options']['plugins']['zoom']['zoom']['onZoomComplete'] = function ({ chart }) {
-        document.getElementById("resetzoom_button").classList.add('blue');
+	if (chart.getZoomLevel() == 1.0)
+            document.getElementById("resetzoom_button").classList.remove('blue');
+	else
+            document.getElementById("resetzoom_button").classList.add('blue');
     }
 
     chart['options']['plugins']['datalabels'] = {};
@@ -724,9 +763,12 @@ function show_spectrum() {
     chart['options']['plugins']['datalabels']['display'] = 'auto';
     chart['options']['plugins']['datalabels']['align'] = 'end';
     chart['options']['plugins']['datalabels']['anchor'] = 'end';
-    //chart['options']['plugins']['datalabels']['clip'] = true;
+    chart['options']['plugins']['datalabels']['clip'] = true;
     chart['options']['plugins']['datalabels']['formatter'] = function(value, context) {
-	return !(context.dataIndex % 2) ? context.dataset.label : null;
+	let datalabel = null;
+        if (value.ion && value.ion !== null)
+	    datalabel = value.ion;
+        return datalabel;
     };
     chart['options']['plugins']['datalabels']['color'] = function(context) {
         return context.dataset.borderColor;
@@ -735,14 +777,62 @@ function show_spectrum() {
     chart['data'] = {};
     chart['data']['datasets'] = [];
 
-    for (var idx in _spectrum[0]['mzs'])
-	chart['data']['datasets'].push(add_datapoint(idx));
+    var all_datasets = {};
+
+    for (var idx in _spectrum[0]['mzs']) {
+	const {series, point, datapoints} = get_datapoints(idx,scale=1.0);
+	if (!all_datasets[series]) {
+            all_datasets['label'+series] = {};
+            all_datasets['label'+series]['label'] = 'label: '+series;
+            all_datasets['label'+series]['type'] = 'scatter';
+            all_datasets['label'+series]['yAxisID'] = 'y2';
+	    all_datasets['label'+series]['pointRadius'] = 1;
+            all_datasets['label'+series]['backgroundColor'] = _ion_colors[series];
+            all_datasets['label'+series]['borderColor'] = _ion_colors[series];
+            all_datasets['label'+series]['data'] = [];
+
+	    all_datasets[series] = {};
+	    all_datasets[series]['label'] = series;
+	    all_datasets[series]['type'] = 'scatter';
+	    all_datasets[series]['showLine'] = true;
+	    all_datasets[series]['backgroundColor'] = _ion_colors[series];
+	    all_datasets[series]['borderColor'] = _ion_colors[series];
+	    all_datasets[series]['data'] = [];
+	}
+	all_datasets[series]['data'].push(...datapoints);
+	all_datasets['label'+series]['data'].push(point);
+    }
+
+    for (var set in all_datasets)
+	chart['data']['datasets'].push(all_datasets[set]);
+
 
     if (_chartdata)
-	_chartdata.destroy();
+        _chartdata.destroy();
     _chartdata = new Chart("viewspectrum_canvas", chart);
 
+    toggle_box("viewspectrum_toolbar",true);
 }
+
+function get_datapoints(index,scale=1.0) {
+    var series = 'n/a';
+    if (_spectrum[0]['_ion_series'][index])
+	series = _spectrum[0]['_ion_series'][index];
+
+    var point = {'x':_spectrum[0]['mzs'][index], 'y':scale*_spectrum[0]['intensities'][index], 'ion':_spectrum[0]['interpretations'][index].split('/')[0]};
+
+    var points = [];
+    points.push({'x':_spectrum[0]['mzs'][index], 'y':0});
+    points.push(point);
+    points.push({'x':_spectrum[0]['mzs'][index], 'y':0});
+
+    return {
+	series: series,
+	point: point,
+	datapoints: points
+    };
+}
+
 
 function add_datapoint(index,scale=1.0) {
     var color = '#999';
@@ -764,12 +854,70 @@ function add_datapoint(index,scale=1.0) {
 }
 
 
-function reset_x() {
+function chart_ctrl(what) {
     if (!_chartdata)
-	return;
-    _chartdata.resetZoom();
-    document.getElementById("resetzoom_button").classList.remove('blue');
+        return;
+
+    if (what == 'reset') {
+	_chartdata.resetZoom();
+	document.getElementById("resetzoom_button").classList.remove('blue');
+    }
+
+    else if (what.startsWith('zoom')) {
+        var scale = 1.4;
+	if (what.startsWith('zoomout'))
+            scale = 1/scale;
+        _chartdata.zoom(scale);
+
+	if (_chartdata.getZoomLevel() == 1.0)
+            document.getElementById("resetzoom_button").classList.remove('blue');
+	else
+            document.getElementById("resetzoom_button").classList.add('blue');
+    }
+
+    else if (what.startsWith('pan')) {
+        var deltax = 150;
+        if (what.startsWith('panright'))
+            deltax = -deltax;
+        if (what.endsWith('fast'))
+            deltax = 5*deltax;
+        _chartdata.pan({'x':deltax,'y':0});
+    }
+
+    else if (what == 'labels') {
+	button = document.getElementById("togglelabels_button");
+
+	if (button.classList.contains('blue')) {
+	    _chartdata['options']['plugins']['datalabels']['display'] = 'auto';
+            button.classList.remove('blue');
+	}
+	else {
+	    _chartdata['options']['plugins']['datalabels']['display'] = false;
+            button.classList.add('blue');
+	}
+	_chartdata.update();
+    }
+
+    else if (what.startsWith('zpmode')) {
+        button = document.getElementById("toggle"+what+"_button");
+
+        if (button.classList.contains('blue'))
+            button.classList.remove('blue');
+        else
+            button.classList.add('blue');
+
+	var axes = '';
+	for (var axis of ['x','y']) {
+            if (document.getElementById("togglezpmode"+axis+"_button").classList.contains('blue'))
+		axes += axis;
+	}
+
+	_chartdata['options']['plugins']['zoom']['pan']['mode'] = axes;
+	_chartdata['options']['plugins']['zoom']['zoom']['mode'] = axes;
+    }
+
 }
+
 
 function user_msg(what,code=400,remove=true) {
     var div = document.createElement("div");
@@ -781,9 +929,9 @@ function user_msg(what,code=400,remove=true) {
     span.title = "dismiss this message";
     span.innerHTML = "&times;"
     span.onclick= function(){div.remove();};
-    div.appendChild(span);
+    div.append(span);
 
-    document.getElementById("useralerts").appendChild(div);
+    document.getElementById("useralerts").append(div);
 
     if (remove) {
         setTimeout(function() { div.style.opacity = "0"; }, 3000 );
@@ -858,17 +1006,34 @@ function process_spectrum_data() {
 
     var precmz = null;
     var charge = null;
+    var isotar = null;
+    var isolow = null;
+    var isoupp = null;
     if (data && data.attributes && data.attributes.length>0) {
         for (var att of data.attributes) {
             if (att.accession == "MS:1000041") charge= att.value;
+
             if (att.accession == "MS:1000744") precmz = att.value;  // preferred
-            if (att.accession == "MS:1000827" && !precmz) precmz = att.value;
+            if (att.accession == "MS:1000827") {
+		isotar = att.value;
+		if (!precmz)
+		    precmz = att.value;
+	    }
+
+            if (att.accession == "MS:1000828") isolow = att.value;
+            if (att.accession == "MS:1000829") isoupp = att.value;
 	}
     }
     if (precmz)
 	document.getElementById("precmz_input").value = precmz;
     if (charge && document.getElementById("charge_input").value == '')
 	document.getElementById("charge_input").value = charge;
+    if (isotar)
+        document.getElementById("isotarget_input").value = isotar;
+    if (isolow)
+        document.getElementById("isolower_input").value = isolow;
+    if (isotar)
+        document.getElementById("isoupper_input").value = isoupp;
 
     var has_annots = false;
     for (var annot of data.interpretations)
@@ -1028,6 +1193,7 @@ function prepare_lorikeet_data() {
     }
 
 }
+// end unused Lorikeet code
 
 
 function isSorted(arr) {
@@ -1161,16 +1327,17 @@ function generate_figure(button,format,download=false) {
     user_parameters.create_pdf = false;
     user_parameters["create_"+format] = true;
 
-    for (var field of ["xmin", "xmax", "mask_isolation_width", "ymax"]) {
+    for (var field of ["xmin", "xmax", "ymax", "mask_isolation_width", "minimum_labeling_percent"]) {
 	var val = document.getElementById(field+"_input").value.trim();
 	if (val != "")
 	    user_parameters[field] = Number(val);
 	document.getElementById(field+"_input").value = val;
     }
     user_parameters["dissociation_type"] = document.getElementById("dissociation_type_input").value;
+    user_parameters["isobaric_labeling_mode"] = document.getElementById("isobaric_labeling_mode_input").value;
 
     for (var field of ["show_sequence", "show_b_and_y_flags", "show_coverage_table", "show_precursor_mzs",
-		       "label_neutral_losses", "label_internal_fragments", "label_unknown_peaks", "show_usi"]) {
+		       "label_neutral_losses", "label_internal_fragments", "label_unknown_peaks", "show_mass_deltas", "show_usi"]) {
 	if (document.getElementById(field+"_input").checked)
             user_parameters[field] = true;
 	else
@@ -1204,7 +1371,7 @@ function generate_figure(button,format,download=false) {
 	    var file_data = annot_data['annotated_spectra'][0]['extended_data'];
 
 	    if (download) {
-		var filename =  _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : 'quetzal_spectrum';
+		var filename = _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : 'quetzal_spectrum';
 
 		var downloadLink = document.createElement('a');
 		downloadLink.target = '_blank';
@@ -1227,7 +1394,15 @@ function generate_figure(button,format,download=false) {
 	    else {
 		var img = document.createElement('img');
 		img.src = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(file_data['svg']);
-		document.getElementById("spectrum_preview").appendChild(img);
+		document.getElementById("spectrum_preview").append(img);
+		document.getElementById("spectrum_preview").append(document.createElement("br"));
+		var legend = document.createElement("p");
+		legend.style.margin = '0px 30px';
+		legend.style.maxWidth = '900px';
+		legend.style.textAlign = 'justify';
+                legend.append(file_data['figure_legend']);
+                document.getElementById("spectrum_preview").append(legend);
+		document.getElementById("spectrum_preview").append(document.createElement("br"));
 	    }
 
         })
@@ -1248,12 +1423,16 @@ function toggle_box(box,open=false,close=false) {
 	elebox.style.opacity = "0";
 	if (document.getElementById(box+"_button"))
 	    document.getElementById(box+"_button").classList.remove("on");
+	if (document.getElementById(box+"_toolbarbutton"))
+	    document.getElementById(box+"_toolbarbutton").classList.remove("blue");
     }
     else {
 	elebox.style.visibility = "visible";
 	elebox.style.opacity = "1";
 	if (document.getElementById(box+"_button"))
 	    document.getElementById(box+"_button").classList.add("on");
+        if (document.getElementById(box+"_toolbarbutton"))
+            document.getElementById(box+"_toolbarbutton").classList.add("blue");
 
 	if ((elebox.offsetLeft + elebox.offsetWidth) < 200)
 	    elebox.style.left = '10px';
@@ -1306,15 +1485,62 @@ function user_annotations(button) {
     if (!_spectrum[0] || !_spectrum[0].mzs || !_spectrum[0].intensities)
         return user_msg("Unable to save annotations.  No spectrum has been loaded.",500,true);
 
+    addCheckBox(button,true);
+
     user_log(null, "Updating annotations via user input...",'run');
+    var comments = 0;
     for (var idx in _spectrum[0]['interpretations']) {
 	_spectrum[0]['interpretations'][idx] = document.getElementById("peak_annotation_"+idx).value;
+	if (_spectrum[0]['interpretations'][idx].includes('Comment:')) {
+	    document.getElementById("peak_annotation_"+idx).style.background = '#ec1';
+	    comments++;
+	}
+	else
+	    document.getElementById("peak_annotation_"+idx).style.background = '';
+
 	if (document.getElementById("peak_annotation_ppm_"+idx).value)
 	    _spectrum[0]['interpretations'][idx] += '/'+document.getElementById("peak_annotation_ppm_"+idx).value;
     }
 
-    add_annotation_table();
-    addCheckBox(button,true);
+    if (comments > 0) {
+	user_log(null, "Sending spectrum with "+comments+" user-annotated peaks for review...",'run');
+
+	review_spectrum_attributes();
+	_spectrum[0]['extended_data'] = {};
+	var user_parameters = {};
+	user_parameters.skip_annotation = true;
+	user_parameters["dissociation_type"] = document.getElementById("dissociation_type_input").value;
+	user_parameters["isobaric_labeling_mode"] = document.getElementById("isobaric_labeling_mode_input").value;
+	_spectrum[0]['extended_data']['user_parameters'] = user_parameters;
+
+	var url = _api['annotate']+"?tolerance="+Number(document.getElementById("peakmztol_input").value.trim());
+	fetch(url, {
+            method: 'post',
+            headers: {
+		'Accept': 'application/json',
+		'Content-Type': 'application/json'
+            },
+            body: JSON.stringify([_spectrum[0]])
+	})
+            .then(response => response.json())
+            .then(status_data => {
+		_spectrum[0]['extended_data'] = null;
+		add_to_user_log(status_data.status.log);
+		if (status_data.status.status == "ERROR")
+                    throw status_data.status.error_code + " :: " + status_data.status.description;
+		user_msg("Detected user comments on "+comments+" peak annotations. This spectrum has been sent for review by the Quetzal team. Thank you for your feedback!",404,false);
+		add_annotation_table();
+            })
+            .catch(error => {
+		user_log(null,"ERROR sending:",'error');
+		user_log(null,error);
+		console.error(error);
+		user_msg("ERROR sending: "+error,500,false);
+            });
+    }
+    else {
+	add_annotation_table();
+    }
 }
 
 
@@ -1388,10 +1614,10 @@ function annotate_peaks(button,wasauto=true) {
 
     _spectrum[0]['extended_data'] = {};
     _spectrum[0]['extended_data']['user_parameters'] = {};
-    if (!wasauto)
+    if (!wasauto) {
 	_spectrum[0]['extended_data']['user_parameters']["dissociation_type"] = document.getElementById("dissociation_type_input").value;
-    if (document.getElementById("create_peak_network_input").checked)
-	_spectrum[0]['extended_data']['user_parameters']["create_peak_network"] = true;
+	_spectrum[0]['extended_data']['user_parameters']["isobaric_labeling_mode"] = document.getElementById("isobaric_labeling_mode_input").value;
+    }
 
     var pform = _peptidoforms[0] ? _peptidoforms[0].peptidoform_string : '';
 
@@ -1439,14 +1665,24 @@ function annotate_peaks(button,wasauto=true) {
 	    _spectrum[0]['mzs'] = annot_data['annotated_spectra'][0]['mzs'];
 	    _spectrum[0]['intensities'] = annot_data['annotated_spectra'][0]['intensities'];
 
-	    if (annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes'] &&
-		annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes']['used dissociation type']) {
-		var frag = annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes']['used dissociation type'];
-		if (frag != document.getElementById("dissociation_type_input").value)
-		    user_msg("Peaks annotated using dissociation type = "+frag,404);
-		document.getElementById("dissociation_type_input").value = frag;
-		user_log(null, "Peaks annotated using dissociation type = "+frag);
-		_spectrum[0]['_ions_annotated'] = frag;
+	    if (annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes']) {
+		if (annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes']['used dissociation type']) {
+		    var frag = annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes']['used dissociation type'];
+		    if (frag != document.getElementById("dissociation_type_input").value)
+			user_msg("Peaks annotated using dissociation type = "+frag,404);
+		    document.getElementById("dissociation_type_input").value = frag;
+		    user_log(null, "Peaks annotated using dissociation type = "+frag);
+		    _spectrum[0]['_ions_annotated'] = frag;
+		}
+
+                if (annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes']['used isobaric labeling mode']) {
+                    var label = annot_data['annotated_spectra'][0]['extended_data']['inferred_attributes']['used isobaric labeling mode'];
+                    if (label != document.getElementById("isobaric_labeling_mode_input").value)
+                        user_msg("Peaks annotated using isobaric labeling mode = "+label,404);
+                    document.getElementById("isobaric_labeling_mode_input").value = label;
+                    user_log(null, "Peaks annotated using isobaric labeling mode = "+label);
+                }
+
 	    }
 
 	    add_annotation_form(mztol);
@@ -1508,7 +1744,7 @@ function extract_ion_series() {
 
 	_spectrum[0]['_ion_series'].push(ion);
 
-	for (var series of ['a','b','c','x','y','z']) {
+	for (var series of _backbone_ions) {
 	    if (ion == series) {
 		var seriesion = "+"+chrg+inum;
 		if (mion)
@@ -1543,13 +1779,13 @@ function add_annotation_form(mztol=null) {
                 input.size = 40;
                 input.value = val.split('/')[0];
 		input.setAttribute('oninput', "document.getElementById('save_input').classList.add('blue')");
-                annot_form.appendChild(input);
+                annot_form.append(input);
 
 		input = document.createElement("input");
                 input.id = "peak_annotation_ppm_"+idx;
                 input.size = 10;
 		input.setAttribute('oninput', "document.getElementById('save_input').classList.add('blue')");
-                annot_form.appendChild(input);
+                annot_form.append(input);
                 if (val.includes('/'))
                     input.value = val.split('/')[1];
 
@@ -1557,13 +1793,12 @@ function add_annotation_form(mztol=null) {
 		span.title = "Clear annotation values for this row";
 		span.setAttribute('onclick', "document.getElementById('peak_annotation_"+idx+"').value='';document.getElementById('peak_annotation_ppm_"+idx+"').value='';document.getElementById('save_input').classList.add('blue')");
 		span.innerHTML = "&times;"
-
             }
             else {
-                span.appendChild(document.createTextNode(val));
+                span.append(val);
 	    }
 
-            annot_form.appendChild(span);
+            annot_form.append(span);
 	}
     }
 }
@@ -1581,12 +1816,12 @@ function add_ion_table() {
     td.append('Ion Series');
     if (_spectrum[0]['_ions_annotated'])
 	td.append(' ('+_spectrum[0]['_ions_annotated']+')');
-    tr.appendChild(td);
-    table.appendChild(tr);
+    tr.append(td);
+    table.append(tr);
 
-    table.appendChild(get_peptide_row());
+    table.append(get_peptide_row());
 
-    for (var series of ['a','b','c','x','y','z']) {
+    for (var series of _backbone_ions) {
 	var first = true;
 	for (var chg of [1,2,3,4,5]) {
 	    var show = false;
@@ -1597,22 +1832,22 @@ function add_ion_table() {
 		tr.style.borderTop = '2px solid black';
 		td.style.color = 'white';
 		td.style.background = 'black';
-		td.appendChild(document.createTextNode(series));
+		td.append(series);
 	    }
 	    else
 		td.className = "rep";
-            tr.appendChild(td);
+            tr.append(td);
 
             td = document.createElement("td");
             td.className = "rep";
-	    td.appendChild(document.createTextNode("("+chg+"+)"));
-	    tr.appendChild(td);
+	    td.append("("+chg+"+)");
+	    tr.append(td);
 
 	    for (var i in _peptidoforms[0].peptide_sequence) {
 		var pos = 'abc'.includes(series) ? Number(i)+1 : Number(_peptidoforms[0].peptide_sequence.length) - i;
 
 		td = document.createElement("td");
-		td.appendChild(document.createTextNode(pos));
+		td.append(pos);
 		td.style.color = 'white';
 
                 //var seriesion = "+"+chg+series+('abc'.includes(series) ? nterm:cterm);
@@ -1628,39 +1863,39 @@ function add_ion_table() {
 		    show = true;
 		    first = false;
 		}
-		tr.appendChild(td);
+		tr.append(td);
             }
 	    if (show)
-		table.appendChild(tr);
+		table.append(tr);
         }
     }
 
-    table.appendChild(get_peptide_row());
+    table.append(get_peptide_row());
 
     clear_element("ion_div");
-    document.getElementById("ion_div").appendChild(table);
+    document.getElementById("ion_div").append(table);
 }
 
 function get_peptide_row() {
     var tr = document.createElement("tr");
     var td = document.createElement("th");
-    tr.appendChild(td);
+    tr.append(td);
 
 
     td = document.createElement("th");
     if (_peptidoforms[0].terminal_modifications && _peptidoforms[0]['terminal_modifications']['nterm']) {
-	td.appendChild(document.createTextNode('n'));
+	td.append('n');
         td.style.background = '#ec1';
 	td.style.textAlign = 'right';
         var mod = _peptidoforms[0]['terminal_modifications']['nterm'];
         td.title = mod.residue_string;
         td.title += " ("+mod.delta_mass+")";
     }
-    tr.appendChild(td);
+    tr.append(td);
 
     for (var idx in _peptidoforms[0].peptide_sequence) {
         td = document.createElement("th");
-        td.appendChild(document.createTextNode(_peptidoforms[0].peptide_sequence[idx]));
+        td.append(_peptidoforms[0].peptide_sequence[idx]);
 
         if (_peptidoforms[0].residue_modifications && _peptidoforms[0]['residue_modifications'][Number(idx)+1]) {
             td.style.background = '#ec1';
@@ -1672,7 +1907,7 @@ function get_peptide_row() {
                 td.title += " (labile:"+mod.labile_delta_mass+")";
         }
 
-        tr.appendChild(td);
+        tr.append(td);
     }
 
     return tr;
@@ -1693,8 +1928,8 @@ function add_annotation_table(mztol=null) {
     var td = document.createElement("td");
     td.colSpan = '13';
     td.className = "rep";
-    td.appendChild(document.createTextNode("Peak Annotations for: "+pform));
-    tr.appendChild(td);
+    td.append("Peak Annotations for: "+pform);
+    tr.append(td);
 
     td = document.createElement("td");
     td.colSpan = '2';
@@ -1703,7 +1938,7 @@ function add_annotation_table(mztol=null) {
     td.setAttribute('onclick', 'show_mass_defect()');
     td.innerHTML = "&#128200; Mass Defect";
     td.title = "View Mass Defect plot";
-    tr.appendChild(td);
+    tr.append(td);
 
     td = document.createElement("td");
     td.colSpan = '2';
@@ -1712,26 +1947,26 @@ function add_annotation_table(mztol=null) {
     td.setAttribute('onclick', 'show_ion_stats()');
     td.innerHTML = "&#128202; Ion Stats";
     td.title = "View Ion Contribution histogram plot";
-    tr.appendChild(td);
+    tr.append(td);
 
-    table.appendChild(tr);
+    table.append(tr);
 
     tr = document.createElement("tr");
     tr.style.position = 'sticky';
-    tr.style.top = '0';
+    tr.style.top = '87px';
     tr.style.zIndex = '5';
     mztol = mztol ?  " [mztol="+mztol+"ppm]" : '';
     for (var col of ["m/z", "intensity", "norm", "interpretation"+mztol].concat(_ion_list)) {
 	td = document.createElement("th");
-	td.appendChild(document.createTextNode(col));
-	tr.appendChild(td);
+	td.append(col);
+	tr.append(td);
     }
-    table.appendChild(tr);
+    table.append(tr);
 
-    var maxint = 1;
+    _maxint = 1;
     for (var pint of annot_data['intensities'])
-	if (pint > maxint)
-	    maxint = pint;
+	if (pint > _maxint)
+	    _maxint = pint;
 
     _totint = 0;
     _totints = [0,0,0,0,0,0,0,0,0,0,0,0,0];
@@ -1745,22 +1980,22 @@ function add_annotation_table(mztol=null) {
 
 	    var val = annot_data[col][idx];
 	    if (col == "interpretations") {
-		td.appendChild(document.createTextNode(val));
+		td.append(val);
 	    }
 	    else {
 		td.className = "number";
 		var f = col == "intensities" ? 1 : 4;
-		td.appendChild(document.createTextNode(Number(val).toFixed(f)));
+		td.append(Number(val).toFixed(f));
 		if (col == "intensities") {
-		    tr.appendChild(td);
+		    tr.append(td);
 		    td = document.createElement("td");
 		    td.className = "number";
 		    td.style.borderRight = "1px solid rgb(187, 221, 187)";
-		    td.appendChild(document.createTextNode(Number(100*val/maxint).toFixed(1)));
-		    td.style.background = "linear-gradient(to left, rgb(187, 221, 187), rgb(187, 221, 187) "+(100*val/maxint)+"%, rgba(255, 255, 255, 0) "+(100*val/maxint)+"%)";
+		    td.append(Number(100*val/_maxint).toFixed(1));
+		    td.style.background = "linear-gradient(to left, rgb(187, 221, 187), rgb(187, 221, 187) "+(100*val/_maxint)+"%, rgba(255, 255, 255, 0) "+(100*val/_maxint)+"%)";
 		}
 	    }
-	    tr.appendChild(td);
+	    tr.append(td);
 	}
 
 	// only consider the first one
@@ -1849,36 +2084,41 @@ function add_annotation_table(mztol=null) {
 		_totint += annot_data['intensities'][idx];
 
             }
-            tr.appendChild(td);
+            tr.append(td);
 	}
 
-	table.appendChild(tr);
+	table.append(tr);
     }
 
     tr = document.createElement("tr");
     for (var col of ["", "", "", ""].concat(_ion_list)) {
 	td = document.createElement("th");
-	td.appendChild(document.createTextNode(col));
-	tr.appendChild(td);
+	td.append(col);
+	tr.append(td);
     }
-    table.appendChild(tr);
+    table.append(tr);
 
     tr = document.createElement("tr");
     td = document.createElement("th");
     td.colSpan = '4';
     td.style.textAlign = 'right';
-    td.appendChild(document.createTextNode("Share of Total Ion Current:"));
-    tr.appendChild(td);
+    td.append("Share of Total Ion Current:");
+    tr.append(td);
 
     for (var aaa in _ion_list) {
 	td = document.createElement("th");
-	td.appendChild(document.createTextNode((100*_totints[aaa]/_totint).toFixed(1)+"%"));
-	tr.appendChild(td);
+	td.append((100*_totints[aaa]/_totint).toFixed(1)+"%");
+	tr.append(td);
     }
-    table.appendChild(tr);
+    table.append(tr);
 
     clear_element("annot_div");
-    document.getElementById("annot_div").appendChild(table);
+    document.getElementById("annot_div").append(table);
+
+    if (_chartdata && _maxint > 0) {
+	_chartdata['options']['scales']['y2']['display'] = true;
+        _chartdata.update();
+    }
 }
 
 
@@ -2063,7 +2303,7 @@ function chart_controls() {
     span.title = "Reset Zoom and axes to intial settings";
     span.onclick= function(){reset_x();};
     span.innerHTML = '&#8634;';
-    div.appendChild(span);
+    div.append(span);
 
     return div;
 }
@@ -2108,7 +2348,7 @@ function displayMsg(divid,msg) {
     var txt = document.createElement("h2");
     txt.className = "invalid";
     txt.style.marginBottom = "0";
-    txt.appendChild(document.createTextNode(msg));
-    document.getElementById(divid).appendChild(txt);
+    txt.append(msg);
+    document.getElementById(divid).append(txt);
 }
 
