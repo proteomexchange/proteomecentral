@@ -127,7 +127,7 @@ class ProxiAnnotator:
                     peptidoform_string = attribute['value']
                 if attribute['name'] == 'charge state' or attribute['accession'] == 'MS:1000041':
                     precursor_charge = int(attribute['value'])
-                if attribute['name'] == 'selected ion m/z' or attribute['accession'] == 'MS:1000040':
+                if attribute['name'] == 'selected ion m/z' or attribute['accession'] == 'MS:1000744':
                     precursor_mz = float(attribute['value'])
                 if attribute['name'] == 'isolation window target m/z' or attribute['accession'] == 'MS:1000827':
                     backup_precursor_mz = float(attribute['value'])
