@@ -93,6 +93,18 @@ class ProxiAnnotator:
                 response['annotated_spectra'].append(None)
                 continue
 
+            #### Check to see if the user has provided some feedback that should be saved
+            if 'interpretations' in spectrum and isinstance(spectrum['interpretations'], list):
+                for interpretation in spectrum['interpretations']:
+                    if 'comment:' in interpretation.lower():
+                        feedback_dir = '/net/dblocal/wwwspecial/proteomecentral/var/annotation_feedback'
+                        now = datetime.now()
+                        feedback_filename = "spectrum_feedback_" + now.strftime("%Y-%m-%d_%H%M%S.json")
+                        feedback_filepath = feedback_dir + '/' + feedback_filename
+                        with open(feedback_filepath, 'w') as outfile:
+                            print(json.dumps(spectrum, indent=2, sort_keys=True), file=outfile)
+                            break
+
             peptidoform_string = None
             precursor_charge = None
             precursor_mz = None
