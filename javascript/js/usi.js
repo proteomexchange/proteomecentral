@@ -966,7 +966,8 @@ function list_recent_usis(max) {
 function pick_box_example(anchor) {
     document.getElementById('usi_input').value=anchor.innerHTML;
     document.getElementById('usi_desc').innerHTML = '';
-    toggle_box('NBTexamples');
+    toggle_box('NBTexamples',false,true);
+    toggle_box('RecentUSIs',false,true);
     check_usi();
 }
 

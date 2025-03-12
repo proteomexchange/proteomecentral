@@ -464,6 +464,13 @@ function fetch_usi(usi,button) {
 	    for (var i in rdata[0].mzs)
 		rdata[0]['interpretations'].push('');
 
+	    if (!rdata['name']) {
+		if (_spectrum['name'])
+		    rdata['name'] = _spectrum['name'];
+		else
+		    rdata['name'] = usi;
+	    }
+
 	    _spectrum = rdata;
 	    process_spectrum_data();
 
@@ -1398,9 +1405,9 @@ function generate_figure(button,format,download=false) {
 		document.getElementById("spectrum_preview").append(document.createElement("br"));
 		var legend = document.createElement("p");
 		legend.style.margin = '0px 30px';
-		legend.style.maxWidth = '900px';
 		legend.style.textAlign = 'justify';
                 legend.append(file_data['figure_legend']);
+		img.onload = function () { legend.style.width = img.offsetWidth+'px'; }
                 document.getElementById("spectrum_preview").append(legend);
 		document.getElementById("spectrum_preview").append(document.createElement("br"));
 	    }
