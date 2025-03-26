@@ -276,7 +276,7 @@ class ProxiSpectra:
             return(status_code, message)
 
         server = 'db.systemsbiology.net'
-        url_base = '/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?output_mode=json&USI='
+        url_base = '/sbeams/cgi/PeptideAtlas/ShowObservedSpec-PROXI?output_mode=json&USI='
 
         #### http.client dies if there are spaces in its URLs. Maybe just replace spaces? or go for complete URLencode?
         #usi = re.sub(r' ','+',usi)
