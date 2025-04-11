@@ -146,23 +146,22 @@ class ProxiSpectra:
             status_code, message = self.fetch_from_local_libraries(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
             return(status_code, message)
 
-        #### If it is a MS2PIP, route it appropriately
+        #### If it is a MS2PIP USI, route it appropriately
         match = re.search(":MS2PIP",usi)
         if match or ( accession is not None and accession == 'MS2PIP'):
             status_code, message = self.fetch_from_MS2PIP(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
             return(status_code, message)
 
-        #### If it is a MS2PIP, route it appropriately
+        #### If it is a SEQ2MS USI, route it appropriately
         match = re.search(":SEQ2MS",usi)
         if match or ( accession is not None and accession == 'SEQ2MS'):
             status_code, message = self.fetch_from_SEQ2MS(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
             return(status_code, message)
 
-        #### If it has a PXD, route it appropriately
-        match = re.search(":PXD",usi)
+        #### If it has a PXD or PDC, route it PeptideAtlas for resolution
+        match = re.search(":PXD|:PDC",usi)
         if match:
             status_code, message = self.fetch_from_PeptideAtlas_ShowObservedSpectrum(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
-            #status_code, message = self.fetch_from_MS2PIP(resultType, pageSize, pageNumber, usi, accession, msRun, fileName, scan, responseContentType)
             if annotate is True:
                 eprint("INFO: Annotate is TRUE, but not ready to do it yet")
             return(status_code, message)
