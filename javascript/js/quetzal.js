@@ -239,7 +239,6 @@ function set_usi_url(button) {
     toggle_box("usercredentials",false,true);
     document.getElementById("usercredentials_button").style.visibility = "hidden";
 
-    //switch (document.getElementById("usiprovider_input").value) {
     switch (button.value) {
     case "iProX":
         where = "https://www.iprox.cn/proxi/spectra";
@@ -257,7 +256,7 @@ function set_usi_url(button) {
         where = "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra";
         break;
     case "PRIDE_private":
-        where = "https://www.ebi.ac.uk/pride/molecules/ws/spectrum?resultType=FULL&usi="; // FFS...
+        where = "https://www.ebi.ac.uk/pride/ws/usi/v1/spectrum?resultType=FULL&usi=";
 
 	button = document.getElementById("usercredentials_button");
 	button.style.visibility = "";
