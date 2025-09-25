@@ -518,8 +518,10 @@ function get_usi_from(where) {
 
 		    if (data && data.attributes && data.attributes.length>0) {
 			for (var att of data.attributes) {
+			    if (att.accession == "MS:1000744") s.precursorMz = att.value;  // preferred
+			    if (att.accession == "MS:1000827" && s.precursorMz == 0) s.precursorMz = att.value;
+
                             if (att.accession == "MS:1008025") s.scanNum     = att.value;
-                            if (att.accession == "MS:1000827") s.precursorMz = att.value;
                             if (att.accession == "MS:1000041") s.charge      = att.value;
                             if (att.accession == "MS:1000888") s.sequence    = att.value;
                             if (att.accession == "MS:1003061") s.fileName    = att.value;
