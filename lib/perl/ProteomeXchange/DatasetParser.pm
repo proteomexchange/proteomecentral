@@ -809,8 +809,16 @@ sub checkCvParam {
       if ( $accession =~ /^MOD:/ ) {
         #print "WARNING: As of 2021-02-08, strict checking of PSI-MOD is disabled";
       } else {
+        my $available_synonyms = "";
+        foreach my $avail_key ( keys %{$self->{cv}->{terms}->{$accession}->{synonyms}} ) {
+          $available_synonyms .= "'$avail_key',";
+        }
+        if ( $available_synonyms ne "" ) {
+          chop($available_synonyms);
+          $available_synonyms = " (or synonyms $available_synonyms also okay)";
+        }
         $self->addCvError(errorMessage=>"ERROR: $accession should be ".
-          "'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'");
+          "'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'$available_synonyms");
         $self->{cv}->{mislabeled_terms}++;
         #print "replaceall.pl \"$name\" \"$self->{cv}->{terms}->{$accession}->{name}\" \$file\n";
       }
@@ -919,6 +927,10 @@ sub readControlledVocabularyFile {
       $self->{cv}->{terms}->{$id}->{name} = $name;
     }
     if ($line =~ /^exact_synonym:\s*\"(.+)\"\s*[\[\]]*\s*$/) {
+      $synonym = $1;
+      $self->{cv}->{terms}->{$id}->{synonyms}->{$synonym} = $synonym;
+    }
+    if ($line =~ /^synonym:\s*\"(.+)?\"/) {
       $synonym = $1;
       $self->{cv}->{terms}->{$id}->{synonyms}->{$synonym} = $synonym;
     }
