@@ -58,10 +58,14 @@ function init() {
     fetch("./proxi_config.json")
 	.then(response => response.json())
 	.then(config => {
-	    _api['spectra'] = config.API_URL +"spectra";
-	    _api['annotate'] = config.API_URL +"annotate";
-	    _api['validate'] = config.API_URL +"usi_validator";
+            if (config.API_URL) {
+		_api['spectra'] = config.API_URL +"spectra";
+		_api['annotate'] = config.API_URL +"annotate";
+		_api['validate'] = config.API_URL +"usi_validator";
+	    }
 	    init2();
+            if (config.SpecialWarning)
+		user_msg(config.SpecialWarning,404,false);
 	})
 	.catch(error => {
 	    _api['spectra'] = _api['base_url'] + "spectra";
@@ -345,7 +349,7 @@ function validate_usi(button,alsofetch) {
 
 		}
 		if (alsofetch)
-		    fetch_usi(usi,button);
+		    fetch_usi(usi,usi.replace(":"+data.validation_results[usi]["interpretation"],':TESTPEPTIDE/2'),button);
 		else {
 		    process_spectrum_data();
 		    stuff_is_running(button,false);
@@ -368,7 +372,7 @@ function validate_usi(button,alsofetch) {
 }
 
 
-function fetch_usi(usi,button) {
+function fetch_usi(full,usi,button) {
     user_log(null, "Fetching USI: "+usi,'run');
     user_log(null, "...from: "+_settings['usi_url']);
 
@@ -425,10 +429,10 @@ function fetch_usi(usi,button) {
 		rdata[0] = fixpride;
 	    }
 
-            document.title = "Quetzal ["+usi+"]";
-            history.replaceState({ usi: usi },document.title, "//"+ window.location.hostname + window.location.pathname + '?usi='+encodeURIComponent(usi)+"&provider="+document.getElementById("usiprovider_input").value);
+            document.title = "Quetzal ["+full+"]";
+            history.replaceState({ usi: full },document.title, "//"+ window.location.hostname + window.location.pathname + '?usi='+encodeURIComponent(full)+"&provider="+document.getElementById("usiprovider_input").value);
 
-	    pc_addRecentItem("USI",usi);
+	    pc_addRecentItem("USI",full);
             list_recent_usis(10);
 
 	    user_msg("Successfully loaded spectrum "+usi,200);
@@ -456,8 +460,8 @@ function fetch_usi(usi,button) {
 		user_log(null,"NO attributes found! Some features may not work properly",'warn');
 	    }
 	    user_log(null,"--------------------");
-	    rdata['origin'] = usi;
-	    rdata[0]['usi'] = usi;
+	    rdata['origin'] = full;
+	    rdata[0]['usi'] = full;
 
 	    rdata[0]['interpretations'] = [];
 	    for (var i in rdata[0].mzs)
@@ -467,7 +471,7 @@ function fetch_usi(usi,button) {
 		if (_spectrum['name'])
 		    rdata['name'] = _spectrum['name'];
 		else
-		    rdata['name'] = usi;
+		    rdata['name'] = full;
 	    }
 
 	    _spectrum = rdata;
