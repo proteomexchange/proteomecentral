@@ -22,6 +22,18 @@ function pc_addRecentItem(type,item) {
     localStorage.setItem("Recent_"+type, JSON.stringify(recent_items));
 }
 
+function pc_displaySpecialWarning(message=null) {
+    if (!message) return;
+
+    var div = document.createElement("div");
+    div.style.fontSize =  "large";
+    div.style.padding = "20px";
+    div.style.background = "#ec1";
+    div.append(message);
+
+    document.body.prepend(div);
+}
+
 
 // from w3schools (mostly)
 function tpp_dragElement(ele) {

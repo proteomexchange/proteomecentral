@@ -42,14 +42,17 @@ function init() {
     fetch("./proxi_config.json")
         .then(response => response.json())
         .then(config => {
-            _api['validate'] = config.API_URL +"usi_validator";
-            _api['examples'] = config.API_URL +"usi_examples";
-            _api['annotate'] = config.API_URL +"annotate";
-	    for (var src of ["ProteomeCentral", "MS2PIP", "Seq2MS"])
-		if (usi_data[src])
-		    usi_data[src].url = usi_data[src].url.replace(_api['base_url'], config.API_URL);
-
+            if (config.API_URL) {
+		_api['validate'] = config.API_URL +"usi_validator";
+		_api['examples'] = config.API_URL +"usi_examples";
+		_api['annotate'] = config.API_URL +"annotate";
+		for (var src of ["ProteomeCentral", "MS2PIP", "Seq2MS"])
+		    if (usi_data[src])
+			usi_data[src].url = usi_data[src].url.replace(_api['base_url'], config.API_URL);
+	    }
 	    init2();
+            if (config.SpecialWarning)
+                pc_displaySpecialWarning(config.SpecialWarning);
         })
         .catch(error => {
             _api['validate'] = _api['base_url'] + "usi_validator";

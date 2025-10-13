@@ -6,14 +6,17 @@ function main() {
     _api['query'] = {};
     var f = parse_querystring();
 
+    _api['datasets'] = "/api/proxi/v0.1/datasets";
     fetch("./proxi_config.json")
 	.then(response => response.json())
 	.then(config => {
-	    _api['datasets'] = config.API_URL +"datasets";
+	    if (config.API_URL)
+		_api['datasets'] = config.API_URL +"datasets";
 	    get_datasets(f,null,null);
+	    if (config.SpecialWarning)
+		pc_displaySpecialWarning(config.SpecialWarning);
 	})
         .catch(error => {
-            _api['datasets'] = "/api/proxi/v0.1/datasets";
 	    get_datasets(f,null,null);
 	});
 }
@@ -669,6 +672,7 @@ function getAnimatedWaitBar(width) {
     wait.appendChild(waitbar);
     return wait;
 }
+
 
 window.onpopstate = function(e){
     if(e.state)

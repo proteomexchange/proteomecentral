@@ -2,6 +2,13 @@ var proxi_status_url = "cgi/PROXI_status";
 var tables_rendered = false;
 
 function main() {
+    fetch("./proxi_config.json")
+        .then(response => response.json())
+        .then(config => {
+            if (config.SpecialWarning)
+                pc_displaySpecialWarning(config.SpecialWarning);
+        });
+
     get_proxi_stream();
 }
 
