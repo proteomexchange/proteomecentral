@@ -8,10 +8,13 @@ import json
 import ast
 import http.client
 import pymysql
+from pymysql.cursors import DictCursor
 import socket
 from datetime import datetime, timezone
 import timeit
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
+
+from pxxml_parser import PXXMLParser
 
 DEBUG = True
 
@@ -49,6 +52,8 @@ class ProxiDatasets:
         self.default_facets = None
         self.default_row_match_index = None
         self.last_refresh_timestamp = None
+
+        self.dataset_history = None
 
         self.refresh_data()
 
@@ -90,7 +95,7 @@ class ProxiDatasets:
 
 
     #### Set the content to an example
-    def fetch_dataset_from_PC(self,dataset_identifier):
+    def fetch_dataset_from_PC(self, dataset_identifier):
 
         server = 'proteomecentral.proteomexchange.org'
         url_base = '/cgi/GetDataset?outputMode=json&ID='
@@ -136,6 +141,77 @@ class ProxiDatasets:
 
         return(status_code, { "status": status_code, "title": "Unknown error", "detail": payload, "type": "about:blank" }, dataset )
 
+
+
+    #### Get the dataset metadata from the local system
+    def get_dataset(self, dataset_identifier):
+
+        self.dataset = {}
+        result = self.get_dataset_history_from_rdbms(dataset_identifier)
+        if result != 'OK':
+            return(self.status_response['status_code'], self.status_response['message'], self.dataset)
+
+        announcement_xml = None
+        for row in self.dataset_history:
+            announcement_xml = row['announcementXML']
+        eprint(f"announcement_xml={announcement_xml}")
+
+        announcement_xml = f"/local/wwwspecial/proteomecentral/var/submissions/{announcement_xml}"
+        parser = PXXMLParser()
+        result = parser.parse_file(announcement_xml)
+        self.status_response = parser.response_status
+        self.dataset = parser.dataset
+        self.dataset['datasetHistory'] = self.dataset_history
+        return(self.status_response['status_code'], self.status_response['message'], self.dataset)
+
+
+
+    #### Get the dataset history from the MySQL server
+    def get_dataset_history_from_rdbms(self, dataset_identifier):
+
+        if socket.gethostname() != 'mimas':
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
+            return self.status_response['status']
+
+        table_name = "datasetHistory"
+        if False:
+            table_name += '_test'
+
+        sql = f"SELECT dataset_id,datasetIdentifier,revisionNumber,reanalysisNumber,isLatestRevision,PXPartner,status,primarySubmitter,title,species,instrument," \
+               "publication,keywordList,announcementXML,identifierDate,submissionDate,revisionDate,changeLogEntry " \
+               "FROM {table_name} " \
+               "WHERE dataset_id = '{dataset_identifier}' " \
+               "ORDER BY reanalysisNumber,revisionNumber,revisionDate"
+
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            if DEBUG:
+                eprint(f"{timestamp}: DEBUG: Connecting to MySQL RDBMS on {self.config['DB_serverName']}")
+        try:
+            session = pymysql.connect(host=self.config['DB_serverName'],
+                                      user=self.config['DB_userName'],
+                                      password=self.config['DB_password'],
+                                      database=self.config['DB_databaseName'])
+        except:
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
+            return self.status_response['status']
+
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: DEBUG: Fetching history for {dataset_identifier} from RDBMS")
+
+        try:
+            cursor = session.cursor(DictCursor)
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            cursor.close()
+        except:
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to get dataset history from back-end database' }
+            return self.status_response['status']
+
+        self.status_response = { 'status_code': 200, 'status': 'OK', 'error_code': 'OK', 'description': f"{len(rows)} of history data for {dataset_identifier} fetched" }
+        self.dataset_history = rows
+        return self.status_response['status']
 
 
     #### Print the contents of the dataset object
