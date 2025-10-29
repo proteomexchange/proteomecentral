@@ -32,11 +32,12 @@ def tsv_generator(list_of_lists):
 
 
 def get_dataset(identifier) -> str:
-    status_code, message, dataset = master_datasets.fetch_dataset_from_PC(identifier)
+    status_code, message, dataset = master_datasets.get_dataset(identifier)
     if status_code == 200:
+        dataset['a'] = 'b'
         return(ast.literal_eval(repr(dataset)))
     else:
-        return(message,status_code)
+        return(message, status_code)
 
 
 def list_datasets(resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None, repository = None, outputFormat = None) -> str:
