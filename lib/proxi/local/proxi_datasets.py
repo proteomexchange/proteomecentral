@@ -55,7 +55,7 @@ class ProxiDatasets:
         self.last_refresh_timestamp = None
 
         self.dataset_history = None
-        #self.refresh_data()
+        self.refresh_data()
 
 
 
