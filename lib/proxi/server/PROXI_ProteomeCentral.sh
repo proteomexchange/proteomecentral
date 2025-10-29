@@ -13,7 +13,8 @@ then
     /bin/rm $ELOGFILE
 fi
 
-export PATH=/net/dblocal/src/python/python3/bin:$PATH
+#export PATH=/net/dblocal/src/python/python3/bin:$PATH
+export PATH=/proteomics/sw/python/python3/bin:$PATH
 
 exec python3 app_${RESOURCE}_${PROXI_INSTANCE}.py 1>$LOGFILE 2>$ELOGFILE
 

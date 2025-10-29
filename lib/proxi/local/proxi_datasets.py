@@ -54,8 +54,7 @@ class ProxiDatasets:
         self.last_refresh_timestamp = None
 
         self.dataset_history = None
-
-        self.refresh_data()
+        #self.refresh_data()
 
 
 
@@ -114,12 +113,14 @@ class ProxiDatasets:
         if status_code == 200:
             try:
                 payload = payload.decode('utf-8', 'replace')
+                if DEBUG:
+                    eprint(f"Received payload of {len(payload)} bytes")
                 dataset = json.loads(payload)
                 message = { "status": status_code }
             except Exception as error:
                 status_code = 500
                 message = { "status": status_code, "title": "Internal JSON parsing error", "detail": "Unable to parse JSON from internal call", "type": "about:blank" }
-            return(status_code, message, dataset)
+            return status_code, message, dataset
 
         if status_code == 404:
             title = 'Dataset not available'
@@ -149,7 +150,7 @@ class ProxiDatasets:
         self.dataset = {}
         result = self.get_dataset_history_from_rdbms(dataset_identifier)
         if result != 'OK':
-            return(self.status_response['status_code'], self.status_response['message'], self.dataset)
+            return(self.status_response['status_code'], self.status_response['description'], self.dataset)
 
         announcement_xml = None
         for row in self.dataset_history:
@@ -162,14 +163,14 @@ class ProxiDatasets:
         self.status_response = parser.response_status
         self.dataset = parser.dataset
         self.dataset['datasetHistory'] = self.dataset_history
-        return(self.status_response['status_code'], self.status_response['message'], self.dataset)
+        return(self.status_response['status_code'], self.status_response['description'], self.dataset)
 
 
 
     #### Get the dataset history from the MySQL server
     def get_dataset_history_from_rdbms(self, dataset_identifier):
 
-        if socket.gethostname() != 'mimas':
+        if socket.gethostname() != 'mimas.systemsbiology.net':
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
             return self.status_response['status']
 
@@ -178,15 +179,14 @@ class ProxiDatasets:
             table_name += '_test'
 
         sql = f"SELECT dataset_id,datasetIdentifier,revisionNumber,reanalysisNumber,isLatestRevision,PXPartner,status,primarySubmitter,title,species,instrument," \
-               "publication,keywordList,announcementXML,identifierDate,submissionDate,revisionDate,changeLogEntry " \
-               "FROM {table_name} " \
-               "WHERE dataset_id = '{dataset_identifier}' " \
-               "ORDER BY reanalysisNumber,revisionNumber,revisionDate"
+              f"publication,keywordList,announcementXML,identifierDate,submissionDate,revisionDate,changeLogEntry " \
+              f"FROM {table_name} " \
+              f"WHERE datasetIdentifier = '{dataset_identifier}' " \
+              f"ORDER BY reanalysisNumber,revisionNumber,revisionDate"
 
         if DEBUG:
             timestamp = str(datetime.now().isoformat())
-            if DEBUG:
-                eprint(f"{timestamp}: DEBUG: Connecting to MySQL RDBMS on {self.config['DB_serverName']}")
+            eprint(f"{timestamp}: DEBUG: Connecting to MySQL RDBMS on {self.config['DB_serverName']}")
         try:
             session = pymysql.connect(host=self.config['DB_serverName'],
                                       user=self.config['DB_userName'],
@@ -209,9 +209,23 @@ class ProxiDatasets:
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to get dataset history from back-end database' }
             return self.status_response['status']
 
-        self.status_response = { 'status_code': 200, 'status': 'OK', 'error_code': 'OK', 'description': f"{len(rows)} of history data for {dataset_identifier} fetched" }
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp} DEBUG: Fetched {len(rows)} rows of history for {dataset_identifier}")
+
         self.dataset_history = rows
+
+        if len(rows) == 0:
+            self.status_response = { 'status_code': 404, 'status': 'ERROR', 'error_code': 'NoSuchIdentifier', 'description': f"Identifier {dataset_identifier} has not yet been reserved for use by any repository" }
+            return self.status_response['status']
+
+        if len(rows) == 1:
+            self.status_response = { 'status_code': 404, 'status': 'ERROR', 'error_code': 'DATASETNOTRELEASED', 'description': f"Dataset {dataset_identifier} has not yet been released" }
+            return self.status_response['status']
+
+        self.status_response = { 'status_code': 200, 'status': 'OK', 'error_code': 'OK', 'description': f"{len(rows)} of history data for {dataset_identifier} fetched" }
         return self.status_response['status']
+
 
 
     #### Print the contents of the dataset object
@@ -730,10 +744,11 @@ def main():
     if params.id is not None and params.id != '':
         id = params.id
 
-    status_code,message = proxi_datasets.fetch_dataset_from_PC(id)
+    #status_code, message, dataset = proxi_datasets.fetch_dataset_from_PC(id)
+    status_code, message, dataset = proxi_datasets.get_dataset(id)
     print('Status='+str(status_code))
     print('Message='+str(message))
-    print(proxi_datasets.dataset)
+    print(dataset)
 
 
 if __name__ == "__main__": main()
