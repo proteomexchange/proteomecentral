@@ -285,16 +285,28 @@ class ProxiDatasets:
             return
 
         with open(extern_sdrf_path) as infile:
-            n_files = 0
+            files = {}
+            file_icolumn = None
             first_line = True
             sdrf_data = { 'titles': None, 'rows': [] }
             for line in infile:
                 if first_line:
                     sdrf_data['titles'] = line.strip().split("\t")
                     first_line = False
+                    icolumn = 0
+                    for title in sdrf_data['titles']:
+                        if title == 'comment[data file]':
+                            file_icolumn = icolumn
+                            break
+                        icolumn += 1
                     continue
                 columns = line.strip().split("\t")
                 sdrf_data['rows'].append(columns)
+                if file_icolumn is not None:
+                    files[columns[file_icolumn]] = True
+
+            sdrf_data['n_samples'] = len(sdrf_data['rows'])
+            sdrf_data['n_files'] = len(files)
 
         sdrf_metadata['sdrf_data'] = sdrf_data
         sdrf_metadata['external_sdrf_ui_url'] = f"https://github.com/bigbio/proteomics-sample-metadata/blob/master/annotated-projects/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
