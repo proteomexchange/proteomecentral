@@ -200,6 +200,10 @@ class ProxiDatasets:
         self.status_response = parser.response_status
         self.dataset = parser.dataset
         self.dataset['datasetHistory'] = self.dataset_history
+
+        #### Get SDRF information if available
+        self.dataset['sdrf_metadata'] = self.get_sdrf_metdata(decomposed_dataset_identifier['stripped_dataset_identifier'])
+
         return(self.status_response['status_code'], self.status_response, self.dataset)
 
 
@@ -266,6 +270,36 @@ class ProxiDatasets:
 
         self.status_response = { 'status_code': 200, 'status': 'OK', 'error_code': 'OK', 'description': f"{len(rows)} of history data for {dataset_identifier} fetched" }
         return self.status_response['status']
+
+
+
+    #### Get SDRF metadata
+    def get_sdrf_metdata(self, dataset_identifier):
+
+        extern_sdrfs_dir = '/net/dblocal/wwwspecial/proteomecentral/extern/proteomics-metadata-standard/annotated-projects'
+
+        sdrf_metadata = { 'external_sdrf_ui_url': None, 'external_sdrf_data_url': None, 'submitted_sdrf_ui_url': False, 'submitted_sdrf_data_url': False, 'sdrf_data': None }
+
+        extern_sdrf_path = f"{extern_sdrfs_dir}/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        if not os.path.exists(extern_sdrf_path):
+            return
+
+        with open(extern_sdrf_path) as infile:
+            n_files = 0
+            first_line = True
+            sdrf_data = { 'titles': None, 'rows': [] }
+            for line in infile:
+                if first_line:
+                    sdrf_data['titles'] = line.strip().split("\t")
+                    first_line = False
+                    continue
+                columns = line.strip().split("\t")
+                sdrf_data['rows'].append(columns)
+
+        sdrf_metadata['sdrf_data'] = sdrf_data
+        sdrf_metadata['external_sdrf_ui_url'] = f"https://github.com/bigbio/proteomics-sample-metadata/blob/master/annotated-projects/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['external_sdrf_data_url'] = f"https://raw.githubusercontent.com/bigbio/proteomics-sample-metadata/refs/heads/master/annotated-projects/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        return sdrf_metadata
 
 
 
