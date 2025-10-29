@@ -34,8 +34,7 @@ def tsv_generator(list_of_lists):
 def get_dataset(identifier) -> str:
     status_code, message, dataset = master_datasets.get_dataset(identifier)
     if status_code == 200:
-        dataset['a'] = 'b'
-        return(ast.literal_eval(repr(dataset)))
+        return(dataset)
     else:
         return(message, status_code)
 
