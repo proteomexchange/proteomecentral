@@ -12,6 +12,7 @@ from pymysql.cursors import DictCursor
 import socket
 from datetime import datetime, timezone
 import timeit
+import re
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 from pxxml_parser import PXXMLParser
@@ -144,17 +145,53 @@ class ProxiDatasets:
 
 
 
+    #### Decompose the identifier into its part if any
+    def decompose_dataset_identifier(self, dataset_identifier):
+        result = { "dataset_identifier": dataset_identifier, "stripped_dataset_identifier": None, "reanalysisNumber": None, "revisionNumber": None }
+        match = re.search(r'\.(\d+)', dataset_identifier)
+        if match:
+            result['reanalysisNumber'] = int(match.group(1))
+            dataset_identifier = dataset_identifier.replace(f".{match.group(1)}", "")
+        match = re.search(r'\-(\d+)', dataset_identifier)
+        if match:
+            result['revisionNumber'] = int(match.group(1))
+            dataset_identifier = dataset_identifier.replace(f"-{match.group(1)}", "")
+        result['stripped_dataset_identifier'] = dataset_identifier
+        return result
+
+
+
     #### Get the dataset metadata from the local system
     def get_dataset(self, dataset_identifier):
 
+        decomposed_dataset_identifier = self.decompose_dataset_identifier(dataset_identifier)
+
         self.dataset = {}
-        result = self.get_dataset_history_from_rdbms(dataset_identifier)
+        result = self.get_dataset_history_from_rdbms(decomposed_dataset_identifier['stripped_dataset_identifier'])
         if result != 'OK':
-            return(self.status_response['status_code'], self.status_response['description'], self.dataset)
+            return(self.status_response['status_code'], self.status_response, self.dataset)
 
         announcement_xml = None
         for row in self.dataset_history:
-            announcement_xml = row['announcementXML']
+            is_correct_reanalysis_number = False
+            is_correct_revision_number = False
+            if decomposed_dataset_identifier['reanalysisNumber'] is not None:
+                if decomposed_dataset_identifier['reanalysisNumber'] == row['reanalysisNumber']:
+                    is_correct_reanalysis_number = True
+            else:
+                is_correct_reanalysis_number = True
+            if decomposed_dataset_identifier['revisionNumber'] is not None:
+                if decomposed_dataset_identifier['revisionNumber'] == row['revisionNumber']:
+                    is_correct_revision_number = True
+            else:
+                is_correct_revision_number = True
+            if is_correct_reanalysis_number is True and is_correct_revision_number is True:
+                announcement_xml = row['announcementXML']
+
+        if announcement_xml is None:
+            self.status_response = { 'status_code': 404, 'status': 'ERROR', 'error_code': 'VersionNotFound', 'description': 'Unable to find the specified reanalysis or revision number for this dataset' }
+            return(self.status_response['status_code'], self.status_response, self.dataset)
+
         eprint(f"announcement_xml={announcement_xml}")
 
         announcement_xml = f"/local/wwwspecial/proteomecentral/var/submissions/{announcement_xml}"
@@ -163,7 +200,7 @@ class ProxiDatasets:
         self.status_response = parser.response_status
         self.dataset = parser.dataset
         self.dataset['datasetHistory'] = self.dataset_history
-        return(self.status_response['status_code'], self.status_response['description'], self.dataset)
+        return(self.status_response['status_code'], self.status_response, self.dataset)
 
 
 
@@ -220,7 +257,11 @@ class ProxiDatasets:
             return self.status_response['status']
 
         if len(rows) == 1:
-            self.status_response = { 'status_code': 404, 'status': 'ERROR', 'error_code': 'DATASETNOTRELEASED', 'description': f"Dataset {dataset_identifier} has not yet been released" }
+            try:
+                repository = rows[0]['PXPartner']
+            except:
+                repository = '?'
+            self.status_response = { 'status_code': 404, 'status': 'ERROR', 'error_code': 'DatasetNotYetReleased', 'description': f"Dataset {dataset_identifier} has not yet been released by {repository}", 'repository': repository }
             return self.status_response['status']
 
         self.status_response = { 'status_code': 200, 'status': 'OK', 'error_code': 'OK', 'description': f"{len(rows)} of history data for {dataset_identifier} fetched" }
