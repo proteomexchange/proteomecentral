@@ -32,7 +32,7 @@ class ProxiLibraries:
         self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'UNKNOWN_PL25', 'description': 'An improperly handled error has occurred' }
 
         self.column_data = [
-            [ 'Library Identifier', 'id_name' ],
+            [ 'Identifier', 'id_name' ],
             [ 'Version Tag', "version_tag" ],
             [ 'Title', 'title' ],
             [ 'Source', 'source' ],
@@ -396,13 +396,13 @@ class ProxiLibraries:
         if resultType == 'resultset':
             libraries_title_list = []
             for column in self.column_data:
-                libraries_title_list.append(rows[column[0]])
+                libraries_title_list.append(column[0])
             resultset_row_list = []
-            for rows in new_rows:
-                row = []
+            for row in new_rows:
+                reformatted_row = []
                 for column in self.column_data:
-                    row.append(rows[column[1]])
-                resultset_row_list.append(row)
+                    reformatted_row.append(row[column[1]])
+                resultset_row_list.append(reformatted_row)
             message['libraries'] = resultset_row_list
             message['result_set'] = { 'page_size': pageSize, 'page_number': pageNumber, 'n_rows_returned': n_rows,
                                     'n_available_rows': match_count, 'n_available_pages': n_available_pages,
