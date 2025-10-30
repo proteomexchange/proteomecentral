@@ -56,6 +56,15 @@ def list_datasets(resultType, pageSize = None, pageNumber = None, species = None
         return(message, status_code)
 
 
+def get_library(identifier) -> str:
+    libraries = ProxiLibraries()
+    status_code, message, library = libraries.get_library(identifier)
+    if status_code == 200:
+        return(library)
+    else:
+        return(message, status_code)
+
+
 def get_libraries(resultType, pageSize = None, pageNumber = None, species = None, accession = None, fragmentation_type = None, lab_head_full_name = None, search = None, keywords = None, year = None, source = None, outputFormat = None) -> str:
 
     libraries = ProxiLibraries()

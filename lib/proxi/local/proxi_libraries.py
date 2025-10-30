@@ -70,7 +70,7 @@ class ProxiLibraries:
     def get_library(self, identifier=None, version_tag=None):
 
         if identifier is None or not isinstance(identifier, str):
-            return(404, { "status": 404, "title": "identifier not specified", "detail": f"PXD identifier not specified or invalid", "type": "about:blank" }, {} )
+            return(404, { "status": 404, "title": "identifier not specified", "detail": f"PXL identifier not specified or invalid", "type": "about:blank" }, {} )
 
         found_row = None
         n_matching_rows = 0

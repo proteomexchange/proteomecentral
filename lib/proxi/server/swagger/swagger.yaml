@@ -49,9 +49,9 @@ paths:
         default: 1
       - name: "resultType"
         in: "query"
-        description: "Type of result to return to the user, where 'resultset' returns a complex \
-          \ resultset format with facets and table-friendly fomatting as used by the \
-          \ ProteomeCentral UI, and where 'compact' and 'full' returns a more traditional \
+        description: "Type of result to return to the user, where 'resultset' returns a complex\
+          \ resultset format with facets and table-friendly fomatting as used by the\
+          \ ProteomeCentral UI, and where 'compact' and 'full' returns a more traditional\
           \ list of objects."
         type: "string"
         default: "compact"
@@ -197,9 +197,9 @@ paths:
         default: 0
       - name: "resultType"
         in: "query"
-        description: "Type of result to return to the user, where 'resultset' returns a complex \
-          \ resultset format with facets and table-friendly fomatting as used by the \
-          \ ProteomeCentral UI, and where 'compact' and 'full' returns a more traditional \
+        description: "Type of result to return to the user, where 'resultset' returns a complex\
+          \ resultset format with facets and table-friendly fomatting as used by the\
+          \ ProteomeCentral UI, and where 'compact' and 'full' returns a more traditional\
           \ list of objects."
         type: "string"
         default: "compact"
@@ -222,12 +222,12 @@ paths:
       - name: "fragmentation_type"
         in: "query"
         description: "Filter the list of libraries by fragmentation type, multiple types\
-          \ search can be performed by [LTQ, QTOF]"
+          \ search can be performed by [CID, HCD]"
         required: false
         type: "string"
       - name: "lab_head_full_name"
         in: "query"
-        description: "Filter the list of datasets by lab head information"
+        description: "Filter the list of libraries by lab head information"
         required: false
         type: "string"
       - name: "search"
@@ -265,6 +265,39 @@ paths:
             items:
               type: "object"
               properties: {}
+        400:
+          description: "Bad request. The requested parameters are not supported."
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: "No data found for the specified parameters."
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/Error"
+      x-tags:
+      - tag: "libraries"
+  /libraries/{identifier}:
+    get:
+      tags:
+      - "libraries"
+      summary: "Get an specific library"
+      operationId: "controllers.default_controller.get_library"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "identifier"
+        in: "path"
+        description: "Identifier of the library"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Library"
         400:
           description: "Bad request. The requested parameters are not supported."
           schema:
