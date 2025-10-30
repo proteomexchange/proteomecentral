@@ -49,10 +49,14 @@ paths:
         default: 1
       - name: "resultType"
         in: "query"
-        description: "Type of the object to be retrieve Compact or Full dataset"
+        description: "Type of result to return to the user, where 'resultset' returns a complex \
+          \ resultset format with facets and table-friendly fomatting as used by the \
+          \ ProteomeCentral UI, and where 'compact' and 'full' returns a more traditional \
+          \ list of objects."
         type: "string"
         default: "compact"
         enum:
+        - "resultset"
         - "compact"
         - "full"
       - name: "species"
@@ -193,11 +197,14 @@ paths:
         default: 0
       - name: "resultType"
         in: "query"
-        description: "Type of the object to be retrieve Compact or Full dataset"
-        required: false
+        description: "Type of result to return to the user, where 'resultset' returns a complex \
+          \ resultset format with facets and table-friendly fomatting as used by the \
+          \ ProteomeCentral UI, and where 'compact' and 'full' returns a more traditional \
+          \ list of objects."
         type: "string"
         default: "compact"
         enum:
+        - "resultset"
         - "compact"
         - "full"
       - name: "species"
