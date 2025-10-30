@@ -21,7 +21,7 @@ from proxi_libraries import ProxiLibraries
 from usi_validator import UsiValidator
 from usi_examples import UsiExamples
 from proxi_annotator import ProxiAnnotator
-from proxi_comparator import ProxiComparator
+#from proxi_comparator import ProxiComparator
 
 master_datasets = ProxiDatasets()
 
@@ -99,7 +99,8 @@ def annotator(body, resultType='compact', tolerance=None) -> str:
     return annotator.annotate(body, resultType=resultType, tolerance=tolerance)
 
 def comparator(body, resultType='compact', tolerance=None) -> str:
-    comparator = ProxiComparator()
-    return comparator.compare(body, resultType=resultType, tolerance=tolerance)
+    return( { "status": 501, "title": "Endpoint not implemented", "detail": "Although this is an officially defined PROXI endpoint, it has not yet been implemented at this server", "type": "about:blank" }, 501 )
+    #comparator = ProxiComparator()
+    #return comparator.compare(body, resultType=resultType, tolerance=tolerance)
 
 
