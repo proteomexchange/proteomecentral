@@ -726,6 +726,54 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+  /compare:
+    post:
+      summary: Compare the first two input list of spectra
+      operationId: "controllers.default_controller.annotator"
+      description: An endpoint to annotate a POSTed JSON list of spectra
+      tags:
+      - comparator
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "JSON list of spectra"
+        required: true
+        schema:
+          type: array
+          items:
+            $ref: "#/definitions/Spectrum"
+      - name: "resultType"
+        in: "query"
+        description: "Type of the object to be retrieved. Currently there is no difference between 'compact' and 'full'"
+        required: false
+        type: "string"
+        default: "compact"
+        enum:
+        - "compact"
+        - "full"
+      - name: "tolerance"
+        in: "query"
+        description: "Annotation tolerance in ppm"
+        required: false
+        type: "number"
+        default: 20
+      responses:
+        "200":
+          description: Comparison results
+          schema:
+            type: object
+        '400':
+          description: Bad request. The requested parameters are not supported.
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
 definitions:
   OntologyTerm:
     required:

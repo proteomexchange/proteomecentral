@@ -21,6 +21,7 @@ from proxi_libraries import ProxiLibraries
 from usi_validator import UsiValidator
 from usi_examples import UsiExamples
 from proxi_annotator import ProxiAnnotator
+from proxi_comparator import ProxiComparator
 
 master_datasets = ProxiDatasets()
 
@@ -96,5 +97,9 @@ def usi_examples() -> str:
 def annotator(body, resultType='compact', tolerance=None) -> str:
     annotator = ProxiAnnotator()
     return annotator.annotate(body, resultType=resultType, tolerance=tolerance)
+
+def comparator(body, resultType='compact', tolerance=None) -> str:
+    comparator = ProxiComparator()
+    return comparator.compare(body, resultType=resultType, tolerance=tolerance)
 
 
