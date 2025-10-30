@@ -729,7 +729,7 @@ paths:
   /compare:
     post:
       summary: Compare the first two input list of spectra
-      operationId: "controllers.default_controller.annotator"
+      operationId: "controllers.default_controller.comparator"
       description: An endpoint to annotate a POSTed JSON list of spectra
       tags:
       - comparator
