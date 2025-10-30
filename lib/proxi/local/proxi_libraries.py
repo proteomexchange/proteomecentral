@@ -392,10 +392,28 @@ class ProxiLibraries:
         else:
             n_available_pages = int(n_available_pages) +1
 
-        message['libraries'] = new_rows
-        message['result_set'] = { 'page_size': pageSize, 'page_number': pageNumber, 'n_rows_returned': n_rows,
-                                  'n_available_rows': match_count, 'n_available_pages': n_available_pages,
-                                  'column_title_list': column_title_list, 'column_key_list': column_key_list }
+        #### For resultType=resultset, transform to a list of lists of just the most interesting attributes
+        if resultType == 'resultset':
+            libraries_title_list = []
+            for column in self.column_data:
+                libraries_title_list.append(rows[column[0]])
+            resultset_row_list = []
+            for rows in new_rows:
+                row = []
+                for column in self.column_data:
+                    row.append(rows[column[1]])
+                resultset_row_list.append(row)
+            message['libraries'] = resultset_row_list
+            message['result_set'] = { 'page_size': pageSize, 'page_number': pageNumber, 'n_rows_returned': n_rows,
+                                    'n_available_rows': match_count, 'n_available_pages': n_available_pages,
+                                    'libraries_title_list': libraries_title_list }
+
+        else:
+            message['libraries'] = new_rows
+            message['result_set'] = { 'page_size': pageSize, 'page_number': pageNumber, 'n_rows_returned': n_rows,
+                                    'n_available_rows': match_count, 'n_available_pages': n_available_pages,
+                                    'column_title_list': column_title_list, 'column_key_list': column_key_list }
+
         message['facets'] = facets
 
         if DEBUG:
