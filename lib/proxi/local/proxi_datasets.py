@@ -40,6 +40,8 @@ class ProxiDatasets:
             [ 'title', 'title' ],
             [ 'repository', 'PXPartner' ],
             [ 'species', 'species' ],
+            [ 'SDRF', 'sdrfData' ],
+            [ 'files', 'files' ],
             [ 'instrument', 'instrument' ],
             [ 'publication', 'publication' ],
             [ 'lab head', 'labHead' ],
@@ -55,6 +57,8 @@ class ProxiDatasets:
         self.last_refresh_timestamp = None
 
         self.dataset_history = None
+
+        self.extended_data = None
 
         if refresh_datasets:
             self.refresh_data()
@@ -378,6 +382,8 @@ class ProxiDatasets:
         eprint(f"INFO: Storing new last_refresh_timestamp {current_timestamp}")
         self.last_refresh_timestamp = current_timestamp
 
+        self.load_extended_data()
+
 
 
     #### Get the raw list of datasets from the MySQL server
@@ -511,13 +517,93 @@ class ProxiDatasets:
                 if 'n_samples' in dataset['sdrf_metadata']:
                     extended_data[identifier]['sdrf_stats'] = f"{dataset['sdrf_metadata']['n_samples']} samples / {dataset['sdrf_metadata']['n_files']} files / {dataset['sdrf_metadata']['n_rows']} rows"
 
+            print(f"    extended_data={extended_data[identifier]}")
             irow += 1
-            if irow > 10:
+            if irow > 100:
                 break
 
         if DEBUG:
             t1 = timeit.default_timer()
-            eprint(f"({(t1-t0):.4f}): Computed extended data metrics for {irow} datasets")
+            eprint(f"({(t1-t0):.4f}): Computed extended data metrics for {irow-1} datasets")
+
+        self.extended_data = extended_data
+        self.store_extended_data()
+
+
+
+    #### Store raw datasets as obtained from RDBMS
+    def store_extended_data(self):
+        if self.extended_data is None:
+            eprint(f"ERROR: [datasets.store_extended_data]: No extended_data available")
+            return 'OK'
+        extended_data_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_extended_data.json"
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: DEBUG: Storing extended_data to '{extended_data_filepath}'")
+        try:
+            with open(extended_data_filepath, 'w') as outfile:
+                json.dump(self.extended_data, outfile)
+        except:
+            eprint(f"ERROR: [datasets.store_extended_data]: Unable to write extended_data to file")
+            return 'OK'
+
+        self.status = 'OK'
+        return self.status
+
+
+
+    #### Inject the extended data
+    def inject_extended_data(self, rows):
+
+        if self.extended_data is None:
+            return rows
+
+        new_rows = []
+
+        for row in rows:
+            new_row = []
+            icolumn = 0
+            identifier = row[0]
+            while icolumn < 9:
+                if icolumn == 4:
+                    if self.extended_data is not None and identifier in self.extended_data:
+                        new_row.append(self.extended_data['sdrf_stats'])
+                        new_row.append(f"{self.extended_data['n_ms_runs']}/{self.extended_data['n_files']}")
+                    else:
+                        new_row.extend([None,None])
+                new_row.append(row[icolumn])
+                icolumn += 1
+
+        return new_rows
+
+
+    #### Store raw datasets as obtained from RDBMS
+    def load_extended_data(self):
+
+        extended_data_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_extended_data.json"
+        if not os.path.exists(extended_data_filepath):
+            eprint(f"ERROR: [datasets.load_extended_data]: No raw datasets file '{extended_data_filepath}'")
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Missing extended_data file' }
+            return self.status_response['status']
+
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: DEBUG: Loading extended_data from '{extended_data_filepath}'")
+            t0 = timeit.default_timer()
+        try:
+            with open(extended_data_filepath,) as infile:
+                self.extended_data = json.load(infile)
+        except:
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to load extended_data from file' }
+            return self.status_response['status']
+
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            t1 = timeit.default_timer()
+            eprint(f"{timestamp}: DEBUG: Loaded extended_data in {(t1-t0):.4f} seconds")
+
+        self.status = 'OK'
+        return self.status
 
 
 
@@ -767,6 +853,9 @@ class ProxiDatasets:
             eprint(f"DEBUG: Scrubbed {irow} rows")
         self.scrubbed_rows = scrubbed_rows
         self.scrubbed_lower_string_rows = scrubbed_lower_string_rows
+
+        self.scrubbed_rows = self.inject_extended_data(scrubbed_rows)
+
         return
     
 
