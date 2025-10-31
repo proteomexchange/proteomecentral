@@ -371,6 +371,7 @@ class ProxiDatasets:
                 return
 
         #### Scrub the data
+        self.load_extended_data()
         self.scrubbed_rows = None
         self.scrubbed_lower_string_rows = None
         self.scrub_data(self.raw_datasets)
@@ -381,8 +382,6 @@ class ProxiDatasets:
         current_timestamp = datetime.now().timestamp()
         eprint(f"INFO: Storing new last_refresh_timestamp {current_timestamp}")
         self.last_refresh_timestamp = current_timestamp
-
-        self.load_extended_data()
 
 
 
@@ -519,8 +518,8 @@ class ProxiDatasets:
 
             print(f"    extended_data={extended_data[identifier]}")
             irow += 1
-            if irow > 100:
-                break
+            #if irow > 100:
+            #    break
 
         if DEBUG:
             t1 = timeit.default_timer()
@@ -567,12 +566,13 @@ class ProxiDatasets:
             while icolumn < 9:
                 if icolumn == 4:
                     if self.extended_data is not None and identifier in self.extended_data:
-                        new_row.append(self.extended_data['sdrf_stats'])
-                        new_row.append(f"{self.extended_data['n_ms_runs']}/{self.extended_data['n_files']}")
+                        new_row.append(self.extended_data[identifier]['sdrf_stats'])
+                        new_row.append(self.extended_data[identifier]['file_stats'])
                     else:
                         new_row.extend([None,None])
                 new_row.append(row[icolumn])
                 icolumn += 1
+            new_rows.append(new_row)
 
         return new_rows
 
@@ -610,7 +610,7 @@ class ProxiDatasets:
     #### Compute the number of files and MS runs for a dataset
     def compute_n_msruns(self, dataset):
 
-        counts = { 'n_files': None, 'n_ms_runs': None, 'n_sdrf_samples': None }
+        counts = { 'n_files': None, 'n_ms_runs': None, 'file_stats': None, 'n_sdrf_samples': None, 'sdrf_stats': None }
         if dataset is not None and 'datasetFiles' in dataset and dataset['datasetFiles'] is not None:
             for file in dataset['datasetFiles']:
                 if 'accession' in file and file['accession'] == 'MS:1002846' or file['name'] == 'Associated raw file URI':
@@ -620,6 +620,11 @@ class ProxiDatasets:
                 if counts['n_files'] is None:
                     counts['n_files'] = 0
                 counts['n_files'] += 1
+        if counts['n_files'] is not None:
+            n_ms_runs = counts['n_ms_runs']
+            if n_ms_runs is None:
+                n_ms_runs = 0
+            counts['file_stats'] = f"{n_ms_runs}/{counts['n_files']}"
         return counts
 
 
@@ -865,6 +870,8 @@ class ProxiDatasets:
 
         facet_data = { 'species': {}, 'instrument': {}, 'keywords': {}, 'year': {}, 'repository': {} }
         facets_to_extract = { 'repository': 2, 'species': 3, 'instrument': 4, 'keywords': 8, 'year': 7, }
+        if len(rows[0]) == 11:
+            facets_to_extract = { 'repository': 2, 'species': 3, 'instrument': 6, 'keywords': 10, 'year': 9, }
         useless_keyword_list = [ 'proteomics', 'LC-MS/MS', 'LC-MSMS', 'Biological', 'human','mouse', 'mass spectrometry',
                                  'proteome', 'Arabidopsis', 'Arabidopsis thaliana', 'Biomedical', 'Biomedical;  Human',
                                  'proteomic', 'Yeast', 'Technical' ]
