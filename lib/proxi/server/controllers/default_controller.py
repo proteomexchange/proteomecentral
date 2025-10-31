@@ -23,7 +23,7 @@ from usi_examples import UsiExamples
 from proxi_annotator import ProxiAnnotator
 #from proxi_comparator import ProxiComparator
 
-master_datasets = ProxiDatasets()
+master_datasets = ProxiDatasets(refresh_datasets=True)
 
 def tsv_generator(list_of_lists):
     headerline = [ 'identifier', 'title', 'repository', 'species', 'instrument', 'publication', 'lab_head', 'announce_date', 'keywords' ]

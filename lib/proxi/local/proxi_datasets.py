@@ -28,7 +28,7 @@ from models.dataset import Dataset
 class ProxiDatasets:
 
     #### Constructor
-    def __init__(self):
+    def __init__(self, refresh_datasets=False):
         self.status = 'OK'
         self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'UNKNOWN_LD95', 'description': 'An improperly handled error has occurred' }
         self.config = self.get_config()
@@ -55,7 +55,9 @@ class ProxiDatasets:
         self.last_refresh_timestamp = None
 
         self.dataset_history = None
-        self.refresh_data()
+
+        if refresh_datasets:
+            self.refresh_data()
 
 
 
@@ -192,7 +194,7 @@ class ProxiDatasets:
             self.status_response = { 'status_code': 404, 'status': 'ERROR', 'error_code': 'VersionNotFound', 'description': 'Unable to find the specified reanalysis or revision number for this dataset' }
             return(self.status_response['status_code'], self.status_response, self.dataset)
 
-        eprint(f"announcement_xml={announcement_xml}")
+        #eprint(f"announcement_xml={announcement_xml}")
 
         announcement_xml = f"/local/wwwspecial/proteomecentral/var/submissions/{announcement_xml}"
         parser = PXXMLParser()
@@ -286,6 +288,7 @@ class ProxiDatasets:
 
         with open(extern_sdrf_path) as infile:
             files = {}
+            samples = {}
             file_icolumn = None
             first_line = True
             sdrf_data = { 'titles': None, 'rows': [] }
@@ -302,10 +305,13 @@ class ProxiDatasets:
                     continue
                 columns = line.strip().split("\t")
                 sdrf_data['rows'].append(columns)
+
                 if file_icolumn is not None:
                     files[columns[file_icolumn]] = True
+                samples[columns[0]] = True
 
-            sdrf_data['n_samples'] = len(sdrf_data['rows'])
+            sdrf_data['n_rows'] = len(sdrf_data['rows'])
+            sdrf_data['n_samples'] = len(samples)
             sdrf_data['n_files'] = len(files)
 
         sdrf_metadata['sdrf_data'] = sdrf_data
@@ -478,11 +484,63 @@ class ProxiDatasets:
         return self.status
 
 
+    #### Rebuild the extended data cache
+    def rebuild_extended_data_cache(self):
+
+        DEBUG = True
+
+        if DEBUG:
+            t0 = timeit.default_timer()
+            eprint(f"({(t0-t0):.4f}): Start rebuild_extended_data_cache()")
+
+        #### Use the cached scrubbed rows as the starter
+        rows = self.scrubbed_rows
+        extended_data = {}
+
+        irow = 0
+        for row in rows:
+            identifier = row[0]
+            print(f"irow={irow}  identifier={identifier}")
+
+            status_code, message, dataset = self.get_dataset(identifier)
+            counts = self.compute_n_msruns(dataset)
+            extended_data[identifier] = counts
+
+            dataset['sdrf_metadata'] = self.get_sdrf_metdata(identifier)
+            if dataset['sdrf_metadata'] is not None and 'sdrf_data' in dataset['sdrf_metadata']:
+                if 'n_samples' in dataset['sdrf_metadata']:
+                    extended_data[identifier]['sdrf_stats'] = f"{dataset['sdrf_metadata']['n_samples']} samples / {dataset['sdrf_metadata']['n_files']} files / {dataset['sdrf_metadata']['n_rows']} rows"
+
+            irow += 1
+            if irow > 10:
+                break
+
+        if DEBUG:
+            t1 = timeit.default_timer()
+            eprint(f"({(t1-t0):.4f}): Computed extended data metrics for {irow} datasets")
+
+
+
+    #### Compute the number of files and MS runs for a dataset
+    def compute_n_msruns(self, dataset):
+
+        counts = { 'n_files': None, 'n_ms_runs': None, 'n_sdrf_samples': None }
+        if dataset is not None and 'datasetFiles' in dataset and dataset['datasetFiles'] is not None:
+            for file in dataset['datasetFiles']:
+                if 'accession' in file and file['accession'] == 'MS:1002846' or file['name'] == 'Associated raw file URI':
+                    if counts['n_ms_runs'] is None:
+                        counts['n_ms_runs'] = 0
+                    counts['n_ms_runs'] += 1
+                if counts['n_files'] is None:
+                    counts['n_files'] = 0
+                counts['n_files'] += 1
+        return counts
+
 
     #### List datasets
     def list_datasets(self, resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None, repository = None, outputFormat = None):
 
-        DEBUG = True
+        DEBUG = False
 
         if DEBUG:
             t0 = timeit.default_timer()
@@ -789,6 +847,7 @@ def main():
     argparser.add_argument('--verbose', action='count', help='If set, print more information about ongoing processing' )
     argparser.add_argument('--id', action='store', default=None, help='PXD identifier to access')
     argparser.add_argument('--list', action='count', help='If set, list datasets' )
+    argparser.add_argument('--initialize_extended_data', action='count', help='If set, (re)initialize the extended data like number of files and SDRF information' )
     params = argparser.parse_args()
 
     # Set verbose mode
@@ -800,6 +859,15 @@ def main():
         timestamp = str(datetime.now().isoformat())
         t0 = timeit.default_timer()
         eprint(f"{timestamp} ({(t0-t0):.4f}): Create ProxiDatasets object")
+
+    #### Mechanism to rebuild the extended data cache for files and SDRF info
+    if params.initialize_extended_data is not None:
+        proxi_datasets = ProxiDatasets(refresh_datasets=True)
+        if proxi_datasets.status != 'OK':
+            eprint("ERROR: Failed to initialize")
+            return
+        proxi_datasets.rebuild_extended_data_cache()
+        return
 
     proxi_datasets = ProxiDatasets()
     if proxi_datasets.status != 'OK':
