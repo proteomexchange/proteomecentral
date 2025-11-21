@@ -513,8 +513,9 @@ class ProxiDatasets:
 
             dataset['sdrf_metadata'] = self.get_sdrf_metdata(identifier)
             if dataset['sdrf_metadata'] is not None and 'sdrf_data' in dataset['sdrf_metadata']:
-                if 'n_samples' in dataset['sdrf_metadata']:
-                    extended_data[identifier]['sdrf_stats'] = f"{dataset['sdrf_metadata']['n_samples']} samples / {dataset['sdrf_metadata']['n_files']} files / {dataset['sdrf_metadata']['n_rows']} rows"
+                sdrf_data = dataset['sdrf_metadata']['sdrf_data']
+                if 'n_samples' in sdrf_data:
+                    extended_data[identifier]['sdrf_stats'] = f"{sdrf_data['n_samples']} samples / {sdrf_data['n_files']} files / {sdrf_data['n_rows']} rows"
 
             print(f"    extended_data={extended_data[identifier]}")
             irow += 1
@@ -868,10 +869,10 @@ class ProxiDatasets:
     #### Compute the available facets
     def compute_facets(self, rows):
 
-        facet_data = { 'species': {}, 'instrument': {}, 'keywords': {}, 'year': {}, 'repository': {} }
+        facet_data = { 'species': {}, 'instrument': {}, 'keywords': {}, 'year': {}, 'repository': {}, 'sdrf': {}, 'files': {} }
         facets_to_extract = { 'repository': 2, 'species': 3, 'instrument': 4, 'keywords': 8, 'year': 7, }
-        if len(rows[0]) == 11:
-            facets_to_extract = { 'repository': 2, 'species': 3, 'instrument': 6, 'keywords': 10, 'year': 9, }
+        if len(rows) > 0 and len(rows[0]) == 11:
+            facets_to_extract = { 'repository': 2, 'species': 3, 'instrument': 6, 'keywords': 10, 'year': 9, 'sdrf': 4, 'files': 5 }
         useless_keyword_list = [ 'proteomics', 'LC-MS/MS', 'LC-MSMS', 'Biological', 'human','mouse', 'mass spectrometry',
                                  'proteome', 'Arabidopsis', 'Arabidopsis thaliana', 'Biomedical', 'Biomedical;  Human',
                                  'proteomic', 'Yeast', 'Technical' ]
@@ -893,11 +894,20 @@ class ProxiDatasets:
                 if facet_name == 'year':
                     values_str = values_str[0:4]
  
+                if values_str is None:
+                    values_str = ''
                 values = values_str.split(',')
 
                 cell_items = {}
                 for value in values:
                     value = value.strip()
+                    if facet_name == 'sdrf':
+                        if value != '':
+                            value = 'SDRF'
+                        else:
+                            value = 'No SDRF'
+                    if facet_name == 'files':
+                        value = self.categorize_files_value_for_facet(value)
                     if value == '':
                         continue
                     if facet_name == 'keywords' and value.lower() in useless_keywords:
@@ -909,7 +919,7 @@ class ProxiDatasets:
                         row_match_index[facet_name][value] = {}
                     row_match_index[facet_name][value][irow] = True
                     cell_items[value] = True
-                if facet_name != 'year':
+                if facet_name != 'year' and facet_name != 'files' and facet_name != 'sdrf':
                     row[icolumn] = ", ".join(sorted(list(cell_items.keys())))
             irow += 1
 
@@ -919,6 +929,8 @@ class ProxiDatasets:
                 new_values_list.append( [key,value] )
             if category == 'year':
                 new_values_list.sort(key=lambda x: x[0], reverse=True)
+            elif category == 'files':
+                new_values_list.sort(key=lambda x: int(re.search(r'\d+', x[0]).group()) if re.search(r'\d+', x[0]) else int(999999), reverse=False)
             else:
                 new_values_list.sort(key=lambda x: x[1], reverse=True)
             new_values = []
@@ -933,6 +945,39 @@ class ProxiDatasets:
             facet_data[category] = new_values
 
         return(facet_data, row_match_index)
+
+
+
+    #### Put the files value into a bin
+    def categorize_files_value_for_facet(self, value):
+        if value == '':
+            return 'unknown'
+        n_msruns_str = ''
+        for char in list(value):
+            if char == '/':
+                break
+            n_msruns_str += char
+        n_msruns = int(n_msruns_str)
+        if n_msruns_str == '0':
+            value = '0'
+        elif n_msruns <= 5:
+            value = '1-5'
+        elif n_msruns <= 10:
+            value = '6-10'
+        elif n_msruns <= 20:
+            value = '11-20'
+        elif n_msruns <= 50:
+            value = '21-50'
+        elif n_msruns <= 100:
+            value = '51-100'
+        elif n_msruns <= 200:
+            value = '101-200'
+        elif n_msruns <= 500:
+            value = '201-500'
+        else:
+            value = '1000+'
+
+        return value
 
 
 
