@@ -40,8 +40,8 @@ class ProxiDatasets:
             [ 'title', 'title' ],
             [ 'repository', 'PXPartner' ],
             [ 'species', 'species' ],
-            [ 'SDRF', 'sdrfData' ],
-            [ 'files', 'files' ],
+#            [ 'SDRF', 'sdrfData' ],
+#            [ 'files', 'files' ],
             [ 'instrument', 'instrument' ],
             [ 'publication', 'publication' ],
             [ 'lab head', 'labHead' ],
@@ -60,8 +60,9 @@ class ProxiDatasets:
 
         self.extended_data = None
 
-        if refresh_datasets:
-            self.refresh_data()
+        self.refresh_data()
+        #if refresh_datasets:
+        #    self.refresh_data()
 
 
 
@@ -181,6 +182,7 @@ class ProxiDatasets:
         for row in self.dataset_history:
             is_correct_reanalysis_number = False
             is_correct_revision_number = False
+            row['isLatestRevision'] = 'N'
             if decomposed_dataset_identifier['reanalysisNumber'] is not None:
                 if decomposed_dataset_identifier['reanalysisNumber'] == row['reanalysisNumber']:
                     is_correct_reanalysis_number = True
@@ -193,6 +195,10 @@ class ProxiDatasets:
                 is_correct_revision_number = True
             if is_correct_reanalysis_number is True and is_correct_revision_number is True:
                 announcement_xml = row['announcementXML']
+        row['isLatestRevision'] = 'Y'
+        for row in self.dataset_history:
+            if announcement_xml == row['announcementXML']:
+                row['isReturnedVersion'] = 'Y'
 
         if announcement_xml is None:
             self.status_response = { 'status_code': 404, 'status': 'ERROR', 'error_code': 'VersionNotFound', 'description': 'Unable to find the specified reanalysis or revision number for this dataset' }
@@ -399,6 +405,9 @@ class ProxiDatasets:
         column_title_list = []
         for column in column_data:
             column_title_list.append(column[0])
+            #if column[0] in [ 'SDRF', 'files' ]:
+            #    column_sql_list.append(f"'-' as {column[1]}")
+            #else:
             column_sql_list.append(column[1])
         column_clause = ", ".join(column_sql_list)
 
@@ -568,10 +577,15 @@ class ProxiDatasets:
                 if icolumn == 4:
                     if self.extended_data is not None and identifier in self.extended_data:
                         new_row.append(self.extended_data[identifier]['sdrf_stats'])
+                    else:
+                        new_row.append(None)
+                elif icolumn == 5:
+                    if self.extended_data is not None and identifier in self.extended_data:
                         new_row.append(self.extended_data[identifier]['file_stats'])
                     else:
-                        new_row.extend([None,None])
-                new_row.append(row[icolumn])
+                        new_row.append(None)
+                else:
+                    new_row.append(row[icolumn])
                 icolumn += 1
             new_rows.append(new_row)
 
@@ -790,6 +804,7 @@ class ProxiDatasets:
             eprint(f"DEBUG: Scrubbing {len(rows)} rows")
 
         columns_to_scrub = { 'species': 3, 'instrument': 4, 'keywords': 8 }
+        #columns_to_scrub = { 'species': 3, 'instrument': 6, 'keywords': 10 }
         scrubbed_rows = []
         scrubbed_lower_string_rows = []
         corrections = { 'species':
@@ -860,7 +875,8 @@ class ProxiDatasets:
         self.scrubbed_rows = scrubbed_rows
         self.scrubbed_lower_string_rows = scrubbed_lower_string_rows
 
-        self.scrubbed_rows = self.inject_extended_data(scrubbed_rows)
+        #FIXME
+        #self.scrubbed_rows = self.inject_extended_data(scrubbed_rows)
 
         return
     
