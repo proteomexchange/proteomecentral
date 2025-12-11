@@ -40,8 +40,8 @@ class ProxiDatasets:
             [ 'title', 'title' ],
             [ 'repository', 'PXPartner' ],
             [ 'species', 'species' ],
-#            [ 'SDRF', 'sdrfData' ],
-#            [ 'files', 'files' ],
+            [ 'SDRF', 'sdrfData' ],
+            [ 'files', 'files' ],
             [ 'instrument', 'instrument' ],
             [ 'publication', 'publication' ],
             [ 'lab head', 'labHead' ],
@@ -405,10 +405,10 @@ class ProxiDatasets:
         column_title_list = []
         for column in column_data:
             column_title_list.append(column[0])
-            #if column[0] in [ 'SDRF', 'files' ]:
-            #    column_sql_list.append(f"'-' as {column[1]}")
-            #else:
-            column_sql_list.append(column[1])
+            if column[0] in [ 'SDRF', 'files' ]:
+                column_sql_list.append(f"'-' as {column[1]}")
+            else:
+                column_sql_list.append(column[1])
         column_clause = ", ".join(column_sql_list)
 
         where_clause = "WHERE status = 'announced'"
@@ -803,8 +803,8 @@ class ProxiDatasets:
         if DEBUG:
             eprint(f"DEBUG: Scrubbing {len(rows)} rows")
 
-        columns_to_scrub = { 'species': 3, 'instrument': 4, 'keywords': 8 }
-        #columns_to_scrub = { 'species': 3, 'instrument': 6, 'keywords': 10 }
+        #columns_to_scrub = { 'species': 3, 'instrument': 4, 'keywords': 8 }
+        columns_to_scrub = { 'species': 3, 'instrument': 6, 'keywords': 10 }
         scrubbed_rows = []
         scrubbed_lower_string_rows = []
         corrections = { 'species':
@@ -885,10 +885,10 @@ class ProxiDatasets:
     #### Compute the available facets
     def compute_facets(self, rows):
 
-        facet_data = { 'species': {}, 'instrument': {}, 'keywords': {}, 'year': {}, 'repository': {}, 'sdrf': {}, 'files': {} }
-        facets_to_extract = { 'repository': 2, 'species': 3, 'instrument': 4, 'keywords': 8, 'year': 7, }
-        if len(rows) > 0 and len(rows[0]) == 11:
-            facets_to_extract = { 'repository': 2, 'species': 3, 'instrument': 6, 'keywords': 10, 'year': 9, 'sdrf': 4, 'files': 5 }
+        facets_to_extract = { 'repository': 2, 'species': 3, 'sdrf': 4, 'files': 5, 'instrument': 6, 'year': 9, 'keywords': 10 }
+        facet_data = {}
+        for facet in facets_to_extract:
+            facet_data[facet] = {}
         useless_keyword_list = [ 'proteomics', 'LC-MS/MS', 'LC-MSMS', 'Biological', 'human','mouse', 'mass spectrometry',
                                  'proteome', 'Arabidopsis', 'Arabidopsis thaliana', 'Biomedical', 'Biomedical;  Human',
                                  'proteomic', 'Yeast', 'Technical' ]
