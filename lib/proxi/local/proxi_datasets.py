@@ -60,9 +60,8 @@ class ProxiDatasets:
 
         self.extended_data = None
 
-        self.refresh_data()
-        #if refresh_datasets:
-        #    self.refresh_data()
+        self.load_raw_datasets()
+        self.refresh_data_if_stale()
 
 
 
@@ -505,38 +504,66 @@ class ProxiDatasets:
 
         if DEBUG:
             t0 = timeit.default_timer()
-            eprint(f"({(t0-t0):.4f}): Start rebuild_extended_data_cache()")
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: INFO: Start rebuild_extended_data_cache()")
 
         #### Use the cached scrubbed rows as the starter
         rows = self.scrubbed_rows
-        extended_data = {}
+
+        previous_extended_data_timestamp = None
+        extended_data_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_extended_data.json"
+        if os.path.exists(extended_data_filepath):
+            if DEBUG:
+                timestamp = str(datetime.now().isoformat())
+                eprint(f"{timestamp}: INFO: Load existing extended data cache")
+            previous_extended_data_timestamp = os.path.getmtime(extended_data_filepath)
+            self.load_extended_data()
+            if self.status != 'OK':
+                self.extended_data = None
+
+        if self.extended_data is None:
+            extended_data = {}
+            previous_extended_data_date = '2000-01-01'
+        else:
+            extended_data = self.extended_data
+            previous_extended_data_date = previous_extended_data_timestamp.strftime("%Y-%m-%d")
+
+        if DEBUG:
+            eprint(f"{timestamp}: INFO: Begin refresh process with extended data for {len(extended_data)} datasets from file dated {previous_extended_data_timestamp}")
 
         irow = 0
+        n_updated_records = 0
         for row in rows:
             identifier = row[0]
-            print(f"irow={irow}  identifier={identifier}")
+            announce_date = row[9]   # FIXME
+            print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
 
-            status_code, message, dataset = self.get_dataset(identifier)
-            counts = self.compute_n_msruns(dataset)
-            extended_data[identifier] = counts
+            if announce_date >= previous_extended_data_date:
+                status_code, message, dataset = self.get_dataset(identifier)
+                counts_struct = self.compute_n_msruns(dataset)
+                extended_data[identifier] = counts_struct
 
-            dataset['sdrf_metadata'] = self.get_sdrf_metdata(identifier)
-            if dataset['sdrf_metadata'] is not None and 'sdrf_data' in dataset['sdrf_metadata']:
-                sdrf_data = dataset['sdrf_metadata']['sdrf_data']
-                if 'n_samples' in sdrf_data:
-                    extended_data[identifier]['sdrf_stats'] = f"{sdrf_data['n_samples']} samples / {sdrf_data['n_files']} files / {sdrf_data['n_rows']} rows"
+                dataset['sdrf_metadata'] = self.get_sdrf_metdata(identifier)
+                if dataset['sdrf_metadata'] is not None and 'sdrf_data' in dataset['sdrf_metadata']:
+                    sdrf_data = dataset['sdrf_metadata']['sdrf_data']
+                    if 'n_samples' in sdrf_data:
+                        extended_data[identifier]['sdrf_stats'] = f"{sdrf_data['n_samples']} samples / {sdrf_data['n_files']} files / {sdrf_data['n_rows']} rows"
 
-            print(f"    extended_data={extended_data[identifier]}")
+                print(f"    extended_data={extended_data[identifier]}")
+                n_updated_records += 1
+
             irow += 1
             #if irow > 100:
             #    break
 
         if DEBUG:
             t1 = timeit.default_timer()
-            eprint(f"({(t1-t0):.4f}): Computed extended data metrics for {irow-1} datasets")
+            eprint(f"({(t1-t0):.4f}): Computed extended data metrics for {n_updated_records} out of {irow-1} datasets")
 
         self.extended_data = extended_data
-        self.store_extended_data()
+        if False:
+        #if n_updated_records > 0 or False:
+            self.store_extended_data()
 
 
 
@@ -595,6 +622,8 @@ class ProxiDatasets:
     #### Store raw datasets as obtained from RDBMS
     def load_extended_data(self):
 
+        self.extended_data = None
+
         extended_data_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_extended_data.json"
         if not os.path.exists(extended_data_filepath):
             eprint(f"ERROR: [datasets.load_extended_data]: No raw datasets file '{extended_data_filepath}'")
@@ -615,7 +644,7 @@ class ProxiDatasets:
         if DEBUG:
             timestamp = str(datetime.now().isoformat())
             t1 = timeit.default_timer()
-            eprint(f"{timestamp}: DEBUG: Loaded extended_data in {(t1-t0):.4f} seconds")
+            eprint(f"{timestamp}: DEBUG: Loaded extended data for {len(self.extended_data)} datasets in {(t1-t0):.4f} seconds")
 
         self.status = 'OK'
         return self.status
