@@ -13,6 +13,7 @@ import socket
 from datetime import datetime, timezone
 import timeit
 import re
+import requests
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 from pxxml_parser import PXXMLParser
@@ -213,7 +214,9 @@ class ProxiDatasets:
         self.dataset['datasetHistory'] = self.dataset_history
 
         #### Get SDRF information if available
-        self.dataset['sdrf_metadata'] = self.get_sdrf_metdata(decomposed_dataset_identifier['stripped_dataset_identifier'])
+        self.dataset['sdrf_metadata'] = self.get_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'])
+        if self.dataset['sdrf_metadata'] is None:
+            self.dataset['sdrf_metadata'] = self.get_repository_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
 
         return(self.status_response['status_code'], self.status_response, self.dataset)
 
@@ -285,7 +288,7 @@ class ProxiDatasets:
 
 
     #### Get SDRF metadata
-    def get_sdrf_metdata(self, dataset_identifier):
+    def get_sdrf_metadata(self, dataset_identifier):
 
         extern_sdrfs_dir = '/net/dblocal/wwwspecial/proteomecentral/extern/proteomics-metadata-standard/annotated-projects'
 
@@ -326,6 +329,95 @@ class ProxiDatasets:
         sdrf_metadata['sdrf_data'] = sdrf_data
         sdrf_metadata['external_sdrf_ui_url'] = f"https://github.com/bigbio/proteomics-sample-metadata/blob/master/annotated-projects/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
         sdrf_metadata['external_sdrf_data_url'] = f"https://raw.githubusercontent.com/bigbio/proteomics-sample-metadata/refs/heads/master/annotated-projects/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        return sdrf_metadata
+
+
+    #### Get SDRF metadata
+    def get_repository_sdrf_metadata(self, identifier, dataset, sdrf_metadata=None):
+
+        if dataset is None:
+            return
+
+        if sdrf_metadata is None:
+            sdrf_metadata = { 'external_sdrf_ui_url': None, 'external_sdrf_data_url': None, 'submitted_sdrf_ui_url': False, 'submitted_sdrf_data_url': False, 'sdrf_data': None }
+
+        sdrf_file_url = None
+        if 'datasetFiles' in dataset:
+            for file_term in dataset['datasetFiles']:
+                if file_term['accession'] != 'MS:1002846':
+                    if 'sdrf' in file_term['value'] or 'SDRF' in file_term['value']:
+                        sdrf_file_url = file_term['value']
+
+        if sdrf_file_url is None:
+            return
+
+        sdrf_file_url = sdrf_file_url.replace('ftp://', 'https://')
+
+        repository_sdrf_cache_dir = os.path.dirname(os.path.abspath(__file__)) + "/sdrf_cache_dir"
+        if not os.path.exists(repository_sdrf_cache_dir):
+            os.mkdir(repository_sdrf_cache_dir)
+        repository_sdrf_cache_identifier_dir = f"{repository_sdrf_cache_dir}/{identifier}"
+        if not os.path.exists(repository_sdrf_cache_identifier_dir):
+            os.mkdir(repository_sdrf_cache_identifier_dir)
+
+        eprint(f"INFO: Processing {sdrf_file_url}")
+        match = re.search(r'.+/(.+?)$', sdrf_file_url)
+        if match:
+            sdrf_filename = match.group(1)
+        else:
+            eprint(f"ERROR: Unable to get filename from URL '{sdrf_file_url}'")
+            return
+
+        repository_sdrf_path = f"{repository_sdrf_cache_identifier_dir}/{sdrf_filename}"
+        if not os.path.exists(repository_sdrf_path):
+            response = requests.get(sdrf_file_url)
+            if response.status_code != 200:
+                eprint(f"WARNING: Failed to download 'sdrf_file_url'. Status code: {response.status_code}")
+                return
+            with open(repository_sdrf_path, 'wb') as outfile:
+                outfile.write(response.content)
+
+        delimiter = '?'
+        if repository_sdrf_path.endswith('tsv') or repository_sdrf_path.endswith('TSV'):
+            delimiter = "\t"
+        if repository_sdrf_path.endswith('txt') or repository_sdrf_path.endswith('TXT'):
+            delimiter = "\t"
+        if repository_sdrf_path.endswith('csv') or repository_sdrf_path.endswith('CSV'):
+            delimiter = ","
+
+        with open(repository_sdrf_path, encoding='utf-8', errors='ignore') as infile:
+            files = {}
+            samples = {}
+            file_icolumn = None
+            first_line = True
+            sdrf_data = { 'titles': None, 'rows': [] }
+            for line in infile:
+                if len(line.strip()) < 2:
+                    continue
+                if first_line:
+                    sdrf_data['titles'] = line.strip().split(delimiter)
+                    first_line = False
+                    icolumn = 0
+                    for title in sdrf_data['titles']:
+                        if title == 'comment[data file]':
+                            file_icolumn = icolumn
+                            break
+                        icolumn += 1
+                    continue
+                columns = line.strip().split("\t")
+                sdrf_data['rows'].append(columns)
+
+                if file_icolumn is not None and len(columns) >= file_icolumn + 1:
+                    files[columns[file_icolumn]] = True
+                samples[columns[0]] = True
+
+        sdrf_data['n_rows'] = len(sdrf_data['rows'])
+        sdrf_data['n_samples'] = len(samples)
+        sdrf_data['n_files'] = len(files)
+
+        sdrf_metadata['sdrf_data'] = sdrf_data
+        sdrf_metadata['external_sdrf_ui_url'] = sdrf_file_url
+        sdrf_metadata['external_sdrf_data_url'] = sdrf_file_url
         return sdrf_metadata
 
 
@@ -493,6 +585,8 @@ class ProxiDatasets:
             t1 = timeit.default_timer()
             eprint(f"{timestamp}: DEBUG: Loaded raw datasets in {(t1-t0):.4f} seconds")
 
+        self.last_refresh_timestamp = os.path.getmtime(raw_datasets_filepath)
+
         self.status = 'OK'
         return self.status
 
@@ -513,10 +607,10 @@ class ProxiDatasets:
         previous_extended_data_timestamp = None
         extended_data_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_extended_data.json"
         if os.path.exists(extended_data_filepath):
+            previous_extended_data_timestamp = datetime.fromtimestamp(os.path.getmtime(extended_data_filepath))
             if DEBUG:
                 timestamp = str(datetime.now().isoformat())
-                eprint(f"{timestamp}: INFO: Load existing extended data cache")
-            previous_extended_data_timestamp = os.path.getmtime(extended_data_filepath)
+                eprint(f"{timestamp}: INFO: Load existing extended data cache with datetime {previous_extended_data_timestamp}")
             self.load_extended_data()
             if self.status != 'OK':
                 self.extended_data = None
@@ -529,6 +623,7 @@ class ProxiDatasets:
             previous_extended_data_date = previous_extended_data_timestamp.strftime("%Y-%m-%d")
 
         if DEBUG:
+            timestamp = str(datetime.now().isoformat())
             eprint(f"{timestamp}: INFO: Begin refresh process with extended data for {len(extended_data)} datasets from file dated {previous_extended_data_timestamp}")
 
         irow = 0
@@ -536,14 +631,19 @@ class ProxiDatasets:
         for row in rows:
             identifier = row[0]
             announce_date = row[9]   # FIXME
-            print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
 
+            #previous_extended_data_date ='2025-12-01'
+            #if identifier == 'PXD058808':
             if announce_date >= previous_extended_data_date:
+                print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
                 status_code, message, dataset = self.get_dataset(identifier)
                 counts_struct = self.compute_n_msruns(dataset)
                 extended_data[identifier] = counts_struct
 
-                dataset['sdrf_metadata'] = self.get_sdrf_metdata(identifier)
+                dataset['sdrf_metadata'] = self.get_sdrf_metadata(identifier)
+                if dataset['sdrf_metadata'] is None:
+                    dataset['sdrf_metadata'] = self.get_repository_sdrf_metadata(identifier, dataset)
+
                 if dataset['sdrf_metadata'] is not None and 'sdrf_data' in dataset['sdrf_metadata']:
                     sdrf_data = dataset['sdrf_metadata']['sdrf_data']
                     if 'n_samples' in sdrf_data:
@@ -557,12 +657,12 @@ class ProxiDatasets:
             #    break
 
         if DEBUG:
+            timestamp = str(datetime.now().isoformat())
             t1 = timeit.default_timer()
-            eprint(f"({(t1-t0):.4f}): Computed extended data metrics for {n_updated_records} out of {irow-1} datasets")
+            eprint(f"{timestamp}: INFO: Computed extended data metrics for {n_updated_records} out of {irow-1} datasets in {(t1-t0):.4f} seconds")
 
         self.extended_data = extended_data
-        if False:
-        #if n_updated_records > 0 or False:
+        if n_updated_records > 0:
             self.store_extended_data()
 
 
