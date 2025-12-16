@@ -41,7 +41,7 @@ class ProxiDatasets:
             [ 'repository', 'PXPartner' ],
             [ 'species', 'species' ],
             [ 'SDRF', 'sdrfData' ],
-            [ 'files', 'files' ],
+            [ 'files (raw/total)', 'files' ],
             [ 'instrument', 'instrument' ],
             [ 'publication', 'publication' ],
             [ 'lab head', 'labHead' ],
@@ -600,7 +600,7 @@ class ProxiDatasets:
             new_row = []
             icolumn = 0
             identifier = row[0]
-            while icolumn < 9:
+            while icolumn < 11:
                 if icolumn == 4:
                     if self.extended_data is not None and identifier in self.extended_data:
                         new_row.append(self.extended_data[identifier]['sdrf_stats'])
@@ -673,7 +673,7 @@ class ProxiDatasets:
 
 
     #### List datasets
-    def list_datasets(self, resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None, repository = None, outputFormat = None):
+    def list_datasets(self, resultType, pageSize = None, pageNumber = None, species = None, accession = None, instrument = None, contact = None, publication = None, modification = None, search = None, keywords = None, year = None, repository = None, sdrf = None, files = None, outputFormat = None):
 
         DEBUG = False
 
@@ -684,7 +684,8 @@ class ProxiDatasets:
         #### Set up the response message
         self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'UNKNOWN_LD95', 'description': 'An improperly handled error has occurred' }
         query_block = { 'resultType': resultType, 'pageSize': pageSize, 'pageNumber': pageNumber, 'species': species, 'accession': accession, 'instrument': instrument,
-                        'contact': contact, 'publication': publication, 'modification': modification, 'search': search, 'keywords': keywords, 'year': year, 'repository': repository }
+                        'contact': contact, 'publication': publication, 'modification': modification, 'search': search, 'keywords': keywords, 'year': year,
+                        'sdrf': sdrf, 'files': files, 'repository': repository }
         result_set_block = { 'page_size': 0, 'page_number': 0, 'n_rows_returned': 0, 'n_available_rows': 0 }
         message = { 'status': self.status_response, 'query': query_block, 'result_set': result_set_block, 'facets': {} }
 
@@ -700,7 +701,7 @@ class ProxiDatasets:
             column_title_list.append(column[0])
 
         #### Check the constraints for validity
-        handled_constraints = { 'instrument': instrument, 'species': species, 'keywords': keywords, 'year': year, 'repository': repository, 'search': search }
+        handled_constraints = { 'instrument': instrument, 'species': species, 'keywords': keywords, 'year': year, 'repository': repository, 'sdrf': sdrf, 'files': files, 'search': search }
         validated_constraints = {}
         for constraint, value in handled_constraints.items():
             if value is None or str(value).strip() == '':
@@ -749,13 +750,8 @@ class ProxiDatasets:
                         break
                     if isinstance(value, str):
                         value = [ value ]
-                    if constraint != 'search':
-                        for item in value:
-                            if item not in row_match_index[constraint] or irow not in row_match_index[constraint][item]:
-                                keep = False
-                                break
 
-                    else:
+                    if constraint == 'search':
                         for item in value:
                             if item == 'PRIDEbug':
                                 if 'pubmed/0' not in row[5] and 'PXD0' not in row[5] and 'dx.doi.org/http' not in row[5]:
@@ -765,6 +761,12 @@ class ProxiDatasets:
                                 if item.lower() not in self.scrubbed_lower_string_rows[irow]:
                                     keep = False
                                     break
+                    else:
+                        for item in value:
+                            if item not in row_match_index[constraint] or irow not in row_match_index[constraint][item]:
+                                keep = False
+                                break
+
 
                 if keep:
                     new_rows.append(row)
@@ -904,8 +906,7 @@ class ProxiDatasets:
         self.scrubbed_rows = scrubbed_rows
         self.scrubbed_lower_string_rows = scrubbed_lower_string_rows
 
-        #FIXME
-        #self.scrubbed_rows = self.inject_extended_data(scrubbed_rows)
+        self.scrubbed_rows = self.inject_extended_data(scrubbed_rows)
 
         return
     
@@ -936,6 +937,7 @@ class ProxiDatasets:
             for facet_name, icolumn in facets_to_extract.items():
 
                 values_str = row[icolumn]
+                #eprint(f"***{facet_name}={icolumn}  value={values_str} (len={len(row)})")
                 if facet_name == 'year':
                     values_str = values_str[0:4]
  
@@ -1001,6 +1003,8 @@ class ProxiDatasets:
         for char in list(value):
             if char == '/':
                 break
+            if char == '-':
+                return '?'
             n_msruns_str += char
         n_msruns = int(n_msruns_str)
         if n_msruns_str == '0':
@@ -1020,7 +1024,7 @@ class ProxiDatasets:
         elif n_msruns <= 500:
             value = '201-500'
         else:
-            value = '1000+'
+            value = '500+'
 
         return value
 
