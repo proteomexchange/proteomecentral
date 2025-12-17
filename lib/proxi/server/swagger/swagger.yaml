@@ -114,6 +114,16 @@ paths:
         description: "Select records based on the exact name of the repository"
         required: false
         type: "string"
+      - name: "sdrf"
+        in: "query"
+        description: "Select records based on having SDRF information"
+        required: false
+        type: "string"
+      - name: "files"
+        in: "query"
+        description: "Select records based on the number of files"
+        required: false
+        type: "string"
       - name: "outputFormat"
         in: "query"
         description: "Output format desired. By default JSON, but TSV is also valid input"
