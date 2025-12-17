@@ -2,7 +2,9 @@
     margin-top: 0;
     padding: 5px;
     background-color: #ddd;
+    text-transform: capitalize;
 }
+
 
 .sectbox {
     margin-right: 5px;
@@ -15,6 +17,54 @@
     text-align: center;
     background-color: #fff;
 }
+
+.sectbox.big {
+    background-size: contain;
+    background-position-x: center;
+    background-repeat: no-repeat;
+    color: #444;
+    font-size: x-large;
+    width: 408px !important;
+    height: 208px !important;
+    margin: 15px !important;
+}
+.sectbox.big:hover {
+    cursor: pointer;
+    color: #666 !important;
+    text-decoration: none !important;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;
+    transform: scale(1.1);
+    transition: transform 0.2s;
+}
+.sectboxbigtitle {
+    background-image: url("/images/topbackground.jpg");
+    color: #fff;
+    margin-bottom: 0px;
+    border-bottom-left-radius: 10px;
+    border-top-right-radius: 5px;
+    padding: 5px 20px;
+    font-size: xx-large;
+    text-align: center;
+    float: right;
+}
+
+.bgwashedout {
+    background-blend-mode: overlay;
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+
+.sectbox.nolinkbig {
+    background-size: contain;
+    background-position-x: center;
+    background-repeat: no-repeat;
+    color: #444;
+    font-size: x-large;
+    width: 408px !important;
+    height: 208px !important;
+    margin: 15px !important;
+}
+
 
 svg a:hover text {
     fill: #f26722;
@@ -34,19 +84,62 @@ a:hover, .filterlink:hover {
     text-decoration: underline !important;
 }
 
+
+.data-full {
+    max-width: 900px;
+    background-color: #fff;
+    border: 2px solid #2c99ce;
+    float: left;
+    border-radius: 15px;
+    box-shadow: 6px 6px 10px 0 #aaa;
+    margin-bottom: 20px;
+}
+
+.data-popup {
+    position: fixed;
+    top: 2vh;
+    left: 2vw;
+    max-width: 95vw;
+    max-height: 95vh;
+    background-color: #fff;
+    border: 2px solid #2c99ce;
+    float: left;
+    border-radius: 15px;
+    box-shadow: 6px 6px 10px 0 #aaa;
+    margin-bottom: 20px;
+    z-index: 50;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0.5s, opacity 0.5s linear;
+}
+
+.datafieldname {
+    width: 0px;
+    min-width: 160px;
+    white-space: nowrap;
+    vertical-align: baseline;
+}
+
 .pcdatatable {
     border-spacing: 0px;
     border-bottom: 2px solid #444;
 }
 .pcdatatable th {
-    border-bottom: 2px solid #444;
+    border-bottom: 1px solid #444;
 }
 .pcdatatable td {
     padding: 2px;
 }
+.pcdatatable td:nth-child(10) {
+    white-space: nowrap;
+}
+.pcdatatable tr:nth-child(even) {
+    background: #ddd;
+}
 
 .stickyrow th {
     background-color: #f4f6f8;
+    box-shadow: inset 0 -1px 0 #000;
     position: sticky;
     top: 0px;
 }
@@ -106,6 +199,7 @@ a:hover, .filterlink:hover {
     border-top-right-radius: 10px;
     padding: 5px;
     text-align: center;
+    text-transform: capitalize;
 }
 
 .buttontag {
@@ -170,12 +264,6 @@ a:hover, .filterlink:hover {
     margin-right: 5px;
 }
 
-td:nth-child(8) {
-    white-space: nowrap;
-}
-tr:nth-child(even) {
-    background: #ddd;
-}
 
 .highlight {
     background: #ff5;
