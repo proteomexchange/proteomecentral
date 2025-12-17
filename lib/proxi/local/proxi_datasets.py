@@ -64,6 +64,15 @@ class ProxiDatasets:
         self.extended_data = None
 
         self.load_raw_datasets()
+        #### Scrub the data
+        self.load_extended_data()
+        self.scrubbed_rows = None
+        self.scrubbed_lower_string_rows = None
+        self.scrub_data(self.raw_datasets)
+
+        #### Compute and store the default set of facet data
+        self.default_facets, self.default_row_match_index = self.compute_facets(self.scrubbed_rows)
+
         self.refresh_data_if_stale()
 
 
@@ -546,7 +555,7 @@ class ProxiDatasets:
         column_title_list = []
         for column in column_data:
             column_title_list.append(column[0])
-            if column[0] in [ 'SDRF', 'files' ]:
+            if column[0] in [ 'SDRF', 'files (raw/total)' ]:
                 column_sql_list.append(f"'-' as {column[1]}")
             else:
                 column_sql_list.append(column[1])
@@ -570,12 +579,13 @@ class ProxiDatasets:
         if DEBUG:
             timestamp = str(datetime.now().isoformat())
             eprint(f"{timestamp}: DEBUG: Fetching all announced datasets from RDBMS")
-        try:
+        if True: #try:
             cursor = session.cursor()
+            eprint(f"SELECT {column_clause} FROM {table_name} {where_clause} {order_by_clause}")
             cursor.execute(f"SELECT {column_clause} FROM {table_name} {where_clause} {order_by_clause}")
             rows = cursor.fetchall()
             cursor.close()
-        except:
+        else: #except:
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to get datasets from back-end database' }
             return self.status_response['status']
 
