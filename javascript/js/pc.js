@@ -1,7 +1,7 @@
 var _api = {};
 var _px_settings = {};
 
-function main(what) {
+function main(what=null) {
     _api['query'] = {};
     _px_settings['ordered_facets'] = { 'datasets' : ['search','species','year','instrument','keywords','sdrf','files','repository'],
 				       'libraries': ['search','species','source','fragmentation_type','keywords','year']
@@ -45,6 +45,10 @@ function main(what) {
 		_api['datasets'] = config.API_URL +"datasets";
 		_api['libraries'] = config.API_URL +"libraries";
 	    }
+	    else {
+		_api['datasets'] = "/api/proxi/v0.1/datasets";
+		_api['libraries'] = "/api/proxi/v0.1/libraries";
+	    }
 
 	    if ('pxid' in _api['query'])
 		get_PXitem(_api['query']['pxid']);
@@ -65,6 +69,7 @@ function main(what) {
                 pc_displaySpecialWarning(config.SpecialWarning);
 	})
         .catch(error => {
+	    console.error(error);
             _api['datasets'] = "/api/proxi/v0.1/datasets";
             _api['libraries'] = "/api/proxi/v0.1/libraries";
 	    if ('pxid' in _api['query'])
