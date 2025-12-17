@@ -257,12 +257,12 @@ class ProxiDatasets:
             timestamp = str(datetime.now().isoformat())
             eprint(f"{timestamp}: DEBUG: Fetching history for {dataset_identifier} from RDBMS")
 
-        try:
+        if True: #try:
             cursor = session.cursor(DictCursor)
             cursor.execute(sql)
             rows = cursor.fetchall()
             cursor.close()
-        except:
+        else: #except:
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to get dataset history from back-end database' }
             return self.status_response['status']
 
@@ -479,6 +479,11 @@ class ProxiDatasets:
 
         refresh_interval = 600
         current_timestamp = datetime.now().timestamp()
+        if self.last_refresh_timestamp is None:
+            eprint(f"INFO: last_refresh_timestamp is null. Refreshing...")
+            self.refresh_data()
+            return
+
         if DEBUG:
             eprint(f"INFO: {int(current_timestamp - self.last_refresh_timestamp)} seconds since last refresh")
         if current_timestamp - self.last_refresh_timestamp > refresh_interval:
@@ -610,7 +615,8 @@ class ProxiDatasets:
 
         raw_datasets_filepath = os.path.dirname(os.path.abspath(__file__)) + "/datasets_raw_datasets.json"
         if not os.path.exists(raw_datasets_filepath):
-            eprint(f"ERROR: [datasets.load_raw_datasets]: No raw datasets file '{raw_datasets_filepath}'")
+            eprint(f"WARNING: [datasets.load_raw_datasets]: No raw datasets file '{raw_datasets_filepath}'")
+            return
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Missing raw datasets file' }
             return self.status_response['status']
 
