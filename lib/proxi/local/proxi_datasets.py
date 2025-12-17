@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 import timeit
 import re
 import requests
+import pandas
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 from pxxml_parser import PXXMLParser
@@ -377,7 +378,9 @@ class ProxiDatasets:
             with open(repository_sdrf_path, 'wb') as outfile:
                 outfile.write(response.content)
 
-        delimiter = '?'
+        files = {}
+        samples = {}
+        delimiter = None
         if repository_sdrf_path.endswith('tsv') or repository_sdrf_path.endswith('TSV'):
             delimiter = "\t"
         if repository_sdrf_path.endswith('txt') or repository_sdrf_path.endswith('TXT'):
@@ -385,31 +388,62 @@ class ProxiDatasets:
         if repository_sdrf_path.endswith('csv') or repository_sdrf_path.endswith('CSV'):
             delimiter = ","
 
-        with open(repository_sdrf_path, encoding='utf-8', errors='ignore') as infile:
-            files = {}
-            samples = {}
-            file_icolumn = None
-            first_line = True
-            sdrf_data = { 'titles': None, 'rows': [] }
-            for line in infile:
-                if len(line.strip()) < 2:
-                    continue
-                if first_line:
-                    sdrf_data['titles'] = line.strip().split(delimiter)
-                    first_line = False
-                    icolumn = 0
-                    for title in sdrf_data['titles']:
-                        if title == 'comment[data file]':
-                            file_icolumn = icolumn
-                            break
-                        icolumn += 1
-                    continue
-                columns = line.strip().split("\t")
-                sdrf_data['rows'].append(columns)
+        if delimiter is not None:
+            with open(repository_sdrf_path, encoding='utf-8', errors='ignore') as infile:
+                file_icolumn = None
+                file_uri_icolumn = None
+                source_name_icolumn = None
+                first_line = True
+                sdrf_data = { 'titles': None, 'rows': [] }
+                for line in infile:
+                    if len(line.strip()) < 2:
+                        continue
+                    if first_line:
+                        sdrf_data['titles'] = line.strip().split(delimiter)
+                        first_line = False
+                        icolumn = 0
+                        for title in sdrf_data['titles']:
+                            if title == 'comment[data file]':
+                                file_icolumn = icolumn
+                            if title == 'comment[file uri]':
+                                file_uri_icolumn = icolumn
+                            if title == 'source name':
+                                source_name_icolumn = icolumn
+                            icolumn += 1
+                        continue
+                    columns = line.strip().split("\t")
+                    sdrf_data['rows'].append(columns)
 
-                if file_icolumn is not None and len(columns) >= file_icolumn + 1:
-                    files[columns[file_icolumn]] = True
-                samples[columns[0]] = True
+                    #### Attempt a more robust way of handling possible [data file] / [file uri] duality
+                    filename = ''
+                    if file_icolumn is not None and len(columns) >= file_icolumn + 1:
+                        filename = columns[file_icolumn]
+                    if filename == '' and file_uri_icolumn is not None and len(columns) >= file_uri_icolumn + 1:
+                        filename = columns[file_uri_icolumn]
+                    files[filename] = True
+
+                    if source_name_icolumn is not None and len(columns) >= source_name_icolumn + 1:
+                        samples[columns[source_name_icolumn]] = True
+
+        elif repository_sdrf_path.endswith('xls') or repository_sdrf_path.endswith('XLS') or repository_sdrf_path.endswith('xlsx') or repository_sdrf_path.endswith('XLSX'):
+            source_sdrf_data = pandas.read_excel(repository_sdrf_path)
+            sdrf_data = { 'titles': list(source_sdrf_data), 'rows': [] }
+            for index, row in source_sdrf_data.iterrows():
+                sdrf_data['rows'].append(row.tolist())
+
+                try:
+                    files[row['comment[data file]']] = True
+                except:
+                    pass
+
+                try:
+                    samples[row['source']] = True
+                except:
+                    pass
+
+        else:
+            eprint(f"WARNING: Don't know how to read file '{repository_sdrf_path}'")
+            return
 
         sdrf_data['n_rows'] = len(sdrf_data['rows'])
         sdrf_data['n_samples'] = len(samples)
@@ -632,7 +666,7 @@ class ProxiDatasets:
             identifier = row[0]
             announce_date = row[9]   # FIXME
 
-            #previous_extended_data_date ='2025-12-01'
+            #previous_extended_data_date ='2025-11-01'
             #if identifier == 'PXD058808':
             if announce_date >= previous_extended_data_date:
                 print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
