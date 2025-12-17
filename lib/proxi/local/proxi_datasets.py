@@ -266,12 +266,12 @@ class ProxiDatasets:
             timestamp = str(datetime.now().isoformat())
             eprint(f"{timestamp}: DEBUG: Fetching history for {dataset_identifier} from RDBMS")
 
-        if True: #try:
+        try:
             cursor = session.cursor(DictCursor)
             cursor.execute(sql)
             rows = cursor.fetchall()
             cursor.close()
-        else: #except:
+        except:
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to get dataset history from back-end database' }
             return self.status_response['status']
 
@@ -579,13 +579,12 @@ class ProxiDatasets:
         if DEBUG:
             timestamp = str(datetime.now().isoformat())
             eprint(f"{timestamp}: DEBUG: Fetching all announced datasets from RDBMS")
-        if True: #try:
+        try:
             cursor = session.cursor()
-            eprint(f"SELECT {column_clause} FROM {table_name} {where_clause} {order_by_clause}")
             cursor.execute(f"SELECT {column_clause} FROM {table_name} {where_clause} {order_by_clause}")
             rows = cursor.fetchall()
             cursor.close()
-        else: #except:
+        except:
             self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to get datasets from back-end database' }
             return self.status_response['status']
 
