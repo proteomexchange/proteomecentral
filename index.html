@@ -4,45 +4,90 @@
   <link rel="stylesheet" href="css/pc.css">
   <script src="javascript/js/utils.js"></script>
   <script src="javascript/js/pc.js"></script>
-  <title>ProteomeCentral Datasets</title>
+  <title>ProteomeCentral Data and Tools</title>
 </head>
 
-<body onload="main()" bgcolor="#f4f6f8" style="min-width:1350px;" marginwidth="0" marginheight="0">
-  <table width="100%" height="127" background="/images/topbackground.jpg" style="box-shadow: 0 6px 8px 0 rgba(0,0,0,0.3);">
-    <tr align="center"><td><a href="https://www.proteomexchange.org/" border="0"><img src="/images/proteomexchange.png"></a></td><td><a href="https://proteomecentral.proteomexchange.org/" border="0"><img src="/images/proteomecentral.png"></a></td></tr>
+<body onload="main();" bgcolor="#f4f6f8" style="min-width:1100px;" marginwidth="0" marginheight="0">
+  <table width="100%" height="127" background="images/topbackground.jpg" style="box-shadow: 0 6px 8px 0 rgba(0,0,0,0.3);">
+    <tr align="center"><td><a href="https://www.proteomexchange.org/" border="0"><img src="images/proteomexchange.png"></a></td><td><a href="./" border="0"><img src="/images/proteomecentral.png"></a></td></tr>
   </table>
 
 <!-- BEGIN main content -->
 
-<h1 class="pagehead"> Browse ProteomeXchange Datasets</h1>
+<h1 id="pagetitle" class="pagehead"> Browse ProteomeXchange Data</h1>
 
-<div id="overview" style="xxdisplay:none;">
-  <div id="stats_species" class="sectbox">
-    <h5 class="title">Top 10 Species</h5>
-    <svg id="svg_species" width="300" height="150"></svg>
+<div style="display:none; margin: 0px auto; width: 1000px;" id="pagemenu">
+  <a href="?view=datasets" class="sectbox big bgwashedout" title="browse ProteomeXchange Datasets" style="background-image: url('images/msms.png');">
+    <span class="sectboxbigtitle">Datasets</span>
+    <br><br><br>
+    Browse<br>ProteomeXchange<br>Datasets
+  </a>
+
+  <!-- a href="?view=libraries" class="sectbox big bgwashedout" title="browse ProteomeXchange Spectral Libraries" style="background-image: url('images/library2.png');" -->
+  <span class="sectbox nolinkbig bgwashedout" title="coming soon!" style="background-image: url('images/library2.png');">
+    <span class="sectboxbigtitle bgwashedout">Libraries</span>
+    <br><br><br>ProteomeXchange<br>Spectral Libraries
+    <br>
+  <span class="buttonfake"> Coming Soon </span>
+  </span>
+
+  <br>
+
+  <a href="usi/" class="sectbox big bgwashedout" title="Universal Spectrum Identifier facility at ProteomeXchange" style="background-image: url('images/USI.png');">
+    <span class="sectboxbigtitle">USI</span>
+    <br><br><br>
+    Access individual spectra from ProteomeXchange Datasets and Libraries
+  </a>
+
+  <a href="https://www.proteomexchange.org/ptmexchange/" class="sectbox big bgwashedout" title="view and download public PTM data" style="background-size: cover; background-image: url('ptmx/stylesheets/PTMXbanner.png');">
+    <span class="sectboxbigtitle">PTMeXchange</span>
+    <br><br><br>
+    Browse public Post-Translational Modification (PTM) data
+  </a>
+
+  <br>
+
+  <a href="quetzal/" class="sectbox big" title="annotate spectra with Quetzal" style="background-size: cover; background-image: url('images/QuetzalBW.png');">
+    <span class="sectboxbigtitle">Quetzal</span>
+    <br><br><br>
+    Comprehensive peak annotation of MS/MS spectra
+  </a>
+
+
+  <a href="PROXI.php" class="sectbox big bgwashedout" title="Server and API status check" style="background-size: cover; background-image: url('images/proxistatus.png');">
+    <span class="sectboxbigtitle">PROXI</span>
+    <br><br><br>
+    PROXI Servers Status Dashboard
+  </a>
+
+
+</div>
+
+
+<div id="overview" style="display:none;">
+  <div id="datastats_1" class="sectbox">
+    <h5 id="databoxtitle_1" class="title">Top 10 Datafield 1</h5>
+    <svg id="datasvg_1" width="300" height="150"></svg>
   </div>
 
-  <div id="stats_instrument" class="sectbox">
-    <h5 class="title">Top 10 Instruments</h5>
-    <svg id="svg_instrument" width="300" height="150"></svg>
+  <div id="datastats_2" class="sectbox">
+    <h5 id="databoxtitle_2" class="title">Top 10 Datafield 2</h5>
+    <svg id="datasvg_2" width="300" height="150"></svg>
   </div>
 
-  <div id="stats_keywords" class="sectbox">
-    <h5 class="title">Top 10 Keywords</h5>
-    <svg id="svg_keywords" width="300" height="150"></svg>
+  <div id="datastats_3" class="sectbox">
+    <h5 id="databoxtitle_3" class="title">Top 10 Datafield 3</h5>
+    <svg id="datasvg_3" width="300" height="150"></svg>
   </div>
 
-  <div id="info_usi" class="sectbox">
-    <h5 class="title">USI</h5>
-    Need to access individual spectra from a ProteomeXchange dataset?<br>
-    <a title="Universal Spectrum Identifier facility at ProteomeXchange" href="/usi">
-      <img width="175px;" src="/images/USI.png">
-    </a>
+  <div id="datastats_4" class="sectbox">
+    <h5 id="databoxtitle_4" class="title">Top 10 Datafield 4</h5>
+    <svg id="datasvg_4" width="300" height="150"></svg>
   </div>
 </div>
 
-<span id="filters"></span>
-<div id="results"></div>
+<span id="filters" style="display:none;"></span>
+<div id="results" style="display:none;"></div>
 
 
 <!-- END main content -->
