@@ -15,6 +15,7 @@ import timeit
 import re
 import requests
 import pandas
+import numpy
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 from pxxml_parser import PXXMLParser
@@ -381,7 +382,7 @@ class ProxiDatasets:
         files = {}
         samples = {}
         delimiter = None
-        if repository_sdrf_path.endswith('tsv') or repository_sdrf_path.endswith('TSV'):
+        if repository_sdrf_path.endswith('tsv') or repository_sdrf_path.endswith('TSV') or repository_sdrf_path.endswith('sdrf') or repository_sdrf_path.endswith('SDRF'):
             delimiter = "\t"
         if repository_sdrf_path.endswith('txt') or repository_sdrf_path.endswith('TXT'):
             delimiter = "\t"
@@ -411,7 +412,7 @@ class ProxiDatasets:
                                 source_name_icolumn = icolumn
                             icolumn += 1
                         continue
-                    columns = line.strip().split("\t")
+                    columns = line.strip().split(delimiter)
                     sdrf_data['rows'].append(columns)
 
                     #### Attempt a more robust way of handling possible [data file] / [file uri] duality
@@ -429,15 +430,25 @@ class ProxiDatasets:
             source_sdrf_data = pandas.read_excel(repository_sdrf_path)
             sdrf_data = { 'titles': list(source_sdrf_data), 'rows': [] }
             for index, row in source_sdrf_data.iterrows():
-                sdrf_data['rows'].append(row.tolist())
+                rowdata = row.tolist()
+                #### Deal with NaN values, which cause problems
+                newrowdata = []
+                for value in rowdata:
+                    if isinstance(value, float) and numpy.isnan(value):
+                        value = 'NaN'
+                    newrowdata.append(value)
+                sdrf_data['rows'].append(newrowdata)
 
                 try:
-                    files[row['comment[data file]']] = True
+                    if 'comment[data file]' in row:
+                        files[row['comment[data file]']] = True
+                    elif 'comment[file uri]' in row:
+                        files[row['comment[file uri]']] = True
                 except:
                     pass
 
                 try:
-                    samples[row['source']] = True
+                    samples[row['source name']] = True
                 except:
                     pass
 
@@ -667,7 +678,7 @@ class ProxiDatasets:
             announce_date = row[9]   # FIXME
 
             #previous_extended_data_date ='2025-11-01'
-            #if identifier == 'PXD058808':
+            #if identifier == 'PXD070494':
             if announce_date >= previous_extended_data_date:
                 print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
                 status_code, message, dataset = self.get_dataset(identifier)
