@@ -5,7 +5,7 @@
   /* $Id$ */
   $TITLE="Universal Spectrum Identifier // ProteomeXchange";
   $SUBTITLE="";
-  include("$DOCUMENT_ROOT/includes/header.inc.php");
+  include("../includes/header.inc.php");
 ?>
 <script src="../javascript/js/utils.js"></script>
 <script src="../javascript/js/usi.js"></script>
@@ -148,7 +148,7 @@ Case 5: Reporting spectra of unidentified peptides with the potential to lead to
 <!-- END main content -->
 
 <?php
-  include("$DOCUMENT_ROOT/includes/footer.inc.php");
+  include("../includes/footer.inc.php");
 ?>
 </body>
 </html>

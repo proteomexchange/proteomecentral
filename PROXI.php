@@ -5,7 +5,7 @@
   /* $Id$ */
   $TITLE="PROXI server status";
   $SUBTITLE="";
-  include("$DOCUMENT_ROOT/includes/header.inc.php");
+  include("includes/header.inc.php");
 ?>
 <link rel="stylesheet" href="css/proxistatus.css">
 <script src="javascript/js/utils.js"></script>
@@ -25,7 +25,7 @@ Debug Info::<br/>
 <!-- END main content -->
 
 <?php
-  include("$DOCUMENT_ROOT/includes/footer.inc.php");
+  include("includes/footer.inc.php");
 ?>
 </body>
 </html>
