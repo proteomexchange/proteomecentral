@@ -46,7 +46,7 @@ class ProxiDatasets:
             [ 'SDRF', 'sdrfData' ],
             [ 'files (raw/total)', 'files' ],
             [ 'instrument', 'instrument' ],
-            [ 'publication', 'publication' ],
+            [ 'publications', 'publication' ],
             [ 'lab head', 'labHead' ],
             [ 'announce date', "DATE_FORMAT(submissionDate,'%Y-%m-%d')" ],
             [ 'keywords', 'keywordList' ]
@@ -692,7 +692,7 @@ class ProxiDatasets:
             identifier = row[0]
             announce_date = row[9]   # FIXME
 
-            #previous_extended_data_date ='2025-11-01'
+            previous_extended_data_date ='2025-12-01'
             #if identifier == 'PXD070494':
             if announce_date >= previous_extended_data_date:
                 print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
