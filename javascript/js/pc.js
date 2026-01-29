@@ -21,6 +21,7 @@ function main(what=null) {
 
     if (!f) {
 	document.getElementById("pagemenu").style.display = '';
+	document.getElementById("bannerlinks").style.display = 'none';
 	set_pagetitle(null);
 	return;
     }
@@ -55,16 +56,6 @@ function main(what=null) {
 	    else
 		get_PXdata(f,null,null);
 
-
-	    if ('click' in _api['query']) {
-		var link_id = "pagelink_"+_api['query']['click'];
-
-		var timeout = setTimeout(function() {
-		    if (document.getElementById(link_id))
-			document.getElementById(link_id).click();
-		}, 200);
-	    }
-
             if (config.SpecialWarning)
                 pc_displaySpecialWarning(config.SpecialWarning);
 	})
@@ -77,6 +68,16 @@ function main(what=null) {
             else
 		get_PXdata(f,null,null);
 	});
+
+    if ('click' in _api['query']) {
+	var link_id = "pagelink_"+_api['query']['click'];
+
+	var timeout = setTimeout(function() {
+	    if (document.getElementById(link_id))
+		document.getElementById(link_id).click();
+	}, 200);
+    }
+
 }
 
 
@@ -936,6 +937,7 @@ function PXdataset_details(itemdata,preview=false) {
         table.className = 'dataset-summary coursetext';
         table.style.width = '100%';
 
+	var filetypes = {};
         for (var row of esqueleto[head]) {
             var [format, name, lookup] = row.split("|");
 
@@ -1142,7 +1144,18 @@ function PXdataset_details(itemdata,preview=false) {
 			    arrit['accession'] == 'MS:1001921')
 			    continue;
 
+                        if (arrit['accession'] == 'MS:1002852' || arrit['accession'] == 'PRIDE:0000411')
+			    itemdata['__current__ftpURL'] = arrit['value'];
+
 			var tr = document.createElement("tr");
+			if (head == 'Full Dataset File List') {
+			    tr.dataset.filetype = arrit['name'];
+			    if (filetypes[arrit['name']])
+				filetypes[arrit['name']]++;
+			    else
+				filetypes[arrit['name']] = 1;
+			}
+
 			var td = document.createElement(format);
 			td.className = 'datafieldname'; // CSS trickery
 			var bold = document.createElement("strong");
@@ -1162,7 +1175,11 @@ function PXdataset_details(itemdata,preview=false) {
 			td = document.createElement(format);
 			td.style.width = '100%';
 			if (arrit['value']) {
-			    if (arrit['value'].startsWith('http') || arrit['value'].startsWith('ftp://')) {
+			    if (arrit['value'].startsWith('ftp://') && arrit['value'].includes('pride.ebi')
+				&& itemdata['__current__ftpURL'] && arrit['value'].startsWith(itemdata['__current__ftpURL'])) {
+				td.append(arrit['value'].replace(itemdata['__current__ftpURL']+'/', ''));
+			    }
+			    else if (arrit['value'].startsWith('http') || arrit['value'].startsWith('ftp://')) {
 				var url = arrit['value'];
 				if (arrit['value'].includes('pride.ebi'))
 				    url = url.replace('ftp://','https://');
@@ -1205,6 +1222,24 @@ function PXdataset_details(itemdata,preview=false) {
 		ele.style.cursor = 'pointer';
 		ele.title = "Click to view / hide all";
 		ele.setAttribute('onclick', 'mas_o_menos("data-files-list");');
+
+		// Filters
+		// only do this if more than one detected file type?  ToDo...
+                var span = document.createElement("span");
+                span.className = 'filtertag caption';
+                span.title = "View all files";
+                span.append("View all ("+itemdata['datasetFiles'].length+")");
+                span.onclick = function() { display_rows('data-files-list', 'filetype', null); };
+                ele.after(span);
+		for (let ftype in filetypes) {
+                    span = document.createElement("span");
+                    span.className = 'filtertag caption';
+		    span.style.marginRight = '5px';
+		    span.title = "Filter by files of type = "+ftype;
+		    span.append(ftype.replace("ProteomeXchange","PX").replace("URI","")+" ("+filetypes[ftype]+") ");
+		    span.onclick = function() { display_rows('data-files-list', 'filetype', ftype); };
+                    ele.after(span);
+		}
 	    }
 	}
 
@@ -1705,9 +1740,9 @@ function submit_on_enter(ele) {
     }
 }
 
-function mas_o_menos(name) {
+function mas_o_menos(name,forcemax=false) {
     var what = document.getElementById(name+"_div");
-    if (what.style.maxHeight == '200px') {
+    if (forcemax || what.style.maxHeight == '200px') {
 	what.style.maxHeight = what.scrollHeight +'px';
 	document.getElementById(name+"_head").classList.replace("mas", "menos");
     }
@@ -1754,3 +1789,22 @@ function toggle_box(box,open=false,close=false) {
             elebox.style.top = '10px';
     }
 }
+
+function display_rows(tableid, type, value=null) {
+    var table = document.getElementById(tableid+"_div");
+    if (!table || !type)
+	return;
+
+    for (const row of table.rows) {
+	console.log(row.dataset[type]);
+	if (!value)
+	    row.style.display = '';
+	else if (row.dataset[type] == value)
+	    row.style.display = '';
+	else
+	    row.style.display = 'none';
+    }
+
+    mas_o_menos(tableid, true);
+}
+
