@@ -497,8 +497,7 @@ sub printPageFooter {
     #### Inject some content at the end
     if ($line =~ /END main content/) {
       $begin = 1;
-      print '';
-      #print '<a href="https://www.proteomexchange.org/storys/how-get-informed-new-datasets-available-proteomexchange"><img width="50" height="15" src="/devED/images/subscribe_button-small.jpg"><font size="+1" color="#aa0000">Subscribe to receive all new ProteomeXchange announcements!</font></a>';
+      print '<br clear="all">';
     }
     if ($begin) {
       print "$line";
@@ -1090,7 +1089,8 @@ sub showDataset {
     #### Show the dataset information window
     print qq~
        <div id="main">
-       <a class="linkback" href="../$teststr"> &#x2B9D; Full datasets listing </a>
+       <br>
+       <a class="linkback" href="../$teststr?view=datasets"> &#x2B9D; Full datasets listing </a>
        <div id="dataset-primary" class="site-content">
        <h1 class="dataset-title">$fullDatasetIDstr</h1>
     ~;
