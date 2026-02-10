@@ -20,17 +20,17 @@ var usi_data = {
     "PRIDE"           : { "url" : "https://www.ebi.ac.uk/pride/proxi/archive/v0.1/spectra?resultType=full&usi=" ,
 			  "view": "https://www.ebi.ac.uk/pride/archive/spectra?usi=INSERT_USI_HERE" },
     "ProteomeCentral" : { "url" : _api['base_url'] + "spectra?resultType=full&usi=" },
-    "MS2PIP"          : { "url" : _api['base_url'] + "spectra?resultType=full&accession=MS2PIP&usi=",
-                          "view": "https://compomics.github.io/projects/ms2pip_c" },
-    "Seq2MS"          : { "url" : _api['base_url'] + "spectra?resultType=full&accession=SEQ2MS&usi=",
-                          "view": "https://github.com/Jerryccm/Seq2MS"}
+    "MS2PIP"          : { "url" : _api['base_url'] + "spectra?resultType=full&accession=MS2PIP&msRun=INSERT_MODELNAME_HERE&usi=",
+                          "view": "https://compomics.github.io/projects/ms2pip" },
+    "KOINA"           : { "url" : "https://dev.koina.wilhelmlab.org/v2/models/INSERT_MODELNAME_HERE/infer",
+                          "view": "https://koina.wilhelmlab.org/" }
 };
 
-// for quick testing...
+// override for quick testing:
 if (0) {
     usi_data = {
-	"PeptideAtlas"    : { "url" : "https://peptideatlas.org/api/proxi/v0.1/spectra?resultType=full&usi=" ,
-			      "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=INSERT_USI_HERE" }
+	"PeptideAtlas" : { "url" : "https://peptideatlas.org/api/proxi/v0.1/spectra?resultType=full&usi=" ,
+			   "view": "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/ShowObservedSpectrum?usi=INSERT_USI_HERE" }
     };
 }
 
@@ -46,7 +46,7 @@ function init() {
 		_api['validate'] = config.API_URL +"usi_validator";
 		_api['examples'] = config.API_URL +"usi_examples";
 		_api['annotate'] = config.API_URL +"annotate";
-		for (var src of ["ProteomeCentral", "MS2PIP", "Seq2MS"])
+		for (var src of ["ProteomeCentral", "MS2PIP"])
 		    if (usi_data[src])
 			usi_data[src].url = usi_data[src].url.replace(_api['base_url'], config.API_URL);
 	    }
@@ -90,16 +90,16 @@ function testUSI() {
         var txt = document.createElement("h2");
 	txt.className = "invalid";
 	txt.style.marginBottom = "0";
-        txt.appendChild(document.createTextNode("WARNING"));
-        document.getElementById("main").appendChild(txt);
+        txt.append("WARNING");
+        document.getElementById("main").append(txt);
 
         txt = document.createElement("h4");
 	txt.className = "invalid";
 	txt.style.marginTop = "0";
-        txt.appendChild(document.createTextNode("There is a [space] character in your USI! This might possibly be appropriate if the MS Run file name has a space in it, but usually this is the result of a copy-paste problem of a USI that was line wrapped in a document or email."));
-	txt.appendChild(document.createElement("br"));
-        txt.appendChild(document.createTextNode("Click [strip spaces] above to remove all spaces from your USI."));
-        document.getElementById("main").appendChild(txt);
+        txt.append("There is a [space] character in your USI! This might possibly be appropriate if the MS Run file name has a space in it, but usually this is the result of a copy-paste problem of a USI that was line wrapped in a document or email.");
+	txt.append(document.createElement("br"));
+        txt.append("Click [strip spaces] above to remove all spaces from your USI.");
+        document.getElementById("main").append(txt);
     }
 
 }
@@ -151,36 +151,36 @@ async function validate_usi(carryon) {
 
 	txt.className = "valid";
 	txt.style.marginBottom = "0";
-	txt.appendChild(document.createTextNode("VALID SYNTAX"));
-	document.getElementById("main").appendChild(txt);
+	txt.append("VALID SYNTAX");
+	document.getElementById("main").append(txt);
 
 	txt = document.createElement("h4");
         txt.className = "valid";
 	txt.style.marginTop = "0";
-	txt.appendChild(document.createTextNode("The syntax of this USI is valid, although it may not be resolvable at any resource"));
-	document.getElementById("main").appendChild(txt);
+	txt.append("The syntax of this USI is valid, although it may not be resolvable at any resource");
+	document.getElementById("main").append(txt);
     }
     else {
         var txt = document.createElement("h2");
 	txt.className = "invalid";
 	txt.style.marginBottom = "0";
-        txt.appendChild(document.createTextNode("INVALID"));
-        document.getElementById("main").appendChild(txt);
+        txt.append("INVALID");
+        document.getElementById("main").append(txt);
 
         txt = document.createElement("h4");
 	txt.className = "invalid";
 	txt.style.marginTop = "0";
-        txt.appendChild(document.createTextNode(data.validation_results[usi]["error_message"]));
-        document.getElementById("main").appendChild(txt);
+        txt.append(data.validation_results[usi]["error_message"]);
+        document.getElementById("main").append(txt);
     }
 
     var txt = document.createElement("span");
     txt.className = "smgr";
     txt.style.cursor = "pointer";
-    txt.appendChild(document.createTextNode("[ show / hide details ]"));
+    txt.append("[ show / hide details ]");
     txt.setAttribute('onclick', 'shta("usideets");');
 
-    document.getElementById("main").appendChild(txt);
+    document.getElementById("main").append(txt);
 
     var table = document.createElement("table");
     table.id = "usideets";
@@ -191,9 +191,9 @@ async function validate_usi(carryon) {
     var td = document.createElement("td");
     td.className = "rep";
     td.colSpan = 2;
-    td.appendChild(document.createTextNode(usi));
-    tr.appendChild(td);
-    table.appendChild(tr);
+    td.append(usi);
+    tr.append(td);
+    table.append(tr);
 
     add_spec_data(table, '', data.validation_results[usi]);
 
@@ -201,74 +201,104 @@ async function validate_usi(carryon) {
     td = document.createElement("td");
     td.className = "rep";
     td.colSpan = 2;
-    td.appendChild(document.createTextNode('JSON response'));
-    tr.appendChild(td);
-    table.appendChild(tr);
+    td.append('JSON response');
+    tr.append(td);
+    table.append(tr);
 
     tr = document.createElement("tr");
     td = document.createElement("td");
     td.colSpan = 2;
     td.style.fontFamily = 'monospace';
     td.style.whiteSpace = 'pre';
-    td.appendChild(document.createTextNode(JSON.stringify(data.validation_results[usi],null,2)));
-    tr.appendChild(td);
-    table.appendChild(tr);
+    td.append(JSON.stringify(data.validation_results[usi],null,2));
+    tr.append(td);
+    table.append(tr);
 
     show_validation_code(table,usi);
 
-    document.getElementById("spec").appendChild(table);
+    document.getElementById("spec").append(table);
 
     return false;
 }
+
+// assumes:
+// - [residues] ordered by position in sequence: Nterm,1,2,3,...n,Cterm
+// - modification_curie is of type UNIMOD
+function get_curie_peptidoform(pform_object) {
+    if (!pform_object.residues)
+	return null;
+
+    var pstring = "";
+    for (var res of pform_object.residues) {
+
+	if (res.base_residue) {
+	    if (res.base_residue == 'cterm')
+		pstring += '-';
+	    else if (res.base_residue != 'nterm')
+		pstring += res.base_residue;
+	}
+	else
+            pstring += res.residue_string;
+
+	if (res.modification_curie)
+            pstring += '['+res.modification_curie+']';
+
+        if (res.base_residue && res.base_residue == 'nterm')
+            pstring += '-';
+    }
+
+    return pstring;
+}
+
 
 function show_validation_code(table,usi) {
     var tr = document.createElement("tr");
     var td = document.createElement("td");
     td.className = "rep";
     td.colSpan = 2;
-    td.appendChild(document.createTextNode('Linux curl snippet'));
-    tr.appendChild(td);
-    table.appendChild(tr);
+    td.append('Linux curl snippet');
+    tr.append(td);
+    table.append(tr);
     tr = document.createElement("tr");
     td = document.createElement("td");
     td.colSpan = 2;
     td.style.fontFamily = 'monospace';
     td.style.whiteSpace = 'pre';
-    td.appendChild(document.createTextNode("curl -X POST -H \"Content-Type: application/json\" https://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator -d '[ \""+usi+"\" ]'"));
-    tr.appendChild(td);
-    table.appendChild(tr);
+    td.append("curl -X POST -H \"Content-Type: application/json\" https://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator -d '[ \""+usi+"\" ]'");
+    tr.append(td);
+    table.append(tr);
 
     tr = document.createElement("tr");
     td = document.createElement("td");
     td.className = "rep";
     td.colSpan = 2;
-    td.appendChild(document.createTextNode('Windows curl snippet'));
-    tr.appendChild(td);
-    table.appendChild(tr);
+    td.append('Windows curl snippet');
+    tr.append(td);
+    table.append(tr);
     tr = document.createElement("tr");
     td = document.createElement("td");
     td.colSpan = 2;
     td.style.fontFamily = 'monospace';
     td.style.whiteSpace = 'pre';
-    td.appendChild(document.createTextNode("curl -X POST -H \"Content-Type: application/json\" https://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator -d \"[ \\\""+usi+"\\\" ]\""));
-    tr.appendChild(td);
-    table.appendChild(tr);
+    td.append("curl -X POST -H \"Content-Type: application/json\" https://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator -d \"[ \\\""+usi+"\\\" ]\"");
+    tr.append(td);
+    table.append(tr);
 
     tr = document.createElement("tr");
     td = document.createElement("td");
     td.className = "rep";
     td.colSpan = 2;
-    td.appendChild(document.createTextNode('Python snippet'));
-    tr.appendChild(td);
-    table.appendChild(tr);
+    td.append('Python snippet');
+    tr.append(td);
+    table.append(tr);
     tr = document.createElement("tr");
     td = document.createElement("td");
     td.colSpan = 2;
     td.style.fontFamily = 'monospace';
     td.style.whiteSpace = 'pre';
-    td.appendChild(document.createTextNode("import json\nimport requests\n\nusis = [ \""+usi+"\", \"not a USI\" ]\nendpoint_url = \"https://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator\"\nresponse_content = requests.post(endpoint_url, json=usis, headers={'accept': 'application/json'})\nresult = response_content.json()\nprint(json.dumps(result, indent=2))\nfor usi in usis:\n  print(result['validation_results'][usi]['is_valid'],\"\\t\",usi)\n"));
-    tr.appendChild(td);
-    table.appendChild(tr);
+    td.append("import json\nimport requests\n\nusis = [ \""+usi+"\", \"not a USI\" ]\nendpoint_url = \"https://proteomecentral.proteomexchange.org/api/proxi/v0.1/usi_validator\"\nresponse_content = requests.post(endpoint_url, json=usis, headers={'accept': 'application/json'})\nresult = response_content.json()\nprint(json.dumps(result, indent=2))\nfor usi in usis:\n  print(result['validation_results'][usi]['is_valid'],\"\\t\",usi)\n");
+    tr.append(td);
+    table.append(tr);
 }
 
 function add_spec_data(table,label,vdata) {
@@ -282,13 +312,13 @@ function add_spec_data(table,label,vdata) {
 
         var tr = document.createElement("tr");
         var td = document.createElement("th");
-        td.appendChild(document.createTextNode(label+f));
-        tr.appendChild(td);
+        td.append(label+f);
+        tr.append(td);
 
         td = document.createElement("td");
-        td.appendChild(document.createTextNode(vdata[f]));
-        tr.appendChild(td);
-        table.appendChild(tr);
+        td.append(vdata[f]);
+        tr.append(td);
+        table.append(tr);
     }
 
 }
@@ -314,43 +344,131 @@ async function check_usi() {
     get_usi_from(null);
 }
 
-function get_usi_from(where) {
+async function fetch_spectrum(who, usi) {
+    var url = usi_data[who].url;
+    // for MS2PIP and KOINA
+    if (document.getElementById(who+"_model"))
+        url = url.replace('INSERT_MODELNAME_HERE', document.getElementById(who+"_model").value);
+
+    if (who == 'KOINA') {
+	var request = { "id":  "0", "inputs": [] };
+	var input = {"name": "peptide_sequences", "shape": [1,1], "datatype": "BYTES", "data": [get_curie_peptidoform(_peptidoforms[0])]};
+	request.inputs.push(input);
+	input ={"name": "precursor_charges", "shape": [1,1], "datatype": "INT32", "data": [_peptidoforms[0].charge]};
+	request.inputs.push(input);
+
+	if (document.getElementById(who+"_model_ce")) {
+	    var ce = parseFloat(0+document.getElementById(who+"_model_ce").value.trim());
+            input ={"name": "collision_energies", "shape": [1,1], "datatype": "FP32", "data": [ce]};
+	    document.getElementById(who+"_model_ce").value = ce;
+            request.inputs.push(input);
+	}
+        if (document.getElementById(who+"_model_frag")) {
+            input ={"name": "fragmentation_types", "shape": [1,1], "datatype": "BYTES", "data": [document.getElementById(who+"_model_frag").value.trim()]};
+            request.inputs.push(input);
+        }
+        if (document.getElementById(who+"_model_instr")) {
+            input ={"name": "instrument_types", "shape": [1,1], "datatype": "BYTES", "data": [document.getElementById(who+"_model_instr").value.trim()]};
+            request.inputs.push(input);
+        }
+
+	var savedResponse; // keep original to pass back after modifying
+
+	return fetch(url, {
+            method: 'post',
+            headers: {
+		'Accept': 'application/json',
+		'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+	})
+	    .then(response => {
+		if (!response.ok)
+		    throw new Error(`HTTP error! status: ${response.status}`);
+		savedResponse = response.clone();
+		return response.json();
+	    })
+            .then(koina_data => {
+		if (koina_data.error)
+                    throw "Server Error :: " + koina_data.error;
+		else if (!koina_data.outputs)
+                    throw "No 'outputs' element in response!";
+
+		try {
+		    var specdata = {};
+		    specdata.attributes = [];
+		    for (var field of ['model_name', 'model_version']) {
+			var att = {};
+			att.name = field;
+			att.accession = '---';
+			att.value = koina_data[field];
+			specdata.attributes.push(att);
+		    }
+
+		    for (var out of koina_data.outputs) {
+			if (out.name == 'mz')
+			    specdata.mzs = out.data;
+			if (out.name == 'intensities')
+			    specdata.intensities = out.data;
+		    }
+
+		    return new Response(JSON.stringify([specdata]), {
+			status: savedResponse.status,
+			statusText: savedResponse.statusText,
+			headers: savedResponse.headers // Use original headers
+		    });
+
+		}
+		catch (e) {
+                    throw "error: "+e;
+		}
+            })
+            .catch(error => {
+		var reply = {};
+		reply.detail = "Error with KOINA ::"+error;
+		reply.status = 400;
+		reply.title = "Error calling KOINA";
+		reply.type = "about:blank";
+		return reply;
+	    });
+
+    }
+    else {
+	url += encodeURIComponent(usi);
+	var ccell = document.getElementById(who+"_msg");
+	ccell.title = "view raw response from API";
+	ccell.setAttribute('onclick', 'window.open("'+url+'");');
+	ccell.style.cursor = "pointer";
+	return fetch(url);
+    }
+}
+
+function get_usi_from(where=null) {
     if (!where) {
 	where = Object.keys(usi_data);
 	var i = where.indexOf("MS2PIP");
 	if (i > -1)
 	    where.splice(i, 1);
-	i = where.indexOf("Seq2MS");
+	i = where.indexOf("KOINA");
         if (i > -1)
             where.splice(i, 1);
     }
 
     const usi = document.getElementById("usi_input").value;
     for (let p of where) {
-	var url = usi_data[p].url + encodeURIComponent(usi);
-
-        // for MS2PIP and SEQ2MS
-        if (document.getElementById(p+"_model"))
-	    url += "&msRun=" + document.getElementById(p+"_model").value;
-
-        var ccell = document.getElementById(p+"_msg");
-        ccell.title = "view raw response from API";
-        ccell.setAttribute('onclick', 'window.open("'+url+'");');
-        ccell.style.cursor = "pointer";
-
 	var rcode = -1;
-	fetch(url)
+	fetch_spectrum(p, usi)
             .then(response => {
                 //console.log(p+" RESPONSE: "+response);
 		rcode = response.status; // must capture it before json parsing
 		//console.log(p+" CODE: "+rcode);
-		return response;
-            })
-            .then(response => response.json())
+		try   { return response.json(); }
+		catch { return response; }
+	    })
             .then(alldata => {
 		if (p == "ProteomeCentral") {
 		    get_usi_from(["MS2PIP"]);
-		    get_usi_from(["Seq2MS"]);
+		    get_usi_from(["KOINA"]);
 		}
 		try {
 		    _done++;
@@ -367,6 +485,10 @@ function get_usi_from(where) {
 			cell.innerHTML = alldata.title;
 			document.getElementById(p+"_spectrum").innerHTML = "n/a";
 			console.log("[DEBUG] "+p+" said: "+alldata.status+"/"+alldata.title+"//"+alldata.detail);
+
+			document.getElementById(p+"_atts").innerHTML = "-";
+			document.getElementById(p+"_json").innerHTML = "-";
+			document.getElementById(p+"_reannot").innerHTML = "";
 			return;
                     }
                     cell.innerHTML = "OK";
@@ -393,7 +515,7 @@ function get_usi_from(where) {
 
                     cell = document.getElementById(p+"_reannot");
                     cell.className = "smgr";
-		    if (p != "MS2PIP" && p != "Seq2MS" && data) {
+		    if (p != "MS2PIP" && p != "KOINA" && data) {
 			cell.title = "Re-annotate peaks using data from this response";
 			cell.setAttribute('onclick', 'reannotate_peaks("'+p+'");');
 			cell.innerHTML = "[ A ]";
@@ -428,6 +550,10 @@ function get_usi_from(where) {
 
                     for (var i in data.mzs) {
                         var usipeaks = [Number(data.mzs[i]), Number(data.intensities[i])];
+			if (usipeaks[0] < 0)
+			    usipeaks[0] = 0;
+			if (usipeaks[1] < 0)
+			    usipeaks[1] = 0;
                         s.ms2peaks.push(usipeaks);
 			if (Number(data.mzs[i]) > maxMz) maxMz = Number(data.mzs[i]);
 			has_spectrum = true;
@@ -537,7 +663,7 @@ function get_usi_from(where) {
 			    }
 			}
 		    }
-		    if (p == "MS2PIP" || p == "Seq2MS")
+		    if (p == "MS2PIP" || p == "KOINA")
 			s.fileName = "PREDICTED SPECTRUM FOR: "+s.fileName;
 
 		    if (has_spectrum) {
@@ -558,7 +684,7 @@ function get_usi_from(where) {
 
 				link.setAttribute('onclick', 'renderLorikeet("spec",'+pf+',"'+p+'");');
 				link.innerHTML = usi_data[p].lori_data.pforms[pf].peptidoform;
-				cell.appendChild(link);
+				cell.append(link);
 			    }
 			}
 			else {
@@ -614,6 +740,7 @@ function get_usi_from(where) {
                 document.getElementById(p+"_atts").innerHTML = "--n/a--";
                 document.getElementById(p+"_json").innerHTML = "--n/a--";
                 document.getElementById(p+"_reannot").innerHTML = "";
+                document.getElementById(p+"_modelparams").innerHTML = "";
 		console.error(error);
             });
     }
@@ -658,8 +785,8 @@ function displayMsg(divid,msg) {
     var txt = document.createElement("h2");
     txt.className = "invalid";
     txt.style.marginBottom = "0";
-    txt.appendChild(document.createTextNode(msg));
-    document.getElementById(divid).appendChild(txt);
+    txt.append(msg);
+    document.getElementById(divid).append(txt);
 }
 
 function viewAtts(divid,src) {
@@ -681,7 +808,7 @@ function viewAtts(divid,src) {
     var title = document.createElement("h1");
     title.className = "rep title";
     title.innerHTML = "Spectrum attributes from " + src;
-    atts.appendChild(title);
+    atts.append(title);
 
     if (usi_data[src].usi_data.attributes) {
 	var table = document.createElement("table");
@@ -691,10 +818,10 @@ function viewAtts(divid,src) {
 	tr = document.createElement("tr");
 	for (var field of ["name", "accession", "value"]) {
             td = document.createElement("th");
-            td.appendChild(document.createTextNode(field));
-            tr.appendChild(td);
+            td.append(field);
+            tr.append(td);
 	}
-	table.appendChild(tr);
+	table.append(tr);
 
 	for (var att of usi_data[src].usi_data.attributes) {
             tr = document.createElement("tr");
@@ -704,22 +831,22 @@ function viewAtts(divid,src) {
 		if (field != "value")
 		    td.style.whiteSpace = "pre";
 		if (att[field])
-		    td.appendChild(document.createTextNode(att[field]));
+		    td.append(att[field]);
 		else {
 		    td.className = "code404";
-		    td.appendChild(document.createTextNode('-- null --'));
+		    td.append('-- null --');
 		}
-		tr.appendChild(td);
+		tr.append(td);
 	    }
-            table.appendChild(tr);
+            table.append(tr);
 	}
-	atts.appendChild(table);
+	atts.append(table);
     }
     else {
 	atts.innerHTML += src+" did not provide any attributes for this spectrum.";
     }
 
-    document.getElementById(divid).appendChild(atts);
+    document.getElementById(divid).append(atts);
 }
 
 function viewJSON(divid,src) {
@@ -740,11 +867,11 @@ function viewJSON(divid,src) {
     var title = document.createElement("h1");
     title.className = "rep title";
     title.innerHTML = src + " JSON response";
-    jcode.appendChild(title);
+    jcode.append(title);
 
     jcode.innerHTML += JSON.stringify(usi_data[src].usi_data,null,2);
 
-    document.getElementById(divid).appendChild(jcode);
+    document.getElementById(divid).append(jcode);
 }
 
 
@@ -806,7 +933,8 @@ function renderLorikeet(divid,pfidx,src,src2=null) {
 
     const title = document.createElement("h1");
     title.style.marginLeft = "280px";
-    if (src == "MS2PIP" || src == "Seq2MS") {
+    title.style.display = "inline";
+    if (src == "MS2PIP" || src == "KOINA") {
 	title.className = "title invalid";
 	title.innerHTML = "PREDICTED spectrum from "+src;
     }
@@ -825,10 +953,10 @@ function render_tables(usi) {
     var txt = document.createElement("span");
     txt.className = "smgr";
     txt.style.cursor = "pointer";
-    txt.appendChild(document.createTextNode("[ show / hide details ]"));
+    txt.append("[ show / hide details ]");
     txt.setAttribute('onclick', 'shta("usideets");');
 
-    document.getElementById("main").appendChild(txt);
+    document.getElementById("main").append(txt);
 
     var table = document.createElement("table");
     table.id = "usideets";
@@ -839,18 +967,32 @@ function render_tables(usi) {
     var td = document.createElement("td");
     td.className = "rep";
     td.colSpan = 99;
-    td.appendChild(document.createTextNode(usi));
-    tr.appendChild(td);
-    table.appendChild(tr);
+    td.append(usi);
+    tr.append(td);
+    table.append(tr);
 
     tr = document.createElement("tr");
-    var headings = ['Provider','Response','Spectrum / PSM (click to view)','','Attributes','Dev Info','']
+    var headings = ['Provider','Response','Spectrum / PSM (click to view)','','Attributes','Dev Info','','Model + Params']
     for (var heading of headings) {
         td = document.createElement("th");
-        td.appendChild(document.createTextNode(heading));
-        tr.appendChild(td);
+        td.append(heading);
+        tr.append(td);
     }
-    table.appendChild(tr);
+    table.append(tr);
+
+    var models = {
+	"MS2PIP" : [ 'HCD', 'HCD2019', 'HCD2021', 'CID', 'iTRAQ', 'iTRAQphospho',
+		     'TMT', 'TTOF5600', 'HCDch2', 'CIDch2', 'Immuno-HCD', 'CID-TMT' ],
+	"KOINA" : [ 'AlphaPeptDeep_ms2_generic', 'Altimeter_2024_intensities',
+		    'Prosit_2019_intensity', 'Prosit_2020_intensity_CID',
+		    'Prosit_2020_intensity_HCD', 'Prosit_2020_intensity_TMT',
+		    'Prosit_2023_intensity_timsTOF', 'Prosit_2024_intensity_PTMs_gl',
+		    'Prosit_2024_intensity_cit', 'Prosit_2025_intensity_22PTM',
+		    'Prosit_2025_intensity_40PTM', 'Prosit_2025_intensity_MultiFrag',
+		    'Prosit_2025_intensity_lac', 'UniSpec',
+		    'ms2pip_CID_TMT', 'ms2pip_HCD2021', 'ms2pip_Immuno_HCD', 'ms2pip_TTOF5600',
+		    'ms2pip_iTRAQphospho', 'ms2pip_timsTOF2023', 'ms2pip_timsTOF2024']
+    };
 
     for (var rname in usi_data) {
 	tr = document.createElement("tr");
@@ -866,76 +1008,210 @@ function render_tables(usi) {
 	    else
 		link.title = "View in "+rname;
 	    link.target = rname+"_spec";
-            link.appendChild(document.createTextNode(rname));
-            td.appendChild(link);
+            link.append(rname);
+            td.append(link);
 
 	}
 	else
-            td.appendChild(document.createTextNode(rname));
+            td.append(rname);
 
-
-        if (rname == "MS2PIP" || rname == "Seq2MS") {
-            var sel = document.createElement('select');
-            sel.id = rname + "_model";
-            sel.style.marginLeft = "10px";
-            sel.title = "Select prediction model";
-            sel.setAttribute('onchange', 'reload("'+rname+'");');
-
-	    var models = rname == "MS2PIP" ?
-		[ 'HCD', 'HCD2019', 'HCD2021', 'CID', 'iTRAQ', 'iTRAQphospho',
-		  'TMT', 'TTOF5600', 'HCDch2', 'CIDch2', 'Immuno-HCD', 'CID-TMT' ] :
-		[ 'retrained', 'pretrained' ];
-            for (var model of models) {
-                var opt = document.createElement('option');
-                opt.value = model;
-                opt.innerText = model;
-                sel.appendChild(opt);
-            }
-            td.appendChild(sel);
-        }
-
-
-        tr.appendChild(td);
+        tr.append(td);
 
         td = document.createElement("td");
         td.id = rname+"_msg";
-        td.appendChild(document.createTextNode('---'));
-        tr.appendChild(td);
+        td.append('---');
+        tr.append(td);
 
         td = document.createElement("td");
         td.id = rname+"_spectrum";
-        td.appendChild(document.createTextNode('---'));
-        tr.appendChild(td);
+        td.append('---');
+        tr.append(td);
 
         td = document.createElement("td");
         td.id = rname+"_current";
-        tr.appendChild(td);
+        tr.append(td);
 
         td = document.createElement("td");
         td.id = rname+"_atts";
-        tr.appendChild(td);
+        tr.append(td);
 
         td = document.createElement("td");
         td.id = rname+"_json";
-        tr.appendChild(td);
+        tr.append(td);
 
         td = document.createElement("td");
         td.id = rname+"_reannot";
-        tr.appendChild(td);
+        tr.append(td);
 
-	table.appendChild(tr);
+        td = document.createElement("td");
+        td.id = rname+"_modelparams";
+
+        if (rname in models) {
+            var sel = document.createElement('select');
+            sel.id = rname + "_model";
+            // sel.style.marginLeft = "10px";
+            sel.title = "Select prediction model";
+            sel.setAttribute('onchange', 'rerun_model("'+rname+'");');
+
+            for (var model of models[rname]) {
+                var opt = document.createElement('option');
+                opt.value = model;
+                opt.innerText = model;
+		if (model == 'ms2pip_HCD2021')
+		    opt.selected = true;
+                sel.append(opt);
+            }
+            td.append(sel);
+        }
+
+        tr.append(td);
+
+	table.append(tr);
     }
 
-    document.getElementById("main").appendChild(table);
-    document.getElementById("main").appendChild(document.createElement("br"));
-    document.getElementById("main").appendChild(document.createElement("br"));
+    document.getElementById("main").append(table);
+    document.getElementById("main").append(document.createElement("br"));
+    document.getElementById("main").append(document.createElement("br"));
 }
+
+function rerun_model(provider) {
+    if (provider == 'MS2PIP')
+	return reload('MS2PIP');
+
+    if (document.getElementById(provider+"_model_submit"))
+        document.getElementById(provider+"_model_submit").remove();
+    var needbutton = false;
+
+    var goreload = true;
+    var model = document.getElementById(provider+"_model").value;
+
+    if (['Prosit_2019_intensity', 'Altimeter_2024_intensities',
+	 'Prosit_2020_intensity_HCD', 'Prosit_2023_intensity_timsTOF',
+	 'Prosit_2020_intensity_TMT', 'Prosit_2024_intensity_PTMs_gl',
+	 'Prosit_2024_intensity_cit', 'Prosit_2025_intensity_22PTM',
+	 'Prosit_2025_intensity_lac', 'Prosit_2025_intensity_40PTM',
+	 'UniSpec', 'AlphaPeptDeep_ms2_generic'].includes(model)) {
+	needbutton = true;
+
+	if (!document.getElementById(provider+"_model_ce_container")) {
+	    goreload = false;
+	    var span = document.createElement("span");
+	    span.id = provider+"_model_ce_container";
+            span.style.paddingLeft = "5px";
+	    span.title = "enter collision energy for model";
+	    span.append("CE:");
+
+            var input = document.createElement("input");
+	    input.id = provider+"_model_ce";
+	    input.size = '3';
+	    input.value = '25';
+            span.append(input);
+
+	    document.getElementById(provider+"_modelparams").append(span);
+	}
+    }
+    else if (document.getElementById(provider+"_model_ce_container"))
+	document.getElementById(provider+"_model_ce_container").remove();
+
+    if (['Prosit_2020_intensity_TMT', 'Prosit_2024_intensity_PTMs_gl',
+         'Prosit_2024_intensity_cit', 'Prosit_2025_intensity_22PTM',
+         'Prosit_2025_intensity_lac', 'Prosit_2025_intensity_40PTM',
+	 'Prosit_2025_intensity_MultiFrag'].includes(model) ) {
+	needbutton = true;
+
+	var fragtype = model=='Prosit_2025_intensity_MultiFrag' ? 'multi':'simple';
+	if (!document.getElementById(provider+"_model_frag") ||
+	    document.getElementById(provider+"_model_frag").dataset.fragtype != fragtype) {
+	    goreload = false;
+
+	    if (document.getElementById(provider+"_model_frag"))
+		document.getElementById(provider+"_model_frag").remove();
+
+	    var sel = document.createElement('select');
+	    sel.id = provider+"_model_frag";
+	    sel.style.marginLeft = "10px";
+	    sel.title = "Select fragmentation method for model";
+            sel.dataset.fragtype = fragtype;
+
+	    var frags = fragtype == 'simple' ?
+		['HCD','CID'] :
+		['HCD','ECD','EID','UVPD','ETciD'];
+
+	    for (var frag of frags) {
+                var opt = document.createElement('option');
+                opt.value = frag;
+                opt.innerText = frag;
+                sel.append(opt);
+	    }
+	    document.getElementById(provider+"_modelparams").append(sel);
+	}
+    }
+    else if (document.getElementById(provider+"_model_frag"))
+        document.getElementById(provider+"_model_frag").remove();
+
+    var models_with_instruments = {
+	'Prosit_2025_intensity_lac' : ['eclipse','astral','lumos'],
+	'UniSpec' : ['QE','QEHFX','LUMOS','ELITE','VELOS','NONE'],
+	'AlphaPeptDeep_ms2_generic': ['QE','LUMOS','TIMSTOF','SCIEXTOF']
+    };
+    if (model in models_with_instruments) {
+	needbutton = true;
+
+	var instr_input;
+        if (document.getElementById("model_instr_container"))
+	    instr_input = document.getElementById("model_instr_container");
+	else {
+	    instr_input = document.createElement("span");
+	    instr_input.id = 'model_instr_container';
+	    document.getElementById(provider+"_modelparams").append(instr_input);
+	}
+
+        if (!document.getElementById(provider+"_model_instr") ||
+	    document.getElementById(provider+"_model_instr").dataset.model != model) {
+            goreload = false;
+	    instr_input.innerHTML = '';
+
+            var sel = document.createElement('select');
+            sel.id = provider+"_model_instr";
+            sel.style.marginLeft = "10px";
+            sel.title = "Select instrument (type) for model";
+	    sel.dataset.model = model;
+
+            for (var instr of models_with_instruments[model]) {
+                var opt = document.createElement('option');
+                opt.value = instr;
+                opt.innerText = instr;
+                sel.append(opt);
+            }
+
+	    instr_input.append(sel);
+	}
+    }
+    else if (document.getElementById("model_instr_container"))
+	document.getElementById("model_instr_container").remove();
+
+    if (needbutton) {
+        var input = document.createElement('button');
+	input.id = provider+"_model_submit";
+	input.style.marginLeft = "10px";
+	input.append('Go');
+	input.onclick = function () { reload(provider); };
+        document.getElementById(provider+"_modelparams").append(input);
+    }
+
+    if (goreload)
+	reload(provider);
+}
+
+
 
 function reload(provider) {
     for (var thing of ["_msg","_spectrum","_atts","_json","_reannot"]) {
-	document.getElementById(provider+thing).innerText = '-- processing request --';
+	document.getElementById(provider+thing).innerText = '-- --';
 	document.getElementById(provider+thing).className = '';
     }
+    document.getElementById(provider+'_msg').innerText = '-- processing request --';
+
     _dispec = '---refresh---';
     _done--;
     document.getElementById("usi_stat").classList.add("running");
@@ -1078,7 +1354,7 @@ function annotate_peaks(spec_data,pform) {
         .then(annot_data => {
 	    var annot_table = annotation_table(annot_data,mztol,pform);
 	    clear_element("annot");
-	    document.getElementById("annot").appendChild(annot_table);
+	    document.getElementById("annot").append(annot_table);
 	});
 }
 
@@ -1090,8 +1366,8 @@ function annotation_table(annot_data,mztol,pform) {
     var td = document.createElement("td");
     td.colSpan = '12';
     td.className = "rep";
-    td.appendChild(document.createTextNode("Peak Annotations for: "+pform));
-    tr.appendChild(td);
+    td.append("Peak Annotations for: "+pform);
+    tr.append(td);
 
     td = document.createElement("td");
     td.colSpan = '2';
@@ -1100,7 +1376,7 @@ function annotation_table(annot_data,mztol,pform) {
     td.setAttribute('onclick', 'show_mass_defect()');
     td.innerHTML = "&#128200; Mass Defect";
     td.title = "View Mass Defect plot";
-    tr.appendChild(td);
+    tr.append(td);
 
     td = document.createElement("td");
     td.colSpan = '2';
@@ -1109,9 +1385,9 @@ function annotation_table(annot_data,mztol,pform) {
     td.setAttribute('onclick', 'show_ion_stats()');
     td.innerHTML = "&#128202; Ion Stats";
     td.title = "View Ion Contribution histogram plot";
-    tr.appendChild(td);
+    tr.append(td);
 
-    table.appendChild(tr);
+    table.append(tr);
 
     tr = document.createElement("tr");
     tr.style.position = 'sticky';
@@ -1120,10 +1396,10 @@ function annotation_table(annot_data,mztol,pform) {
     mztol = mztol ?  " [mztol="+mztol+"]" : '';
     for (var col of ["m/z", "intensity", "norm", "interpretation(s)"+mztol].concat(_ion_list)) {
         td = document.createElement("th");
-	td.appendChild(document.createTextNode(col));
-        tr.appendChild(td);
+	td.append(col);
+        tr.append(td);
     }
-    table.appendChild(tr);
+    table.append(tr);
 
     var maxint = 1;
     for (var pint of annot_data['annotated_spectra'][0]['intensities'])
@@ -1141,21 +1417,21 @@ function annotation_table(annot_data,mztol,pform) {
 	    td = document.createElement("td");
 	    var val = annot_data['annotated_spectra'][0][col][idx];
 	    if (col == "interpretations")
-		td.appendChild(document.createTextNode(val));
+		td.append(val);
 	    else {
 		td.className = "number";
 		var f = col == "intensities" ? 1 : 4;
-		td.appendChild(document.createTextNode(Number(val).toFixed(f)));
+		td.append(Number(val).toFixed(f));
 		if (col == "intensities") {
-		    tr.appendChild(td);
+		    tr.append(td);
 		    td = document.createElement("td");
 		    td.className = "number";
 		    td.style.borderRight = "1px solid rgb(187, 221, 187)";
-		    td.appendChild(document.createTextNode(Number(100*val/maxint).toFixed(1)));
+		    td.append(Number(100*val/maxint).toFixed(1));
 		    td.style.background = "linear-gradient(to left, rgb(187, 221, 187), rgb(187, 221, 187) "+(100*val/maxint)+"%, rgba(255, 255, 255, 0) "+(100*val/maxint)+"%)";
 		}
 	    }
-	    tr.appendChild(td);
+	    tr.append(td);
 	}
 
 	// only consider the first one
@@ -1237,34 +1513,34 @@ function annotation_table(annot_data,mztol,pform) {
 		_totint += annot_data['annotated_spectra'][0]['intensities'][idx];
 
 	    }
-            tr.appendChild(td);
+            tr.append(td);
 	}
 
-	table.appendChild(tr);
+	table.append(tr);
     }
 
 
     tr = document.createElement("tr");
     for (var col of ["", "", "", ""].concat(_ion_list)) {
         td = document.createElement("th");
-        td.appendChild(document.createTextNode(col));
-        tr.appendChild(td);
+        td.append(col);
+        tr.append(td);
     }
-    table.appendChild(tr);
+    table.append(tr);
 
     tr = document.createElement("tr");
     td = document.createElement("th");
     td.colSpan = '4';
     td.style.textAlign = 'right';
-    td.appendChild(document.createTextNode("Share of Total Ion Current:"));
-    tr.appendChild(td);
+    td.append("Share of Total Ion Current:");
+    tr.append(td);
 
     for (var aaa in _ion_list) {
 	td = document.createElement("th");
-	td.appendChild(document.createTextNode((100*_totints[aaa]/_totint).toFixed(1)+"%"));
-	tr.appendChild(td);
+	td.append((100*_totints[aaa]/_totint).toFixed(1)+"%");
+	tr.append(td);
     }
-    table.appendChild(tr);
+    table.append(tr);
 
     return table;
 }
