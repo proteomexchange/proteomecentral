@@ -185,6 +185,11 @@ class ProxiDatasets:
         decomposed_dataset_identifier = self.decompose_dataset_identifier(dataset_identifier)
 
         self.dataset = {}
+        result = self.get_dataset_status_from_rdbms(decomposed_dataset_identifier['stripped_dataset_identifier'])
+        if result != 'OK':
+            return(self.status_response['status_code'], self.status_response, self.dataset)
+
+        self.dataset = {}
         result = self.get_dataset_history_from_rdbms(decomposed_dataset_identifier['stripped_dataset_identifier'])
         if result != 'OK':
             return(self.status_response['status_code'], self.status_response, self.dataset)
@@ -294,6 +299,74 @@ class ProxiDatasets:
             return self.status_response['status']
 
         self.status_response = { 'status_code': 200, 'status': 'OK', 'error_code': 'OK', 'description': f"{len(rows)} of history data for {dataset_identifier} fetched" }
+        return self.status_response['status']
+
+
+
+    #### Get the dataset status from the MySQL server
+    def get_dataset_status_from_rdbms(self, dataset_identifier):
+
+        if socket.gethostname() != 'mimas.systemsbiology.net':
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
+            return self.status_response['status']
+
+        table_name = "dataset"
+        if False:
+            table_name += '_test'
+
+        sql = f"SELECT dataset_id,datasetIdentifier,PXPartner,status,title " \
+              f"FROM {table_name} " \
+              f"WHERE datasetIdentifier = '{dataset_identifier}' "
+
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: DEBUG: Connecting to MySQL RDBMS on {self.config['DB_serverName']}")
+        try:
+            session = pymysql.connect(host=self.config['DB_serverName'],
+                                      user=self.config['DB_userName'],
+                                      password=self.config['DB_password'],
+                                      database=self.config['DB_databaseName'])
+        except:
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to connect to back-end database' }
+            return self.status_response['status']
+
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp}: DEBUG: Fetching dataset status for {dataset_identifier} from RDBMS")
+
+        try:
+            cursor = session.cursor(DictCursor)
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            cursor.close()
+        except:
+            self.status_response = { 'status_code': 500, 'status': 'ERROR', 'error_code': 'FATALERROR', 'description': 'Unable to get dataset status from back-end database' }
+            return self.status_response['status']
+
+        if DEBUG:
+            timestamp = str(datetime.now().isoformat())
+            eprint(f"{timestamp} DEBUG: Fetched {len(rows)} rows of status data for {dataset_identifier}")
+
+        if len(rows) == 0:
+            self.status_response = { 'status_code': 404, 'status': 'ERROR', 'error_code': 'NoSuchIdentifier', 'description': f"Identifier {dataset_identifier} has not yet been reserved for use by any repository" }
+            return self.status_response['status']
+
+        status = '?'
+        title = '?'
+        repository = '?'
+        if 'status' in rows[0]:
+            status = rows[0]['status']
+        if 'title' in rows[0]:
+            title = rows[0]['title']
+        if 'PXPartner' in rows[0]:
+            repository = rows[0]['PXPartner']
+
+        eprint(f"**** status={status}  repository={repository}  title={title}")
+        if status.contains('requested') and title is not None:
+            self.status_response = { 'status_code': 404, 'status': 'ERROR', 'error_code': 'DatasetDereleased', 'description': f"Dataset {dataset_identifier} was announced as released by {repository}, but then a problem was discovered, and the dataset was removed from circulation while the problem is being addressed.", 'repository': repository }
+            return self.status_response['status']
+
+        self.status_response = { 'status_code': 200, 'status': 'OK', 'error_code': 'OK', 'description': f"{len(rows)} of status data for {dataset_identifier} fetched" }
         return self.status_response['status']
 
 
