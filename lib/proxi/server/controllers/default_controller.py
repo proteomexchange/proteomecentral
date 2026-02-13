@@ -29,6 +29,9 @@ def tsv_generator(list_of_lists):
     headerline = [ 'identifier', 'title', 'repository', 'species', 'instrument', 'publication', 'lab_head', 'announce_date', 'keywords' ]
     yield("\t".join(headerline) + "\n")
     for row in list_of_lists:
+        for i in range(len(row)):
+            if row[i] is None:
+                row[i] = ''
         yield("\t".join(row) + "\n")
 
 
