@@ -361,8 +361,7 @@ class ProxiDatasets:
         if 'PXPartner' in rows[0]:
             repository = rows[0]['PXPartner']
 
-        eprint(f"**** status={status}  repository={repository}  title={title}")
-        if status.contains('requested') and title is not None:
+        if 'requested' in status and title is not None:
             self.status_response = { 'status_code': 404, 'status': 'ERROR', 'error_code': 'DatasetDereleased', 'description': f"Dataset {dataset_identifier} was announced as released by {repository}, but then a problem was discovered, and the dataset was removed from circulation while the problem is being addressed.", 'repository': repository }
             return self.status_response['status']
 
@@ -765,7 +764,7 @@ class ProxiDatasets:
             identifier = row[0]
             announce_date = row[9]   # FIXME
 
-            previous_extended_data_date ='2025-12-01'
+            previous_extended_data_date ='2005-12-01'
             #if identifier == 'PXD070494':
             if announce_date >= previous_extended_data_date:
                 print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
