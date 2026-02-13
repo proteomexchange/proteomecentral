@@ -7,7 +7,6 @@
   $SUBTITLE="";
   include("../includes/header.inc.php");
 ?>
-<script src="../javascript/js/utils.js"></script>
 <script src="../javascript/js/usi.js"></script>
 <script src="../javascript/js/lorikeet/jquery.min.js"></script>
 <script src="../javascript/js/lorikeet/jquery-ui.slider.min.js"></script>
