@@ -22,7 +22,7 @@ var usi_data = {
     "ProteomeCentral" : { "url" : _api['base_url'] + "spectra?resultType=full&usi=" },
     "MS2PIP"          : { "url" : _api['base_url'] + "spectra?resultType=full&accession=MS2PIP&msRun=INSERT_MODELNAME_HERE&usi=",
                           "view": "https://compomics.github.io/projects/ms2pip" },
-    "KOINA"           : { "url" : "https://dev.koina.wilhelmlab.org/v2/models/INSERT_MODELNAME_HERE/infer",
+    "KOINA"           : { "url" : "https://koina.wilhelmlab.org/v2/models/INSERT_MODELNAME_HERE/infer",
                           "view": "https://koina.wilhelmlab.org/" }
 };
 
@@ -364,11 +364,11 @@ async function fetch_spectrum(who, usi) {
             request.inputs.push(input);
 	}
         if (document.getElementById(who+"_model_frag")) {
-            input ={"name": "fragmentation_types", "shape": [1,1], "datatype": "BYTES", "data": [document.getElementById(who+"_model_frag").value.trim()]};
+            input ={"name": "fragmentation_types", "shape": [1,1], "datatype": "BYTES", "data": [document.getElementById(who+"_model_frag").value]};
             request.inputs.push(input);
         }
         if (document.getElementById(who+"_model_instr")) {
-            input ={"name": "instrument_types", "shape": [1,1], "datatype": "BYTES", "data": [document.getElementById(who+"_model_instr").value.trim()]};
+            input ={"name": "instrument_types", "shape": [1,1], "datatype": "BYTES", "data": [document.getElementById(who+"_model_instr").value]};
             request.inputs.push(input);
         }
 
@@ -411,6 +411,9 @@ async function fetch_spectrum(who, usi) {
 			if (out.name == 'intensities')
 			    specdata.intensities = out.data;
 		    }
+
+		    if (document.getElementById("KOINA_model_submit"))
+			pc_addCheckBox(document.getElementById("KOINA_model_submit"),true);
 
 		    return new Response(JSON.stringify([specdata]), {
 			status: savedResponse.status,
@@ -1198,11 +1201,15 @@ function rerun_model(provider) {
 	input.onclick = function () { reload(provider); };
         document.getElementById(provider+"_modelparams").append(input);
     }
+    else {
+	var span = document.createElement("span");
+	span.id = provider+"_model_submit";
+	document.getElementById(provider+"_modelparams").append(span);
+    }
 
     if (goreload)
 	reload(provider);
 }
-
 
 
 function reload(provider) {
@@ -1649,40 +1656,4 @@ function show_mass_defect() {
     }
 
     toggle_box("quickplot",true);
-}
-
-// from w3schools (mostly)
-function tpp_dragElement(ele) {
-    ele.style.cursor = "move";
-    var posx1 = 0, posx2 = 0, posy1 = 0, posy2 = 0;
-    if (document.getElementById(ele.id + "header"))
-        document.getElementById(ele.id + "header").onmousedown = dragMouseDown;
-    else
-        ele.onmousedown = dragMouseDown;
-
-    function dragMouseDown(e) {
-        e = e || window.event;
-        e.preventDefault();
-        posx2 = e.clientX;
-        posy2 = e.clientY;
-        document.onmouseup = closeDragElement;
-        document.onmousemove = elementDrag;
-    }
-
-    function elementDrag(e) {
-        e = e || window.event;
-        e.preventDefault();
-        posx1 = posx2 - e.clientX;
-        posy1 = posy2 - e.clientY;
-        posx2 = e.clientX;
-        posy2 = e.clientY;
-        ele.style.top  = (ele.offsetTop  - posy1) + "px";
-        ele.style.left = (ele.offsetLeft - posx1) + "px";
-        ele.style.right = 'initial';
-    }
-
-    function closeDragElement() {
-        document.onmouseup = null;
-        document.onmousemove = null;
-    }
 }

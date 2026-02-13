@@ -34,6 +34,18 @@ function pc_displaySpecialWarning(message=null) {
     document.body.prepend(div);
 }
 
+function pc_addCheckBox(ele,remove) {
+    var check = document.createElement("span");
+    check.className = 'buttonlike on';
+    check.style.position = 'fixed';
+    check.style.marginLeft = '10px';
+    check.style.marginTop = '-5px';
+    check.innerHTML = '&check;';
+    ele.parentNode.insertBefore(check, ele.nextSibling);
+
+    if (remove)
+        var timeout = setTimeout(function() { check.remove(); }, 1500 );
+}
 
 // from w3schools (mostly)
 function tpp_dragElement(ele) {
