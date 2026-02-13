@@ -129,13 +129,19 @@ function get_PXitem(pxid) {
     var apiurl = _api[call] + '/' + pxid + '?src=PCUI&resultType=full';
     fetch(apiurl)
         .then(response => {
-            if (response.ok) return response.json();
-            else throw new Error('Unable to fetch item data '+apiurl);
+            try   { return response.json(); }
+            catch { throw new Error('Unable to fetch item data '+apiurl); }
         })
         .then(data => {
 	    document.title = "ProteomeXchange Dataset: " + pxid;
             results_node.innerHTML = '';
-	    if (call == 'datasets')
+	    if (data.status && data.status == 'ERROR') {
+		if (["DatasetDereleased", "DatasetNotYetReleased"].includes(data.error_code))
+		    notpublic_PX(pxid,data);
+		else
+		    throw new Error('['+data.error_code+'] '+data.description);
+	    }
+	    else if (call == 'datasets')
 		PXdataset_details(data,false);
 	    else
 		PXlibrary_details(data,false);
@@ -143,10 +149,131 @@ function get_PXitem(pxid) {
         .catch(error => {
             document.title = "ProteomeCentral ERROR with PX dataset: " + pxid;
             results_node.innerHTML = '';
-            results_node.className = "error";
-            results_node.innerHTML = "<br>" + error + "<br><br>";
+            var h3 = document.createElement("h3");
+            h3.className = "buttonfake";
+            h3.append(error);
+            results_node.append(h3);
             console.error(error);
 	});
+
+}
+
+function notpublic_PX(pxid,msg) {
+    var pxpartner = msg.repository;
+
+    var div = get_PXdeets_div(false);
+
+    var span = document.createElement("h1");
+    span.className = 'dataset-title';
+    span.style.margin = '0';
+    span.append(pxid);
+    div.append(span);
+
+    span = document.createElement("div");
+    span.className = 'dataset-content';
+    div.append(span);
+
+    span.append("ProteomeXchange dataset "+pxid+" has been reserved by the "+pxpartner+" repository for a dataset that has been deposited, ");
+    if (msg.error_code == "DatasetDereleased")
+	span.append("and it was announced as released, but then a problem was discovered, and the dataset was removed from circulation while the problem is being addressed.");
+    else
+	span.append("but is not yet publicly released and announced to ProteomeXchange.");
+    span.append(document.createElement("br"));
+    span.append(document.createElement("br"));
+
+    var repositories = {
+	"PRIDE"  : { "url": "https://www.ebi.ac.uk/pride/login",
+		     "pagename" : "PRIDE Archive login page",
+		     "contact" : "pride-support@ebi.ac.uk" },
+	"MassIVE": { "url": "https://massive.ucsd.edu/ProteoSAFe/QueryPXD?id="+pxid,
+		     "pagename" : "MassIVE dataset page",
+		     "contact" : "ccms@proteomics.ucsd.edu" }
+    };
+
+    var text = document.createElement("span");
+    text.className = 'dataset-secthead';
+    text.append("If you are a reviewer of a manuscript that includes this dataset:");
+    span.append(text);
+
+    var ul = document.createElement("ul");
+    text = document.createElement("li");
+    text.append("You should also have received a username and password to access this dataset: "+pxid);
+    ul.append(text);
+    text = document.createElement("li");
+    text.append("If you did not, contact your manuscript editor about obtaining this information.");
+    ul.append(text);
+    span.append(ul);
+    ul = document.createElement("ul");
+    text = document.createElement("li");
+    text.append("If you did, go to the ");
+
+    if (pxpartner in repositories) {
+	var link = document.createElement("a");
+	link.href = repositories[pxpartner]['url'];
+	link.append(repositories[pxpartner]['pagename']);
+	text.append(link);
+    }
+    else {
+	text.append(pxpartner+" web site");
+    }
+
+    text.append(" to enter the reviewer credentials and access the data.");
+    ul.append(text);
+
+    if (pxpartner in repositories) {
+	text = document.createElement("li");
+	text.append("If you have questions or problems about this process, please contact: ");
+	var link = document.createElement("strong");
+	link.append(repositories[pxpartner]['contact']);
+	text.append(link);
+	ul.append(text);
+    }
+    span.append(ul);
+
+    text = document.createElement("span");
+    text.className = 'dataset-secthead';
+    text.append("If you have seen this identifier in an accepted manuscript:");
+    span.append(text);
+    ul = document.createElement("ul");
+    text = document.createElement("li");
+    text.append("Then this dataset should be publicly released. Probably the authors and/or the journal have not contacted the original repository yet in order to trigger the public release.");
+    ul.append(text);
+    text = document.createElement("li");
+
+    if (pxpartner == 'PRIDE') {
+	text.append("Please go to the ");
+	link = document.createElement("a");
+	link.href = "https://www.ebi.ac.uk/pride/archive/projects/"+pxid+"/publish";
+	link.append("PRIDE Publication Notification Page for this dataset");
+	text.append(link);
+	text.append(" and enter in the citation information so that the dataset can be associated with the article and released.");
+    }
+    else if (pxpartner == 'MassIVE') {
+	text.append("Please contact ");
+	link = document.createElement("strong");
+	link.append(repositories[pxpartner]['contact']);
+	text.append(link);
+	text.append(" to request that the dataset be associated with the article and released.");
+    }
+    else {
+	text.append("Please contact "+pxpartner+" to request that the dataset be associated with the article and released.");
+    }
+
+    ul.append(text);
+    span.append(ul);
+
+    text = document.createElement("span");
+    text.className = 'dataset-secthead';
+    text.append("If you are just waiting for this dataset to be released:");
+    span.append(text);
+    ul = document.createElement("ul");
+    text = document.createElement("li");
+    text.append("It is not available at this time");
+    ul.append(text);
+    text = document.createElement("li");
+    text.append("Please check again later or contact the original data submitters or "+pxpartner+" curators to see when it will be public");
+    ul.append(text);
+    span.append(ul);
 
 }
 
