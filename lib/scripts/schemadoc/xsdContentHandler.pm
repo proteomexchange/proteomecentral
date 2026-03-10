@@ -1097,12 +1097,15 @@ sub writeElement {
       my $allowChildTerm = 0;
       $allowChildTerm = 1 if ($rules->{$rule}->{allowChildren} && $rules->{$rule}->{allowChildren} eq 'true');
 
+      my $cvRef = lc((split /:/, $term)[0]);
+      my $term_dash = $term;
+      $term_dash =~ s/:/_/;
       if ($allowParentTerm && $allowChildTerm) {
-	$buffer.= "$requirementLevel supply term <a target=\"new\" href=\"http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=$term\">$term</a> (<span title=\"$termDefinition\" class=\"popup\">$termName</span>) or any of its children $cardinality\n";
+        $buffer.= "$requirementLevel supply term <a target=\"new\" href=\"https://www.ebi.ac.uk/ols4/ontologies/$cvRef/classes/http" . '%%3A%%2F%%2Fpurl.obolibrary.org%%2Fobo%%2F' . "$term_dash\">$term</a> (<span title=\"$termDefinition\" class=\"popup\">$termName</span>) or any of its children $cardinality\n";
       } elsif ($allowParentTerm) {
-	$buffer.= "$requirementLevel supply term <a target=\"new\" href=\"http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=$term\">$term</a> (<span title=\"$termDefinition\" class=\"popup\">$termName</span>) $cardinality\n";
+	$buffer.= "$requirementLevel supply term <a target=\"new\" href=\"https://www.ebi.ac.uk/ols4/ontologies/$cvRef/classes/http" . '%%3A%%2F%%2Fpurl.obolibrary.org%%2Fobo%%2F' . "$term_dash\">$term</a> (<span title=\"$termDefinition\" class=\"popup\">$termName</span>) $cardinality\n";
       } elsif ($allowChildTerm) {
-	$buffer.= "$requirementLevel supply a *child* term of <a target=\"new\" href=\"http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=$term\">$term</a> (<span title=\"$termDefinition\" class=\"popup\">$termName</span>) $cardinality\n";
+	$buffer.= "$requirementLevel supply a *child* term of <a target=\"new\" href=\"https://www.ebi.ac.uk/ols4/ontologies/$cvRef/classes/http" . '%%3A%%2F%%2Fpurl.obolibrary.org%%2Fobo%%2F' . "$term_dash\">$term</a> (<span title=\"$termDefinition\" class=\"popup\">$termName</span>) $cardinality\n";
       }
 
       if ($allowChildTerm) {
@@ -1121,9 +1124,14 @@ sub writeElement {
 
 	  if ($termCount < 10) {
 	    #$buffer.= "  e.g.: $childTerm ($childTermName)\n";
-            $buffer.= "  e.g.: <a target=\"new\" href=\"http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=$childTerm\">$childTerm</a> (<span title=\"$childTermDefinition\" class=\"popup\">$childTermName</span>) $childTermDefinitionWarning\n";
+            my $cvRef = lc((split /:/, $term)[0]);
+            my $term_dash = $term;
+            $term_dash =~ s/:/_/;
+            my $child_term_dash = $childTerm;
+            $child_term_dash =~ s/:/_/;
+            $buffer.= "  e.g.: <a target=\"new\" href=\"https://www.ebi.ac.uk/ols4/ontologies/$cvRef/classes/http" . '%%3A%%2F%%2Fpurl.obolibrary.org%%2Fobo%%2F' . "$child_term_dash\">$childTerm</a> (<span title=\"$childTermDefinition\" class=\"popup\">$childTermName</span>) $childTermDefinitionWarning\n";
 	  } elsif ($termCount == 10 && scalar(@childTerms) > 10) {
-	    $buffer.= "  <a target=\"new\" href=\"http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MS&termId=$term\">et al.</a>\n";
+	    $buffer.= "  <a target=\"new\" href=\"https://www.ebi.ac.uk/ols4/ontologies/$cvRef/classes/http" . '%%3A%%2F%%2Fpurl.obolibrary.org%%2Fobo%%2F' . "$term_dash\">et al.</a>\n";
 	  }
 	  $termCount++;
 	}
