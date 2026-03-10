@@ -788,23 +788,23 @@ sub validatePXXMLDocument {
     if ($line && $line =~ /SchemaLocation=\"(.+?)\"/) {
       $schema = $1;
       if ( $permitOldSchemas ) {
-        if ( $schema =~ /^proteomeXchange-1.[0-4].0.xsd$/ ) {
+        if ( $schema =~ /^proteomeXchange-1.[0-5].0.xsd$/ ) {
 	  push(@{$response->{info}},"File has as acceptable XSD $schema");
 	  $info->{hasRightXSD} = 'passed';
         } else {
 	  $response->{result} = "ERROR";
 	  $response->{message} = "File has unexpected XSD '$schema'. Cannot process this file. Sorry.";
-	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.[0-4].0.xsd");
+	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.[0-5].0.xsd");
 	  $info->{hasRightXSD} = 'failed';
         }
       } else {
-        if ($schema eq 'proteomeXchange-1.4.0.xsd') {
-	  push(@{$response->{info}},"File has as acceptable XSD $schema");
+        if ($schema eq 'proteomeXchange-1.4.0.xsd' || $schema eq 'proteomeXchange-1.5.0.xsd') {
+	  push(@{$response->{info}},"File has an acceptable XSD $schema");
 	  $info->{hasRightXSD} = 'passed';
         } else {
 	  $response->{result} = "ERROR";
 	  $response->{message} = "File has unexpected XSD '$schema'. Cannot process this file. Sorry.";
-	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.4.0.xsd is permitted");
+	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.4.0.xsd and proteomeXchange-1.5.0.xsd is permitted");
 	  $info->{hasRightXSD} = 'failed';
         }
       }
