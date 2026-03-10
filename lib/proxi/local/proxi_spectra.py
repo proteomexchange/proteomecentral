@@ -486,7 +486,8 @@ def main():
         result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXL000031:2015-11-06:index:0:ELVIS/2')
         #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01283_A02_P013187_S00_N09_R1:scan:30190:ELVISYLPPGM[L-methionine sulfoxide]ASK/2')
         #result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD010154:01284_E04_P013188_B00_N29_R1.mzML:scan:31291:DQNGTWEM[Oxidation]ESNENFEGYM[Oxidation]K/2')
-    
+        result = spectra.fetch_spectra(resultType, usi = 'mzspec:PXD000134:4Skin_Mix1_SCX_F12rep3_OR5:scan:14618:[Dimethyl]-LYIVGGSDPYGQK[Dimethyl]/2')
+
     elif example == 2:
         resultType = 'compact'
         result = spectra.fetch_from_MS2PIP(resultType, usi = 'mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2')
