@@ -533,7 +533,7 @@
 
   <xs:simpleType name="versionRegex">
     <xs:restriction base="xs:string">
-      <xs:pattern value="(1\.4\.?\d?)"/>
+      <xs:pattern value="(1\.5\.?\d?)"/>
     </xs:restriction>
   </xs:simpleType>
   
