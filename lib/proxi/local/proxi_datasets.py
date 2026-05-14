@@ -1166,11 +1166,11 @@ class ProxiDatasets:
                     value = value.strip()
                     if facet_name == 'sdrf':
                         if value != '':
-                            try:
-                                sdrf_source = value.split(':')[0]
+                            sdrf_source = value.split(':')[0]
+                            if sdrf_source == value:
+                                value = '?? SDRF'
+                            else:
                                 value = f"{sdrf_source} SDRF"
-                            except Exception:
-                                value = 'SDRF'
                         else:
                             value = 'No SDRF'
                     if facet_name == 'files':
