@@ -739,7 +739,7 @@ class ProxiDatasets:
             if announce_date >= previous_extended_data_date:
                 print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
                 status_code, message, dataset = self.get_dataset(identifier)
-                if status_code != 200:
+                if status_code != 200 or dataset is None:
                     error_message = f"ERROR: Unable to read dataset with identifier {identifier}"
                     print(error_message)
                     error_messages.append(error_message)
