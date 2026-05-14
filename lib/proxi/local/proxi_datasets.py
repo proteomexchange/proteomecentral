@@ -440,13 +440,13 @@ class ProxiDatasets:
         sdrf_handler.sdrf_data['problems'] = sdrf_handler.problems
 
         sdrf_metadata['sdrf_data'] = sdrf_handler.sdrf_data
-        sdrf_metadata['external_sdrf_ui_url'] = f"https://github.com/bigbio/sdrf-annotated-datasets/blob/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
-        sdrf_metadata['external_sdrf_data_url'] = f"https://raw.githubusercontent.com/bigbio/sdrf-annotated-datasets/refs/heads/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['external_sdrf_ui_url'] = f"https://github.com/NCEMS/HAMLET/blob/main/store/hamlet_sdrfs/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['external_sdrf_data_url'] = f"https://raw.githubusercontent.com/NCEMS/HAMLET/refs/heads/main/store/hamlet_sdrfs/{dataset_identifier}.sdrf.tsv"
 
         sdrf_source = 'agentic'
         sdrf_metadata['sdrf_source'][sdrf_source]['sdrf_data'] = sdrf_handler.sdrf_data
-        sdrf_metadata['sdrf_source'][sdrf_source]['ui_url'] = f"https://github.com/bigbio/sdrf-annotated-datasets/blob/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
-        sdrf_metadata['sdrf_source'][sdrf_source]['data_url'] = f"https://raw.githubusercontent.com/bigbio/sdrf-annotated-datasets/refs/heads/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['sdrf_source'][sdrf_source]['ui_url'] = f"https://github.com/NCEMS/HAMLET/blob/main/store/hamlet_sdrfs/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['sdrf_source'][sdrf_source]['data_url'] = f"https://raw.githubusercontent.com/NCEMS/HAMLET/refs/heads/main/store/hamlet_sdrfs/{dataset_identifier}.sdrf.tsv"
         sdrf_metadata['sdrf_best_source'] = sdrf_source
 
 
@@ -1159,7 +1159,7 @@ class ProxiDatasets:
                             try:
                                 sdrf_source = value.split(':')[0]
                                 value = f"{sdrf_source} SDRF"
-                            except:
+                            except Exception:
                                 value = 'SDRF'
                         else:
                             value = 'No SDRF'
