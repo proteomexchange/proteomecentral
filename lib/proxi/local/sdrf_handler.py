@@ -648,9 +648,11 @@ def main():
         sdrf.data_url = params.url
         sdrf.ui_url = params.url
 
-        response = requests.get(params.url, timeout=30)
-        if response.status_code != 200:
-            eprint(f"ERROR: Failed to download {params.url}. Status code: {response.status_code}")
+        try:
+            response = requests.get(params.url, timeout=30)
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            eprint(f"ERROR: Failed to download {params.url}: {exc}")
             return
         os.makedirs(sdrf_cache_path, exist_ok=True)
 
@@ -687,9 +689,11 @@ def main():
         merge_sdrf.data_url = params.merge_url
         merge_sdrf.ui_url = params.merge_url
 
-        response = requests.get(params.merge_url, timeout=30)
-        if response.status_code != 200:
-            eprint(f"ERROR: Failed to download {params.merge_url}. Status code: {response.status_code}")
+        try:
+            response = requests.get(params.url, timeout=30)
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            eprint(f"ERROR: Failed to download {params.url}: {exc}")
             return
 
         merge_filename = sdrf.extract_filename(params.merge_url)
