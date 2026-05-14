@@ -727,6 +727,7 @@ class ProxiDatasets:
             timestamp = str(datetime.now().isoformat())
             eprint(f"{timestamp}: INFO: Begin refresh process with extended data for {len(extended_data)} datasets from file dated {previous_extended_data_timestamp}")
 
+        error_messages = ()
         irow = 0
         n_updated_records = 0
         for row in rows:
@@ -738,6 +739,10 @@ class ProxiDatasets:
             if announce_date >= previous_extended_data_date:
                 print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
                 status_code, message, dataset = self.get_dataset(identifier)
+                if status_code != 200:
+                    error_message = f"ERROR: Unable to read dataset with identifier {identifier}"
+                    print(error_message)
+                    error_messages.append(error_message)
                 counts_struct = self.compute_n_msruns(dataset)
                 extended_data[identifier] = counts_struct
 
@@ -766,6 +771,11 @@ class ProxiDatasets:
             timestamp = str(datetime.now().isoformat())
             t1 = timeit.default_timer()
             eprint(f"{timestamp}: INFO: Computed extended data metrics for {n_updated_records} out of {irow-1} datasets in {(t1-t0):.4f} seconds")
+
+        if len(error_messages) > 0:
+            print("Summary of error messages:")
+            for error_message in error_messages:
+                print(f"  - {error_message}")
 
         self.extended_data = extended_data
         if n_updated_records > 0:
