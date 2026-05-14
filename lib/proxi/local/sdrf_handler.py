@@ -120,7 +120,7 @@ class SDRFHandler:
                 first_line = True
                 sdrf_data = { 'titles': None, 'rows': [] }
                 for line in infile:
-                    if len(line.strip()) < 2:
+                    if line.strip() == '':
                         continue
                     if first_line:
                         sdrf_data['titles'] = line.strip().split(filetype['delimiter'])
@@ -650,8 +650,7 @@ def main():
         if response.status_code != 200:
             eprint(f"ERROR: Failed to download {params.url}. Status code: {response.status_code}")
             return
-        if not os.path.exists(sdrf_cache_path):
-            os.mkdir(sdrf_cache_path)
+        os.makedirs(sdrf_cache_path, exist_ok=True)
 
         filename = sdrf.extract_filename(params.url)
         filepath = f"{sdrf_cache_path}/{filename}"
@@ -695,6 +694,7 @@ def main():
         merge_filepath = f"{sdrf_cache_path}/{merge_filename}"
         if merge_filepath == filepath:
             merge_filepath += '_to_merge'
+        os.makedirs(sdrf_cache_path, exist_ok=True)
         with open(merge_filepath, 'wb') as outfile:
             outfile.write(response.content)
 
