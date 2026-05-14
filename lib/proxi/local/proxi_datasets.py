@@ -19,8 +19,9 @@ import numpy
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 from pxxml_parser import PXXMLParser
+from sdrf_handler import SDRFHandler
 
-DEBUG = True
+DEBUG = False
 
 #### Import the Swagger client libraries
 sys.path.append(os.path.dirname(os.path.abspath(__file__))+"/../client/swagger_client")
@@ -230,9 +231,10 @@ class ProxiDatasets:
         self.dataset['datasetHistory'] = self.dataset_history
 
         #### Get SDRF information if available
-        self.dataset['sdrf_metadata'] = self.get_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'])
-        if self.dataset['sdrf_metadata'] is None:
-            self.dataset['sdrf_metadata'] = self.get_repository_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
+        self.initialize_sdrf_metadata(self.dataset)
+        self.get_agentic_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
+        self.get_repository_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
+        self.get_curated_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
 
         return(self.status_response['status_code'], self.status_response, self.dataset)
 
@@ -371,58 +373,91 @@ class ProxiDatasets:
 
 
     #### Get SDRF metadata
-    def get_sdrf_metadata(self, dataset_identifier):
+    def initialize_sdrf_metadata(self, dataset):
 
-        extern_sdrfs_dir = '/net/dblocal/wwwspecial/proteomecentral/extern/proteomics-metadata-standard/annotated-projects'
+        sdrf_metadata = { 'external_sdrf_ui_url': None, 'external_sdrf_data_url': None, 'sdrf_data': None, 'sdrf_source': {}, 'sdrf_best_source': None }
+        sdrf_sources = [ 'curated', 'repository', 'agentic' ]
+        for sdrf_source in sdrf_sources:
+            sdrf_metadata['sdrf_source'][sdrf_source] = { 'ui_url': None, 'data_url': None, 'sdrf_data': None }
 
-        sdrf_metadata = { 'external_sdrf_ui_url': None, 'external_sdrf_data_url': None, 'submitted_sdrf_ui_url': False, 'submitted_sdrf_data_url': False, 'sdrf_data': None }
+        dataset['sdrf_metadata'] = sdrf_metadata
+
+
+
+    #### Get SDRF metadata
+    def get_curated_sdrf_metadata(self, dataset_identifier, dataset):
+
+        extern_sdrfs_dir = '/net/dblocal/wwwspecial/proteomecentral/extern/sdrf-annotated-datasets/datasets'
+
+        sdrf_metadata = dataset['sdrf_metadata']
 
         extern_sdrf_path = f"{extern_sdrfs_dir}/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
         if not os.path.exists(extern_sdrf_path):
             return
 
-        with open(extern_sdrf_path) as infile:
-            files = {}
-            samples = {}
-            file_icolumn = None
-            first_line = True
-            sdrf_data = { 'titles': None, 'rows': [] }
-            for line in infile:
-                if first_line:
-                    sdrf_data['titles'] = line.strip().split("\t")
-                    first_line = False
-                    icolumn = 0
-                    for title in sdrf_data['titles']:
-                        if title == 'comment[data file]':
-                            file_icolumn = icolumn
-                            break
-                        icolumn += 1
-                    continue
-                columns = line.strip().split("\t")
-                sdrf_data['rows'].append(columns)
+        sdrf_handler = SDRFHandler()
+        sdrf_handler.read(extern_sdrf_path)
 
-                if file_icolumn is not None:
-                    files[columns[file_icolumn]] = True
-                samples[columns[0]] = True
+        sdrf_handler.sdrf_data['n_rows'] = sdrf_handler.n_rows
+        sdrf_handler.sdrf_data['n_samples'] = sdrf_handler.n_samples
+        sdrf_handler.sdrf_data['n_files'] = sdrf_handler.n_files
+        sdrf_handler.sdrf_data['n_assays'] = sdrf_handler.n_assays
+        sdrf_handler.sdrf_data['problems'] = sdrf_handler.problems
 
-            sdrf_data['n_rows'] = len(sdrf_data['rows'])
-            sdrf_data['n_samples'] = len(samples)
-            sdrf_data['n_files'] = len(files)
+        sdrf_metadata['sdrf_data'] = sdrf_handler.sdrf_data
+        sdrf_metadata['external_sdrf_ui_url'] = f"https://github.com/bigbio/sdrf-annotated-datasets/blob/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['external_sdrf_data_url'] = f"https://raw.githubusercontent.com/bigbio/sdrf-annotated-datasets/refs/heads/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
 
-        sdrf_metadata['sdrf_data'] = sdrf_data
-        sdrf_metadata['external_sdrf_ui_url'] = f"https://github.com/bigbio/proteomics-sample-metadata/blob/master/annotated-projects/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
-        sdrf_metadata['external_sdrf_data_url'] = f"https://raw.githubusercontent.com/bigbio/proteomics-sample-metadata/refs/heads/master/annotated-projects/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
-        return sdrf_metadata
+        sdrf_source = 'curated'
+        sdrf_metadata['sdrf_source'][sdrf_source]['sdrf_data'] = sdrf_handler.sdrf_data
+        sdrf_metadata['sdrf_source'][sdrf_source]['ui_url'] = f"https://github.com/bigbio/sdrf-annotated-datasets/blob/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['sdrf_source'][sdrf_source]['data_url'] = f"https://raw.githubusercontent.com/bigbio/sdrf-annotated-datasets/refs/heads/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['sdrf_best_source'] = sdrf_source
 
 
-    #### Get SDRF metadata
-    def get_repository_sdrf_metadata(self, identifier, dataset, sdrf_metadata=None):
+
+    #### Get agentic SDRF metadata
+    def get_agentic_sdrf_metadata(self, dataset_identifier, dataset):
 
         if dataset is None:
             return
 
-        if sdrf_metadata is None:
-            sdrf_metadata = { 'external_sdrf_ui_url': None, 'external_sdrf_data_url': None, 'submitted_sdrf_ui_url': False, 'submitted_sdrf_data_url': False, 'sdrf_data': None }
+        extern_sdrfs_dir = '/net/dblocal/wwwspecial/proteomecentral/extern/HAMLET/store/hamlet_sdrfs'
+
+        sdrf_metadata = dataset['sdrf_metadata']
+
+        extern_sdrf_path = f"{extern_sdrfs_dir}/{dataset_identifier}.sdrf.tsv"
+        if not os.path.exists(extern_sdrf_path):
+            return
+
+        sdrf_handler = SDRFHandler()
+        sdrf_handler.read(extern_sdrf_path)
+
+        sdrf_handler.sdrf_data['n_rows'] = sdrf_handler.n_rows
+        sdrf_handler.sdrf_data['n_samples'] = sdrf_handler.n_samples
+        sdrf_handler.sdrf_data['n_files'] = sdrf_handler.n_files
+        sdrf_handler.sdrf_data['n_assays'] = sdrf_handler.n_assays
+        sdrf_handler.sdrf_data['problems'] = sdrf_handler.problems
+
+        sdrf_metadata['sdrf_data'] = sdrf_handler.sdrf_data
+        sdrf_metadata['external_sdrf_ui_url'] = f"https://github.com/bigbio/sdrf-annotated-datasets/blob/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['external_sdrf_data_url'] = f"https://raw.githubusercontent.com/bigbio/sdrf-annotated-datasets/refs/heads/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+
+        sdrf_source = 'agentic'
+        sdrf_metadata['sdrf_source'][sdrf_source]['sdrf_data'] = sdrf_handler.sdrf_data
+        sdrf_metadata['sdrf_source'][sdrf_source]['ui_url'] = f"https://github.com/bigbio/sdrf-annotated-datasets/blob/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['sdrf_source'][sdrf_source]['data_url'] = f"https://raw.githubusercontent.com/bigbio/sdrf-annotated-datasets/refs/heads/master/datasets/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['sdrf_best_source'] = sdrf_source
+
+
+
+    #### Get repository SDRF metadata
+    def get_repository_sdrf_metadata(self, identifier, dataset):
+
+        if dataset is None:
+            return
+
+        sdrf_metadata = dataset['sdrf_metadata']
 
         sdrf_file_url = None
         if 'datasetFiles' in dataset:
@@ -460,91 +495,25 @@ class ProxiDatasets:
             with open(repository_sdrf_path, 'wb') as outfile:
                 outfile.write(response.content)
 
-        files = {}
-        samples = {}
-        delimiter = None
-        if repository_sdrf_path.endswith('tsv') or repository_sdrf_path.endswith('TSV') or repository_sdrf_path.endswith('sdrf') or repository_sdrf_path.endswith('SDRF'):
-            delimiter = "\t"
-        if repository_sdrf_path.endswith('txt') or repository_sdrf_path.endswith('TXT'):
-            delimiter = "\t"
-        if repository_sdrf_path.endswith('csv') or repository_sdrf_path.endswith('CSV'):
-            delimiter = ","
+        sdrf_handler = SDRFHandler()
+        sdrf_handler.read(repository_sdrf_path)
 
-        if delimiter is not None:
-            with open(repository_sdrf_path, encoding='utf-8', errors='ignore') as infile:
-                file_icolumn = None
-                file_uri_icolumn = None
-                source_name_icolumn = None
-                first_line = True
-                sdrf_data = { 'titles': None, 'rows': [] }
-                for line in infile:
-                    if len(line.strip()) < 2:
-                        continue
-                    if first_line:
-                        sdrf_data['titles'] = line.strip().split(delimiter)
-                        first_line = False
-                        icolumn = 0
-                        for title in sdrf_data['titles']:
-                            if title == 'comment[data file]':
-                                file_icolumn = icolumn
-                            if title == 'comment[file uri]':
-                                file_uri_icolumn = icolumn
-                            if title == 'source name':
-                                source_name_icolumn = icolumn
-                            icolumn += 1
-                        continue
-                    columns = line.strip().split(delimiter)
-                    sdrf_data['rows'].append(columns)
+        sdrf_handler.sdrf_data['n_rows'] = sdrf_handler.n_rows
+        sdrf_handler.sdrf_data['n_samples'] = sdrf_handler.n_samples
+        sdrf_handler.sdrf_data['n_files'] = sdrf_handler.n_files
+        sdrf_handler.sdrf_data['n_assays'] = sdrf_handler.n_assays
+        sdrf_handler.sdrf_data['problems'] = sdrf_handler.problems
 
-                    #### Attempt a more robust way of handling possible [data file] / [file uri] duality
-                    filename = ''
-                    if file_icolumn is not None and len(columns) >= file_icolumn + 1:
-                        filename = columns[file_icolumn]
-                    if filename == '' and file_uri_icolumn is not None and len(columns) >= file_uri_icolumn + 1:
-                        filename = columns[file_uri_icolumn]
-                    files[filename] = True
-
-                    if source_name_icolumn is not None and len(columns) >= source_name_icolumn + 1:
-                        samples[columns[source_name_icolumn]] = True
-
-        elif repository_sdrf_path.endswith('xls') or repository_sdrf_path.endswith('XLS') or repository_sdrf_path.endswith('xlsx') or repository_sdrf_path.endswith('XLSX'):
-            source_sdrf_data = pandas.read_excel(repository_sdrf_path)
-            sdrf_data = { 'titles': list(source_sdrf_data), 'rows': [] }
-            for index, row in source_sdrf_data.iterrows():
-                rowdata = row.tolist()
-                #### Deal with NaN values, which cause problems
-                newrowdata = []
-                for value in rowdata:
-                    if isinstance(value, float) and numpy.isnan(value):
-                        value = 'NaN'
-                    newrowdata.append(value)
-                sdrf_data['rows'].append(newrowdata)
-
-                try:
-                    if 'comment[data file]' in row:
-                        files[row['comment[data file]']] = True
-                    elif 'comment[file uri]' in row:
-                        files[row['comment[file uri]']] = True
-                except:
-                    pass
-
-                try:
-                    samples[row['source name']] = True
-                except:
-                    pass
-
-        else:
-            eprint(f"WARNING: Don't know how to read file '{repository_sdrf_path}'")
-            return
-
-        sdrf_data['n_rows'] = len(sdrf_data['rows'])
-        sdrf_data['n_samples'] = len(samples)
-        sdrf_data['n_files'] = len(files)
-
-        sdrf_metadata['sdrf_data'] = sdrf_data
+        sdrf_metadata['sdrf_data'] = sdrf_handler.sdrf_data
         sdrf_metadata['external_sdrf_ui_url'] = sdrf_file_url
         sdrf_metadata['external_sdrf_data_url'] = sdrf_file_url
-        return sdrf_metadata
+
+        sdrf_source = 'repository'
+        sdrf_metadata['sdrf_source'][sdrf_source]['sdrf_data'] = sdrf_handler.sdrf_data
+        sdrf_metadata['sdrf_source'][sdrf_source]['ui_url'] = sdrf_file_url
+        sdrf_metadata['sdrf_source'][sdrf_source]['data_url'] = sdrf_file_url
+        if sdrf_metadata['sdrf_best_source'] is None or sdrf_metadata['sdrf_best_source'] != 'curated':
+            sdrf_metadata['sdrf_best_source'] = sdrf_source
 
 
 
@@ -764,7 +733,7 @@ class ProxiDatasets:
             identifier = row[0]
             announce_date = row[9]   # FIXME
 
-            previous_extended_data_date ='2026-01-01'
+            previous_extended_data_date ='2026-05-01'
             #if identifier == 'PXD070494':
             if announce_date >= previous_extended_data_date:
                 print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
@@ -772,16 +741,21 @@ class ProxiDatasets:
                 counts_struct = self.compute_n_msruns(dataset)
                 extended_data[identifier] = counts_struct
 
-                dataset['sdrf_metadata'] = self.get_sdrf_metadata(identifier)
-                if dataset['sdrf_metadata'] is None:
-                    dataset['sdrf_metadata'] = self.get_repository_sdrf_metadata(identifier, dataset)
+                sdrf_best_source = None
+                if dataset['sdrf_metadata'] is not None and 'sdrf_best_source' in dataset['sdrf_metadata']:
+                    sdrf_best_source = dataset['sdrf_metadata']['sdrf_best_source']
+                if sdrf_best_source is None or sdrf_best_source == '':
+                    sdrf_best_source = '????'
 
-                if dataset['sdrf_metadata'] is not None and 'sdrf_data' in dataset['sdrf_metadata']:
-                    sdrf_data = dataset['sdrf_metadata']['sdrf_data']
-                    if 'n_samples' in sdrf_data:
-                        extended_data[identifier]['sdrf_stats'] = f"{sdrf_data['n_samples']} samples / {sdrf_data['n_files']} files / {sdrf_data['n_rows']} rows"
+                sdrf_data = dataset['sdrf_metadata']['sdrf_data']
+                if sdrf_data is not None and 'n_samples' in sdrf_data:
+                    validity = "valid"
+                    if sdrf_data['problems']['errors']['count'] > 0:
+                        validity = "invalid"
+                    extended_data[identifier]['sdrf_stats'] = f"{sdrf_best_source} {validity}: {sdrf_data['n_samples']} samples / {sdrf_data['n_files']} files / {sdrf_data['n_rows']} rows" \
+                        f" -- {sdrf_data['problems']['errors']['count']}/{sdrf_data['problems']['warnings']['count']} errors/warnings"
+                    print(f"    extended_data={extended_data[identifier]}")
 
-                print(f"    extended_data={extended_data[identifier]}")
                 n_updated_records += 1
 
             irow += 1
@@ -1182,7 +1156,11 @@ class ProxiDatasets:
                     value = value.strip()
                     if facet_name == 'sdrf':
                         if value != '':
-                            value = 'SDRF'
+                            try:
+                                sdrf_source = value.split(':')[0]
+                                value = f"{sdrf_source} SDRF"
+                            except:
+                                value = 'SDRF'
                         else:
                             value = 'No SDRF'
                     if facet_name == 'files':
