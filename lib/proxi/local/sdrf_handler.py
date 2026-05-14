@@ -8,7 +8,6 @@ import json
 import pandas as pd
 import numpy
 import re
-import pandas
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
 
 
@@ -54,7 +53,7 @@ class SDRFHandler:
             return
 
         if not isinstance(filepath, str):
-            eprint(f"ERROR: SDRFData.extract_filename: filepath must be a string")
+            eprint("ERROR: SDRFData.extract_filename: filepath must be a string")
             return
 
         match = re.match(r'.*/(.+)?$', filepath)
@@ -726,4 +725,5 @@ def main():
 
 
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
