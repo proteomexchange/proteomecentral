@@ -225,7 +225,7 @@ class SDRFHandler:
 
         sdrf_data = self.sdrf_data
         if sdrf_data is None:
-            eprint(f"ERROR: SDRFData.check_and_fix_headers: No available data to process")
+            eprint("ERROR: SDRFData.compute_stats: No available data to process")
             return
 
         columns_of_interest = [ 'source name', 'assay name', 'comment[data file]', 'comment[file uri]' ]
@@ -301,7 +301,7 @@ class SDRFHandler:
             return
 
         if self.n_rows != merge_sdrf.n_rows:
-            self.log_problem('ERROR', 'DifferingNRows', 0, 0, f"Primary SDRF has {self.n_rows} files and SDRF to merge has {merge_sdrf.n_rows} files. Cannot merge such differing SDRFs")
+            self.log_problem('ERROR', 'DifferingNRows', 0, 0, f"Primary SDRF has {self.n_rows} rows and SDRF to merge has {merge_sdrf.n_rows} rows. Cannot merge such differing SDRFs")
             return
 
         if prefer_main_columns is None or prefer_main_columns == '':
@@ -433,7 +433,7 @@ class SDRFHandler:
                 del(merge_data['match_data'][title]['main_leftover_values'][value])
             else:
                 #### Try to match without filename suffixes
-                match = re.match(r'(.+)(\.+)?', value)
+                match = re.match(r'(.+)\.(.+)?', value)
                 if match:
                     value_root = match.group(1)
                     suffix = match.group(2)
@@ -646,7 +646,7 @@ def main():
         sdrf.data_url = params.url
         sdrf.ui_url = params.url
 
-        response = requests.get(params.url)
+        response = requests.get(params.url, timeout=30)
         if response.status_code != 200:
             eprint(f"ERROR: Failed to download {params.url}. Status code: {response.status_code}")
             return
@@ -686,7 +686,7 @@ def main():
         merge_sdrf.data_url = params.merge_url
         merge_sdrf.ui_url = params.merge_url
 
-        response = requests.get(params.merge_url)
+        response = requests.get(params.merge_url, timeout=30)
         if response.status_code != 200:
             eprint(f"ERROR: Failed to download {params.merge_url}. Status code: {response.status_code}")
             return
