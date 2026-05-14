@@ -5,7 +5,7 @@ import os
 import argparse
 import os.path
 import json
-import pandas as pd
+import pandas
 import numpy
 import re
 def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
@@ -262,7 +262,7 @@ class SDRFHandler:
 
         self.n_rows = len(sdrf_data['rows'])
         if self.n_rows == 0:
-            self.log_problem('ERROR', 'ZeroRows', 0, 0, f"SDRF file has no data rows")
+            self.log_problem('ERROR', 'ZeroRows', 0, 0, "SDRF file has no data rows")
 
         self.n_samples = len(column_unique_values['source name'])
         if self.n_samples == 0:
@@ -270,7 +270,7 @@ class SDRFHandler:
 
         self.n_assays = len(column_unique_values['assay name'])
         if self.n_assays == 0:
-            self.log_problem('ERROR', 'ZeroAssays', 0, 0, f"SDRF file has no assay information for 'assay name'")
+            self.log_problem('ERROR', 'ZeroAssays', 0, 0, "SDRF file has no assay information for 'assay name'")
 
         self.n_files = len(column_unique_values['comment[data file]'])
         if len(column_unique_values['comment[file uri]']) > self.n_files:
