@@ -1,7 +1,7 @@
 package ProteomeXchange::DDIJS;
 
 ###############################################################################
-# $Id:  $
+# $Id$
 #
 # Description : Package to manage access to javascript visualizations adapted
 # from DDI (Data discovery index)
@@ -20,7 +20,7 @@ use ProteomeXchange::Log;
 my $basePath = $CONFIG{basePath} || '/net/dblocal/wwwspecial/proteomecentral';
 my $log_dir = $basePath . '/logs/';
 my $log =  ProteomeXchange::Log->new( base => $log_dir, log_level => 'debug' );
-my $baseUrl = $CONFIG{baseUrl} || 'http://www.proteomecentral.org';
+my $baseUrl = $CONFIG{baseUrl} || 'https://www.proteomecentral.org';
 
 
 ##### Public Methods ###########################################################
@@ -65,7 +65,7 @@ sub get_onload_script {
 sub get_js_includes {
   my $this = shift;
   my $mode = shift || '';
-  $log->info( "Mode is $mode" );
+  #$log->info( "Mode is $mode" );
 
   my $js_includes = '';
 #  for my $js ( qw( angular-animate.min.js angular-cookies.js angular.js angular-route.min.js app.js autocomplete.js d3.layout.cloud.js d3.min.js DDIDatasetCtl.js DDIDatasetListsCtl.js DDIGetTweets.js DDIMainContentCtl.js DDIPieCharts.js DDIQueryCtl.js DDIResultsListCtl.js DDIService.js DDIWordCloud.js jquery-1.10.1.min.js ngprogress.min.js queue.v1.min.js underscore-min.js ) ) {
@@ -73,10 +73,10 @@ sub get_js_includes {
 #  for my $js ( qw( d3.min.js DDISBPieCharts.js DDISBWordCloud.js ) ) {
   for my $js ( qw( d3.min.js d3.layout.cloud.js DDISBPieCharts.js DDISBWordCloud.js ) ) {
     if ( $js eq 'DDISBPieCharts.js' && $mode ) {
-      $log->info( "adding single" );
+      #$log->info( "adding single" );
       $js_includes .= "<script src=$baseUrl/javascript/js/ddi/DDISBPieChartsSingle.js></script>\n";
     } else {
-      $log->info( "adding $js" );
+      #$log->info( "adding $js" );
       $js_includes .= "<script src=$baseUrl/javascript/js/ddi/$js></script>\n";
     }
   }

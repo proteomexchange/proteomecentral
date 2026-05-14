@@ -1,15 +1,21 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" href="/css/isb.css" />
-
+<link rel="stylesheet" href="/css/pc.css" />
+<script src="/javascript/js/utils.js"></script>
 <title><?php if ($TITLE) { echo "$TITLE"; } ?></title>
-
 </head>
 
 <body bgcolor="#f4f6f8" marginwidth="0" marginheight="0">
-	<table width="100%" height="127" background="/images/topbackground.jpg">
-	<tr align="center"><td><a href="http://www.proteomexchange.org/" border="0"><img src="/images/proteomexchange.png"></a></td><td><a href="http://proteomecentral.proteomexchange.org/" border="0"><img src="/images/proteomecentral.png"></a></td></tr>
-	</table>	
+  <div class="pagebanner">
+    <a href="./"><img src="/images/proteomecentral.png"></a><br><br>
+    <div id="bannerlinks">
+      <a href="/">Home</a> |
+      <a href="/?view=datasets">Datasets</a> |
+      <a href="/usi/">USI</a> |
+      <a href="/quetzal/">Quetzal</a> |
+      <a href="/PROXI.php">PROXI</a>
+    </div>
+  </div>
 
-	<!-- Main content area here -->
-
+<!-- BEGIN main content -->

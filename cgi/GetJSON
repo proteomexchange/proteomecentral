@@ -138,15 +138,21 @@ sub get_keywords {
       $w =~ s/\s+$//g;
       next unless $w;
 
-      my $skip = 0;
-      for my $bad ( qw( as a of from al. 1 an and the my our in for to by on during with et using part - 2  Protein Proteomics Proteomic Analysis Proteome Proteins Identification Reveals Novel Biomedical LC-MS/MS LC-MSMS Mass spectrometry ), 'mass spectrometry' ) {
-        $skip++ if $w =~/^$bad$/i;
-      }
-      next if $skip;
-
       $words{$w}++;
     }
   }
+
+  for my $w ( keys %words ) {
+    my $skip = 0;
+    for my $bad ( qw( as a of from al. 1 an and the my our in for to by on during with et using part - 2  Protein Proteomics Proteomic Analysis Proteome Proteins Identification Reveals Novel Biomedical LC-MS/MS LC-MSMS Mass spectrometry ), 'mass spectrometry' ) {
+      if ($w =~/^$bad$/i) {
+	$skip++;
+	last;
+      }
+    }
+    delete $words{$w} if $skip;
+  }
+
   my @top_words = sort { $words{$b} <=> $words{$a} } keys( %words );
   my @return;
   for ( my $idx = 0; $idx < 50; $idx++ ) {
@@ -165,7 +171,6 @@ sub get_keywords {
 }
 
 
-
 sub get_titlewords {
   my %args = @_;
   my $sql = "SELECT title FROM dataset WHERE status = 'announced'";
@@ -174,7 +179,6 @@ sub get_titlewords {
 
   my %bad;
   for my $bad ( qw( as a of from al. 1 an and the my our in for to by on during with et using part - 2  Protein Proteomics Proteomic Analysis Proteome Proteins Identification Reveals Novel Biomedical LC-MS/MS LC-MSMS Mass spectrometry ) ) {
-
     $bad{ucfirst($bad)}++;
   }
 

@@ -326,7 +326,7 @@
       <xs:documentation>The list of controlled vocabularies used in the file.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
-      <xs:element name="CV" type="CvType" maxOccurs="unbounded"/>
+      <xs:element name="Cv" type="CvType" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="CvType">

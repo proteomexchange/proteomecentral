@@ -96,7 +96,7 @@ sub getArticleRef {
 
   #### Return if supplied PubMedID isn't all digits
   unless ($PubMedID =~ /^\d+$/) {
-    print "$SUB_NAME: Error: Parameter PubMedID '$PubMedID'not valid\n" if ($verbose);
+    print "$SUB_NAME: Error: Parameter PubMedID '$PubMedID' not valid\n" if ($verbose);
     return 0;
   }
 
@@ -182,6 +182,18 @@ sub getArticleRef {
       print "publication: $key=$value=\n";
     }
   }
+
+  #### Make sure that elements are at least am empty string to avoid warnings
+  $info{AuthorList} = "" if ( ! defined($info{AuthorList}) );
+  $info{ArticleTitle} = "" if ( ! defined($info{ArticleTitle}) );
+  $info{MedlineTA} = "" if ( ! defined($info{MedlineTA}) );
+  $info{Volume} = "" if ( ! defined($info{Volume}) );
+  $info{Issue} = "" if ( ! defined($info{Issue}) );
+  $info{MedlinePgn} = "" if ( ! defined($info{MedlinePgn}) );
+  $info{PublishedYear} = "" if ( ! defined($info{PublishedYear}) );
+  $PubMedID = "" if ( ! defined($PubMedID) );
+
+
   my $ref  = "$info{AuthorList}, $info{ArticleTitle} $info{MedlineTA}, $info{Volume}".
              "($info{Issue}):$info{MedlinePgn}($info{PublishedYear}) [".
              "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed?term=$PubMedID\" target=\"_blank\">pubmed</a>]";

@@ -1,5 +1,118 @@
-<html>
-<header><meta http-equiv="REFRESH" content="0;url=http://proteomecentral.proteomexchange.org/cgi/GetDataset">
-<body>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="css/isb.css">
+  <link rel="stylesheet" href="css/pc.css">
+  <script src="javascript/js/utils.js"></script>
+  <script src="javascript/js/pc.js"></script>
+  <title>ProteomeCentral Data and Tools</title>
+</head>
+
+<body onload="main();" bgcolor="#f4f6f8" style="min-width:1100px;" marginwidth="0" marginheight="0">
+  <div class="pagebanner">
+    <a href="./"><img src="/images/proteomecentral.png"></a><br><br>
+    <div id="bannerlinks">
+      <a href="./">Home</a> |
+      <a href="?view=datasets">Datasets</a> |
+      <a href="usi/">USI</a> |
+      <a href="quetzal/">Quetzal</a> |
+      <a href="PROXI.php">PROXI</a>
+    </div>
+  </div>
+
+<!-- BEGIN main content -->
+
+<h1 id="pagetitle" class="pagehead"> Browse ProteomeXchange Data</h1>
+
+<div style="display:none; margin: 0px auto; width: 1000px;" id="pagemenu">
+  <a href="?view=datasets" class="sectbox big bgwashedout" title="browse ProteomeXchange Datasets" style="background-image: url('images/msms.png');">
+    <span class="sectboxbigtitle">Datasets</span>
+    <br><br><br>
+    Browse<br>ProteomeXchange<br>Datasets
+  </a>
+
+  <!-- a href="?view=libraries" class="sectbox big bgwashedout" title="browse ProteomeXchange Spectral Libraries" style="background-image: url('images/library2.png');" -->
+  <span class="sectbox nolinkbig bgwashedout" title="coming soon!" style="background-image: url('images/library2.png');">
+    <span class="sectboxbigtitle bgwashedout">Libraries</span>
+    <br><br><br>ProteomeXchange<br>Spectral Libraries
+    <br>
+  <span class="buttonfake"> Coming Soon </span>
+  </span>
+
+  <br>
+
+  <a href="usi/" class="sectbox big bgwashedout" title="Universal Spectrum Identifier facility at ProteomeXchange" style="background-image: url('images/USI.png');">
+    <span class="sectboxbigtitle">USI</span>
+    <br><br><br>
+    Access individual spectra from ProteomeXchange Datasets and Libraries
+  </a>
+
+  <a href="https://www.proteomexchange.org/ptmexchange/" class="sectbox big bgwashedout" title="view and download public PTM data" style="background-size: cover; background-image: url('images/PTMXbanner.png');">
+    <span class="sectboxbigtitle">PTMeXchange</span>
+    <br><br><br>
+    Browse public Post-Translational Modification (PTM) data
+  </a>
+
+  <br>
+
+  <a href="quetzal/" class="sectbox big" title="annotate spectra with Quetzal" style="background-size: cover; background-image: url('images/QuetzalBW.png');">
+    <span class="sectboxbigtitle">Quetzal</span>
+    <br><br><br>
+    Comprehensive peak annotation of MS/MS spectra
+  </a>
+
+
+  <a href="PROXI.php" class="sectbox big bgwashedout" title="Server and API status check" style="background-size: cover; background-image: url('images/proxistatus.png');">
+    <span class="sectboxbigtitle">PROXI</span>
+    <br><br><br>
+    PROXI Servers Status Dashboard
+  </a>
+
+
+</div>
+
+
+<div id="overview" style="display:none;">
+  <div id="datastats_1" class="sectbox">
+    <h5 id="databoxtitle_1" class="title">Top 10 Datafield 1</h5>
+    <svg id="datasvg_1" width="300" height="150"></svg>
+  </div>
+
+  <div id="datastats_2" class="sectbox">
+    <h5 id="databoxtitle_2" class="title">Top 10 Datafield 2</h5>
+    <svg id="datasvg_2" width="300" height="150"></svg>
+  </div>
+
+  <div id="datastats_3" class="sectbox">
+    <h5 id="databoxtitle_3" class="title">Top 10 Datafield 3</h5>
+    <svg id="datasvg_3" width="300" height="150"></svg>
+  </div>
+
+  <div id="datastats_4" class="sectbox">
+    <h5 id="databoxtitle_4" class="title">Top 10 Datafield 4</h5>
+    <svg id="datasvg_4" width="300" height="150"></svg>
+  </div>
+</div>
+
+<span id="filters" style="display:none;"></span>
+<div id="results" style="display:none;"></div>
+
+
+<!-- END main content -->
+
+<br clear="all">
+
+<div class="footer">
+  <span style="float:right; padding: 10px;">
+    <a class="logolink" target="_blank" href="https://www.ebi.ac.uk/"><img src="images/ebi_footer_logo.png"></a>&nbsp;&nbsp;&nbsp;&nbsp;
+    <a class="logolink" target="_blank" href="https://www.isbscience.org/"><img src="images/isb.jpg"></a>&nbsp;&nbsp;&nbsp;&nbsp;
+    <a class="logolink" target="_blank" href="https://ec.europa.eu/research/fp7/index_en.cfm"><img src="images/capacities.png"></a>
+  </span>
+
+  ProteomeCentral is a member of:<br>
+  <a class="logolink" href="https://www.proteomexchange.org/" border="0"><img src="images/proteomexchange.png"></a><br>
+  &nbsp;&nbsp;
+  <a href="https://www.proteomexchange.org/contact">contact</a> |
+  <a href="https://www.proteomexchange.org/subscribe/">subscribe</a>
+</div>
 </body>
 </html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="js/bootstrap.js"></script>
+<script src="js/bootstrap-typeahead.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="../javascript/js/he-master/he.js"></script>
+<script src="js/annotate.js"></script>
+<link rel="stylesheet" type="text/css" href="../css/isb.css"/>
+<link rel="stylesheet" type="text/css" href="css/dd.css"/>
+<link rel="stylesheet" type="text/css" href="css/annotate.css"/>
+</head>
+
+<body onload="main();">
+
+<div id="overlay"></div>
+
+<div class="header">
+<h1>&nbsp;Study Annotation</h1>
+
+<span id="status">Load/Create:</span><span>
+<select id="dataset_menu" class="linkback" title="Choose dataset to view/edit" onchange="load_dataset_annotations(this.value);"><option value="">-- Loading datasets... --</option></select><select id="dataset_menu2" class="linkback" style="margin-left: 10px;" title="Choose annotation to view/edit" onchange="get_form_definitions(this.value);"><option value="">-- No annotations available --</option></select></span><span><a class="linkback" style="color:#eee;" target="annothelp" href="index.html">Help / Info</a></span></div>
+
+<div id="newDataset" class="datasetinput"><span class="title">Enter dataset (PXDnnnnnn) identifier</span>
+<input id="newDatasetId" class="linkback" type="text" title="Create a new dataset annotation" value=""><br/>
+<span title="Cancel" class="enter" onclick="dismissBox('newDataset');">Cancel</span><span title="Enter Dataset Name" class="enter" onclick="enter_dataset();">Create New</span></div>
+
+<span id="sidenav_toggle" title="show/hide messages" class="toggle" onclick="toggleMsgs();">&varr; Messages (<span id="num_msgs">0</span>)</span>
+<div id="sidenav" class="messages">
+<span class="title">Messages and Debug Info</span><br/>
+  <span id="myMessages">No messages...</span>
+</div>
+
+<div id="alertBox" class="alert"><span class="title">Error!</span><br/>
+<span id="alertList"></span>
+<span title="dismiss" class="dismiss" onclick="dismissBox('alertBox');">Dismiss</span>
+</div>
+
+<div id="main"></div>
+
+<br clear="all">
+
+</body>
+</html>

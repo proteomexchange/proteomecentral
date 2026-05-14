@@ -9,10 +9,9 @@ package ProteomeXchange::DatasetParser;
 ###############################################################################
 
 use strict;
-use ProteomeXchange::Database;
+use Data::Dumper;
 
-use vars qw($db);
-$db = new ProteomeXchange::Database;
+use ProteomeXchange::Configuration qw( %CONFIG );
 
 
 ###############################################################################
@@ -55,6 +54,209 @@ sub getAnnouncementXML {
 
 
 ###############################################################################
+# proxiParse: Parse a ProteomeXchange XML file into a PROXI Dataset format
+###############################################################################
+sub proxiParse {
+  my $self = shift;
+  my %args = @_;
+  my $SUB_NAME = 'proxiParse';
+
+  #### Decode the argument list
+  my $params = $args{'announcementXML'};
+  my $filename = $args{'filename'};
+
+  #### Set a default error message in case something goes wrong
+  our $response;
+  $response->{result} = "ERROR";
+  $response->{message} = "Unable to parse file: Unknown error";
+
+  #### Check the filename
+  unless ( $filename ) {
+    $response->{message} = "ERROR: [$SUB_NAME]: filename not specified!";
+    return($response);
+  }
+
+  #### Check the file existence
+  if ( ! -f $filename ) {
+    $response->{message} = "Unable to parse file. Does not exist!";
+    return($response);
+  }
+
+  #### Set up on basic structures
+
+  #### dataset gets a generic XML structure import that is a bit cumbersome
+  $response->{dataset} = { attributes=>{}, subelements=>[] };
+  $response->{stack} = [ { name=>"dataset", addr=>$response->{dataset} } ];
+  #### proxiDataset gets a special PROXI specific reformulation of the XML
+  $response->{proxiDataset} = { };
+  $response->{messages} = [];
+  $response->{warnings} = [];
+  $response->{errors} = [];
+
+  #### Define a simplified mapping from PX XML to PROXI JSON
+  our $mapping = { DatasetIdentifier => { name=>"identifiers", type=>"OntologyTerm" },
+                   Species => { name=>"species", type=>"OntologyTermList" },
+                   Instrument => { name=>"instruments", type=>"OntologyTerm" },
+                   ModificationList => { name=>"modifications", type=>"OntologyTerm" },
+                   Contact => { name=>"contacts", type=>"OntologyTermList" },
+                   Publication => { name=>"publications", type=>"OntologyTermList" },
+                   KeywordList => { name=>"keywords", type=>"OntologyTerm" },
+                   FullDatasetLink => { name=>"fullDatasetLinks", type=>"OntologyTerm" },
+                   DatasetFile => { name=>"datasetFiles", type=>"OntologyTerm" },
+  };
+
+  #### Open the file
+  unless (open(INFILE,$filename)) {
+    $response->{message} = "Unable to open the document '$filename'";
+    return($response);
+  }
+
+  #### Set up the SAX Parser
+  use XML::Parser;
+  my $parser = XML::Parser->new(Handlers => {Start => \&proxiParse_start,
+                                   End   => \&proxiParse_end,
+                                   Char  => \&proxiParse_char});
+ 
+  $parser->parse(*INFILE, ProtocolEncoding => 'UTF-8');
+  close(INFILE);
+ 
+  return($response);
+}
+
+
+###############################################################################
+# proxiParse_start: proxiParser start tag handler
+###############################################################################
+sub proxiParse_start {
+  my $SUB_NAME = 'proxiParse_start';
+  our $response;
+  our $previousParentAddr;
+  our $previousContainerAddr;
+
+  #### Decode the argument list
+  my ($expat,$element,@attributes) = @_;
+  my %attributes = @attributes;
+  #print("  - start $element: ".join(",",@attributes)."\n");
+
+  #### Find parent in the stack
+  my @stack = @{$response->{stack}};
+  my $topItem = $stack[-1];
+  #print("    ( top item in stack is: ".Dumper($topItem)."\n");
+
+  my $object = { $element => { attributes => \%attributes, subelements => [], subelement_by_name => {} } };
+  push(@{$topItem->{addr}->{subelements}}, $object);
+  $topItem->{addr}->{subelement_by_name}->{$element} = $object->{$element};
+
+  push(@{$response->{stack}},{ name=>$element, addr=>$object->{$element} } );
+
+
+  #### Custom code to build the PROXI Dataset object
+  our $mapping;
+  if ( $element eq "DatasetSummary" ) {
+    $response->{proxiDataset}->{title} = $attributes{title};
+  }
+
+  #### Handle cvParam based on its parent
+  if ( $element eq "cvParam" ) {
+    my $parent = $topItem->{name};
+    if ($mapping->{$parent} ) {
+      if ( ! exists($response->{proxiDataset}->{$mapping->{$parent}->{name}}) ) {
+        $response->{proxiDataset}->{$mapping->{$parent}->{name}} = [];
+      }
+      my %ontologyTerm = %attributes;
+      delete($ontologyTerm{cvRef});
+
+      #### Handle the OntologyTerm type of mapping
+      if ( $mapping->{$parent}->{type} eq "OntologyTerm" ) {
+        push(@{$response->{proxiDataset}->{$mapping->{$parent}->{name}}}, \%ontologyTerm);
+
+      #### Handle the OntologyTermList type of mapping
+      } elsif ( $mapping->{$parent}->{type} eq "OntologyTermList" ) {
+
+        #### If this is the first term
+        my $needNewContainer = 0;
+        my $container = $previousContainerAddr;
+        my $arrayLength = @{$response->{proxiDataset}->{$mapping->{$parent}->{name}}};
+        if ( $arrayLength == 0 || ! defined($previousParentAddr) ) {
+          $needNewContainer = 1;
+          
+        } elsif ( $topItem->{addr} ne $previousParentAddr ) {
+          $needNewContainer = 1;
+          $previousParentAddr = $topItem->{addr};
+        }
+
+        #print("needNewContainer=$needNewContainer, previousParentAddr=$previousParentAddr, topItemAddr=$topItem->{addr}\n");
+        
+        #### If we need a new container, create it
+        if ( $needNewContainer == 1 ) {
+          $container = [];
+          my $ontologyTermList = { terms => $container };
+          push( @{$response->{proxiDataset}->{$mapping->{$parent}->{name}}}, $ontologyTermList );
+        }
+
+        #### Add the current ontologyTerm
+        push(@{$container}, \%ontologyTerm);
+
+        $previousParentAddr = $topItem->{addr};
+        $previousContainerAddr = $container;
+
+      } else {
+        die("ERROR: Unrecognized mapping type");
+      }
+    }
+  }
+
+  return;
+}
+
+
+###############################################################################
+# proxiParse_end: proxiParser end tag handler
+###############################################################################
+sub proxiParse_end {
+  my $SUB_NAME = 'proxiParse_end';
+  our $response;
+
+  #### Decode the argument list
+  my ($expat,$element) = @_;
+
+  #### Pop the top item off the stack and make sure it is the correct name
+  my $object = pop(@{$response->{stack}});
+  if ( $object->{name} ne $element ) {
+    print("ERROR: Expected to find top element on the stack of $element, but found $object->{name}!\n");
+    exit(11);
+  }
+
+  return;
+}
+
+
+###############################################################################
+# proxiParse_char: proxiParser character handler
+###############################################################################
+sub proxiParse_char {
+  my $SUB_NAME = 'proxiParse_char';
+  our $response;
+
+  #### Decode the argument list
+  my ($expat,$characterData) = @_;
+  return if ( $characterData =~ /^\s*$/ );
+
+  my @stack = @{$response->{stack}};
+  my $object = $stack[-1];
+  $object->{addr}->{character_data} = $characterData;
+
+  #### Custom code to build the PROXI Dataset object
+  my $parent = $object->{name};
+  if ( $parent eq "Description" ) {
+    $response->{proxiDataset}->{description} = $characterData;
+  }
+
+  return;
+}
+
+
+###############################################################################
 # parse: Parser a ProteomeXchange XML file
 ###############################################################################
 sub parse {
@@ -85,11 +287,14 @@ sub parse {
   }
 
   my $dataset;
-  my @warnings;
   my @messages = ();
+  my @warnings = ();
+  my @errors = ();
 
 
   #### Open the file
+  #### (switching to ISO-8859-1 seems to fix some special characters, but causes a complete Perl core dump in others. See emails of 2019-11-26)
+  #unless (open(FH,'<:encoding(ISO-8859-1)',$filename)){
   unless (open(FH,$filename)){
     $response->{message} = "Unable to open the document '$filename'";
     return($response);
@@ -143,9 +348,17 @@ sub parse {
 
 
   #### Extract the ChangeLogEntry. There could be multiple. Only the first is looked at here! FIXME
-  my ($changeLogEntry) = $doctree->find_by_tag_name('ChangeLogEntry');
-  if ($changeLogEntry) {
-    $dataset->{changeLogEntry} = $changeLogEntry->as_text();
+  my @changeLogEntries = $doctree->find_by_tag_name('ChangeLogEntry');
+  my $iChangeLogEntry = 0;
+  if (@changeLogEntries) {
+    foreach my $changeLogEntry ( @changeLogEntries ) {
+      if ( $iChangeLogEntry == 0 ) {
+	$dataset->{changeLogEntry} = $changeLogEntry->attr('date').": ".$changeLogEntry->as_text();
+      } else {
+	$dataset->{changeLogEntry} .= "\n".$changeLogEntry->attr('date').": ".$changeLogEntry->as_text();
+      }
+      $iChangeLogEntry++;
+    }
   }
 
 
@@ -177,13 +390,13 @@ sub parse {
 
   #### Ensure that reanalysis rules are followed
   if ( $dataset->{identifier} =~ /^RPX/ ) {
-    if ( $dataset->{reanalysisNumber} ) {
+    if ( defined($dataset->{reanalysisNumber}) ) {
       # good
     } else {
       $self->addCvError(errorMessage=>"ERROR: RPXD is missing a MS:1002997 reanalysis number");
     }
   } else {
-    if ( $dataset->{reanalysisNumber} ) {
+    if ( defined($dataset->{reanalysisNumber}) ) {
       $self->addCvError(errorMessage=>"ERROR: An original data PXD should not have a reanalysis number");
     } else {
       # good
@@ -200,10 +413,17 @@ sub parse {
     foreach my $cvParam ( @cvParams ) {
       if ($cvParam->attr('accession') eq "MS:1001919" || $cvParam->attr('name') eq "ProteomeXchange accession number") {
 	$origin{identifier} = $cvParam->attr('value');
-      } elsif ($cvParam->attr('accession') eq "PRIDE:0000397" || $cvParam->attr('name') eq "Data derived from previous dataset") {
+      } elsif ($cvParam->attr('accession') eq "MS:0002863" || $cvParam->attr('name') eq "Data derived from previous dataset") {
 	$origin{derived} = 1;
       } elsif ($cvParam->attr('accession') eq "MS:1002868" || $cvParam->attr('name') eq "Original data") {
 	$origin{original} = 1;
+      } elsif ($cvParam->attr('accession') eq "MS:1002487" || $cvParam->attr('name') eq "MassIVE dataset identifier" ||
+               $cvParam->attr('accession') eq "MS:1002872" || $cvParam->attr('name') eq "Panorama Public dataset identifier" ||
+               $cvParam->attr('accession') eq "MS:1002836" || $cvParam->attr('name') eq "iProX Public dataset identifier" ||
+               $cvParam->attr('accession') eq "MS:1002632" || $cvParam->attr('name') eq "jPOST Public dataset identifier" ||
+               $cvParam->attr('accession') eq "MS:1002032" || $cvParam->attr('name') eq "PeptideAtlas dataset URI"
+              ) {
+	$origin{identifier} = $cvParam->attr('value');
       } else {
         $self->addCvError(errorMessage=>"ERROR: DatasetOrigin has unrecognized term '".$cvParam->attr('accession')."'");
       }
@@ -224,7 +444,8 @@ sub parse {
         $self->addCvError(errorMessage=>"ERROR: A derived dataset must be accompanied by an identifier of some sort");
       }
       if ( $dataset->{identifier} !~ /^RPX/ ) {
-        $self->addCvError(errorMessage=>"ERROR: A derived dataset identifier must begin with a RPXD prefix, not PXD");
+	#### By general consensus, there are plausible scenarios for this being valid, so not and error any more
+        #$self->addCvError(errorMessage=>"ERROR: A derived dataset identifier must begin with a RPXD prefix, not PXD");
       }
     } else {
       $self->addCvError(errorMessage=>"ERROR: Each DatasetOrigin must be either original or derived");
@@ -329,7 +550,8 @@ sub parse {
 
       if (exists($contact{'dataset submitter'})) {
 				if ($dataset->{primarySubmitter}) {
-					push(@warnings,'WARNING: There appears to be more than one dataset submitter. Only the first may appear in scalar uses.');
+					#push(@warnings,'WARNING: There appears to be more than one dataset submitter. Only the first may appear in scalar uses.');
+					push(@errors,'ERROR: There appears to be more than one dataset submitter. Only a single submitter may be specified.');
 				} else {
 					$dataset->{primarySubmitter} = $contact{'contact name'};
 				}
@@ -337,7 +559,9 @@ sub parse {
 
       if (exists($contact{'lab head'})) {
 				if ($dataset->{labHead}) {
-					push(@warnings,'WARNING: There appears to be more than one lab head. Only the first may appear in scalar uses.');
+				        #### Now permitted as per group discussion
+					#push(@warnings,'WARNING: There appears to be more than one lab head. Only the first may appear in scalar uses.');
+					$dataset->{labHead} .= ", ".$contact{'contact name'};
 				} else {
 					$dataset->{labHead} = $contact{'contact name'};
 				}
@@ -346,11 +570,11 @@ sub parse {
   }
 
   unless ($dataset->{primarySubmitter}) {
-    push(@warnings,"WARNING: No contact had the designation 'primary submitter'. Will assume that the first contact is the 'primary submitter'");
+    push(@errors,"ERROR: No contact had the designation 'dataset submitter'.");
     $dataset->{primarySubmitter} = $firstContact{'contact name'};
   }
   unless ($dataset->{labHead}) {
-    push(@warnings,"WARNING: No contact had the designation 'lab head'");
+    push(@errors,"ERROR: No contact had the designation 'lab head'");
   }
 
   my %lists=();
@@ -384,7 +608,7 @@ sub parse {
         my ($pubname, $pubmed_info) = $PubMedFetcher->getArticleRef(
           PubMedID=>$lists{$id}{pubmedid});
         $dataset->{publicationList} .= "$sep$pubmed_info";
-        $dataset->{publication} .= "$sep<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$lists{$id}{pubmedid}\" target=\"_blank\">$pubname</a>";;  
+        $dataset->{publication} .= "$sep<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/$lists{$id}{pubmedid}\" target=\"_blank\">$pubname</a>";;  
         $sep = '; ' if (!$sep);
       }elsif(defined $lists{$id}{DOI}){
          #my $pubmedid = $PubMedFetcher->getPubmedID(DOI=>$lists{$id}{DOI});
@@ -457,8 +681,13 @@ sub parse {
                                                 ' target="_blank">'.  "PRIDE experiment $1 </a>; ";
 	     }
            } else {
-           $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
-                                              ' target="_blank">'.  $cvParam->attr('name') .'</a>; ';
+             $dataset->{fullDatasetLinkList} .= '<a href='. $cvParam->attr('value') .
+                                              ' target="_blank">'.  $cvParam->attr('name') .'</a>';
+             if ($cvParam->attr('name') =~ /FTP/i) {
+               $dataset->{fullDatasetLinkList} .= "<BR>\n<b>NOTE:</b> Most web browsers have now discontinued native support for FTP access within the browser window. But you can usually install another FTP app (we recommend FileZilla) and configure your browser to launch the external application when you click on this FTP link. Or otherwise, launch an app that supports FTP (like FileZilla) and use this address: " . $cvParam->attr('value') . "; ";
+	     } else {
+               $dataset->{fullDatasetLinkList} .= "; ";
+	     }
            }
          }else{
            $dataset->{fullDatasetLinkList} .= $cvParam->attr('name') .": ". $cvParam->attr('value') ."; ";
@@ -501,6 +730,7 @@ sub parse {
   #push(@{$response->{info}},"+++ datasets Keys are: ".join(",",keys(%{$dataset})));
   $response->{dataset} = $dataset;
   $response->{warnings} = \@warnings;
+  $response->{errors} = \@errors;
 
   #push(@{$response->{info}},"+++ response Keys are: ".join(",",keys(%{$response})));
   return($response);
@@ -522,7 +752,7 @@ sub checkCvParam {
 
   #### Check all the CV params
   unless ($self->{cv}) {
-    my $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/psi-ms.obo';
+    my $infile = "$CONFIG{basePath}/extern/CVs/psi-ms.obo";
     $self->readControlledVocabularyFile(input_file=>$infile);
     return unless ($self->{cv}->{status} eq 'read ok');
 
@@ -530,7 +760,7 @@ sub checkCvParam {
     #$infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/pride_cv.obo';
     #$self->readControlledVocabularyFile(input_file=>$infile);
 
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/PSI-MOD.obo';
+    $infile = "$CONFIG{basePath}/extern/CVs/PSI-MOD.obo";
     $self->readControlledVocabularyFile(input_file=>$infile);
     $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/cl.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
@@ -538,7 +768,7 @@ sub checkCvParam {
     $self->readControlledVocabularyFile(input_file=>$infile);
     $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/doid.obo';
     $self->readControlledVocabularyFile(input_file=>$infile);
-    $infile = '/net/dblocal/wwwspecial/proteomecentral/extern/CVs/unimod.obo';
+    $infile = "$CONFIG{basePath}/extern/CVs/unimod.obo";
     $self->readControlledVocabularyFile(input_file=>$infile);
     my @tmp = ();
     $self->{cvErrors} = \@tmp;
@@ -549,32 +779,49 @@ sub checkCvParam {
   my $value = $paramValue;
 
   if ($accession =~ /\s/) {
-    $self->addCvError(errorMessage=>"WARNING: term '$accession' has whitespace in it. This is not good.");
+    $self->addCvError(errorMessage=>"ERROR: term '$accession' has whitespace in it. This is not good.");
     $accession =~ s/\s//g;
   }
 
   unless ($name) {
-    $self->addCvError(errorMessage=>"WARNING: term '$accession' does not have a corresponding name specified.");
+    $self->addCvError(errorMessage=>"ERROR: term '$accession' does not have a corresponding name specified.");
   }
 
   #### Disallow the PRIDE CV now
   if ( $accession =~ /^PRIDE:/ ) {
-    $self->addCvError(errorMessage=>"ERROR: the PRIDE CV is no longer supported at term '$accession'.");
+    $self->addCvError(errorMessage=>"WARNING: the PRIDE CV will soon no longer supported at term '$accession'.");
     return;
   }
 
   if ($self->{cv}->{terms}->{$accession}) {
     if ($self->{cv}->{terms}->{$accession}->{name} eq $name) {
       #print "INFO: $accession = $name matches CV\n";
-      $self->{cv}->{n_valid_terms}++;
+      if ( $name =~ /deprecated/i ) {
+        $self->addCvError(errorMessage=>"ERROR: $accession:$name is a deprecated term. Deprecated terms should not be used");
+        $self->{cv}->{n_deprecated_terms}++;
+      } else {
+        $self->{cv}->{n_valid_terms}++;
+      }
     } elsif ($self->{cv}->{terms}->{$accession}->{synonyms}->{$name}) {
       #print "INFO: $accession = $name matches CV\n";
       $self->{cv}->{n_valid_terms}++;
     } else {
-      $self->addCvError(errorMessage=>"WARNING: $accession should be ".
-	"'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'");
-      $self->{cv}->{mislabeled_terms}++;
-      #print "replaceall.pl \"$name\" \"$self->{cv}->{terms}->{$accession}->{name}\" \$file\n";
+      if ( $accession =~ /^MOD:/ ) {
+        #print "WARNING: As of 2021-02-08, strict checking of PSI-MOD is disabled";
+      } else {
+        my $available_synonyms = "";
+        foreach my $avail_key ( keys %{$self->{cv}->{terms}->{$accession}->{synonyms}} ) {
+          $available_synonyms .= "'$avail_key',";
+        }
+        if ( $available_synonyms ne "" ) {
+          chop($available_synonyms);
+          $available_synonyms = " (or synonyms $available_synonyms also okay)";
+        }
+        $self->addCvError(errorMessage=>"ERROR: $accession should be ".
+          "'$self->{cv}->{terms}->{$accession}->{name}' instead of '$name'$available_synonyms");
+        $self->{cv}->{mislabeled_terms}++;
+        #print "replaceall.pl \"$name\" \"$self->{cv}->{terms}->{$accession}->{name}\" \$file\n";
+      }
     }
 
     #### Assess the correct presence of a value attribute
@@ -600,12 +847,12 @@ sub checkCvParam {
 
   } else {
     #### Exceptions
-    if ($paramCvRef eq 'NEWT') {
-      #### Skip for now
-    } else {
-      $self->addCvError(errorMessage=>"WARNING: CV term $accession ('$name') is not in the cv");
+#    if ($paramCvRef eq 'NEWT') {
+#      #### Skip for now
+#    } else {
+      $self->addCvError(errorMessage=>"ERROR: CV term $accession ('$name') is not in the cv");
       $self->{cv}->{unrecognized_terms}++;
-    }
+#    }
   }
 
 }
@@ -683,12 +930,16 @@ sub readControlledVocabularyFile {
       $synonym = $1;
       $self->{cv}->{terms}->{$id}->{synonyms}->{$synonym} = $synonym;
     }
+    if ($line =~ /^synonym:\s*\"(.+)?\"/) {
+      $synonym = $1;
+      $self->{cv}->{terms}->{$id}->{synonyms}->{$synonym} = $synonym;
+    }
     if ($line =~ /^relationship:\s*has_units\s*(\S+) \! (.+)?\s*$/) {
       my $unit = $1;
       my $unitName = $2;
       $self->{cv}->{terms}->{$id}->{units}->{$unit} = $unitName;
     }
-    if ($line =~ /^xref:\s*value-type:\s*(\S+)\s+\"/) {
+    if ($line =~ /^relationship:\s*has_value_type\s*(\S+)\s+/) {
       my $datatype = $1;
       $datatype =~ s/\\//g;
       $self->{cv}->{terms}->{$id}->{datatypes}->{$datatype} = $datatype;

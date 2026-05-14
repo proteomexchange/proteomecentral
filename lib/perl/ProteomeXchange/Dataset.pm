@@ -184,6 +184,7 @@ sub updateRecord{
   my $mainTableName = 'dataset';
   my $historyTableName = 'datasetHistory';
   if ($test && ($test =~ /yes/i || $test =~ /true/i)) {
+    $test = "true";
     $mainTableName .= $TESTSUFFIX;
     $historyTableName .= $TESTSUFFIX;
   }
@@ -200,9 +201,21 @@ sub updateRecord{
   #### Set the revision and realanysis states
   my $isReanalysis = 0;
   my $isRevision = 0;
-  $isReanalysis = 1 if ( $datasetidentifier =~ /^RPX/ );
-  $isRevision = 1 if ( $result->{revisionNumber} );
+  $isReanalysis = 1 if ( $datasetidentifier =~ /^RP/ );
+  $isRevision = 1 if ( $result->{revisionNumber} && $result->{revisionNumber} > 1 );
 
+
+  #### Verify that the test mode and the identifier types are compatible
+  if ( $test eq "true" && $datasetidentifier =~ /PXD/ ) {
+    $response->{result} = "ERROR";
+    $response->{message} = "The dataset identifier \"$datasetidentifier\" must be PXTnnnnnn not PXDnnnnnn if test=yes\n";
+    return;
+  }
+  if ( $test ne "true" && $datasetidentifier =~ /PXT/ ) {
+    $response->{result} = "ERROR";
+    $response->{message} = "The dataset identifier \"$datasetidentifier\" must be PXDnnnnnn not PXTnnnnnn if test=false\n";
+    return;
+  }
 
   #### Verify that the ChangeLogEntry information is appropriate
   my $changeLogEntry = $result->{changeLogEntry};
@@ -212,7 +225,7 @@ sub updateRecord{
   if ( $isRevision == 0 ) {
     if ($changeLogEntry) {
       $response->{result} = "ERROR";
-      $response->{message} = "There is no revision number specified for \"$datasetidentifier\" and therefore should NOT have a ChangeLogEntry\n";
+      $response->{message} = "This submission is not a revision (revision number is not specified or less than 2 for \"$datasetidentifier\" and therefore should NOT have a ChangeLogEntry\n";
       return;
     } else {
       # good
@@ -223,7 +236,7 @@ sub updateRecord{
       # good
     } else {
       $response->{result} = "ERROR";
-      $response->{message} = "There was already an announcement for this dataset, and thus, this submission is a revision, which must have a ChangeLogEntry. Yet it does not. Please add a ChangeLogEntry to make it clear how this record has been altered in this revised submission.";
+      $response->{message} = "The revision number specified is $result->{revisionNumber} , which is higher than 1, and thus, this submission is a revision, which under ProteomeXchange rules must have a ChangeLogEntry. Yet it does not. Please add a ChangeLogEntry to make it clear how this record has been altered in this revised submission.";
       return;
     }
   }
@@ -250,7 +263,7 @@ sub updateRecord{
   foreach my $row ( @rows ) {
     ($dataset_id,$submissionDate,$revisionDate,$revisionNumber,$reanalysisNumber) = @{$row};
     $reanalysisNumber = 0 unless ( $reanalysisNumber );
-    $revisionNumber = 1 unless ( $revisionNumber );
+    $revisionNumber = 0 unless ( defined($revisionNumber) );
     $revisionNumbersByReanalysis{$reanalysisNumber}->{$revisionNumber} = 1;
     push(@{$response->{info}},"Found history record: $dataset_id,$submissionDate,$revisionDate,$revisionNumber,$reanalysisNumber");
   }
@@ -268,40 +281,54 @@ sub updateRecord{
   my $expectedRevisionNumber = 1;
   my $thisReanalysisNumber = 0;
   if ( $isReanalysis ) {
-    if ( $result->{reanalysisNumber} && $result->{reanalysisNumber} =~ /^\s*\d+\s*$/ ) {
+    if ( defined($result->{reanalysisNumber}) && $result->{reanalysisNumber} =~ /^\s*\d+\s*$/ ) {
       $thisReanalysisNumber = $result->{reanalysisNumber};
     } else {
       $response->{result} = "ERROR";
-      $response->{message} = "This dataset '$datasetidentifier' appears to be a reanalyzed datasets, but the reanalysisNumber '$result->{reanalysisNumber}' is not valid";
+      $response->{message} = "This dataset '$datasetidentifier' appears to be a reanalyzed dataset, but the reanalysisNumber '$result->{reanalysisNumber}' is not valid";
       return;
     }
-  } else {
-    $thisReanalysisNumber = 0;
   }
 
-  #### If there are already some revisions for this reanalysis (or no reanalysis), then set the expectation
+  #### If there are already some revisions for this reanalysis, then set the expectation
   if ( exists($revisionNumbersByReanalysis{$thisReanalysisNumber}) ) {
     $expectedRevisionNumber = $revisionNumbersByReanalysis{$thisReanalysisNumber}->{max} + 1;
   }
 
   #### Now check the revision number
-  my $thisRevisionNumber = $result->{revisionNumber} || '';
+  my $thisRevisionNumber = $result->{revisionNumber};
+  $thisRevisionNumber = '' if (!defined($thisRevisionNumber));
+  push(@{$response->{info}},"The revisionNumber in the document is listed as '$thisRevisionNumber'");
+ 
+  if ( $isRevision == 0 && $thisRevisionNumber eq '' && $expectedRevisionNumber == 1 ) {
+    push(@{$response->{info}},"For this new submission, no revision number is provided, and therefore the revision is implicitly set to 1");
+    $thisRevisionNumber = 1;
+  }
+
   if ( $expectedRevisionNumber > 1 && ! $thisRevisionNumber ) {
     $response->{result} = "ERROR";
     $response->{message} = "A submission for dataset '$datasetidentifier' already exists and a revision number '$expectedRevisionNumber' was expected, but none was provided. This is unexpected. Please check carefully and fix or report a server problem.";
     return;
 
-  } elsif ( $isRevision == 0 && $thisRevisionNumber eq '' & $expectedRevisionNumber == 1 ) {
-    push(@{$response->{info}},"For this new submission, the revision is implicitly set to 1");
-    $thisRevisionNumber = 1;
   } elsif ( $thisRevisionNumber == $expectedRevisionNumber ) {
     push(@{$response->{info}},"The revisionNumber in the document is as expected at $thisRevisionNumber");
+
   } else {
     $response->{result} = "ERROR";
-    $response->{message} = "The provided revision number for this document for '$datasetidentifier' (reanalysis $thisReanalysisNumber) was expected to be '$expectedRevisionNumber' but was provided as '$thisRevisionNumber'. This is unexpected. Please check carefully and fix or report a server problem.";
+    my $reanalysisMessage = "";
+    $reanalysisMessage = " (reanalysis $thisReanalysisNumber)" if ( $datasetidentifier =~ /RPX/ );
+    $response->{message} = "The provided revision number for this document for '$datasetidentifier'$reanalysisMessage was expected to be '$expectedRevisionNumber' but was provided as '$thisRevisionNumber'. This is unexpected. Please check carefully and fix or report a server problem.";
     return;
   }
 
+  #### Check to make sure that any reanalysis already has a container
+  if ( $isReanalysis && $thisReanalysisNumber != 0 ) {
+    if ( ! exists($revisionNumbersByReanalysis{0}) || $revisionNumbersByReanalysis{0}->{max} < 1) {
+      $response->{result} = "ERROR";
+      $response->{message} = "Before any individual reanalyses can be submitted, the reanalysis container must be defined. This can be done by submitted a PX XML document with a reanalysis number of 0.";
+      return;
+    }
+  }
 
   #### Set the final revision and reanalysis
   $revisionNumber = $thisRevisionNumber;
@@ -369,7 +396,7 @@ sub updateRecord{
   if ($value == 1 ) {
     $response->{result} = "Success";
     $response->{message} = "Database was updated. ";
-    $response->{link} = "http://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$dataset_id&test=$test";
+    $response->{link} = "https://proteomecentral.proteomexchange.org/cgi/GetDataset?ID=$dataset_id&test=$test";
 
     #### Now add to the history table
 
@@ -692,7 +719,7 @@ sub processAnnouncement {
 				   ccRecipients=>\@ccRecipients,
 				   bccRecipients=>\@bccRecipients,
 				   subject=>"$messageType{titleIntro} ProteomeXchange dataset $identifier$testFlag",
-				   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttp://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}HostingRepository: $params->{PXPartner}\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\n\nHTML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: http://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
+				   message=>"Dear$testFlag ProteomeXchange subscriber, a $messageType{midSentence} ProteomeXchange dataset is being announced$testFlag. To see more information, click here:\n\nhttps://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\n\nSummary of dataset\n\nStatus: $messageType{status}\nIdentifier: $identifier\n${changeLogEntry}HostingRepository: $params->{PXPartner}\nSpecies: $result->{species}\nTitle: $result->{title}\nSubmitter: $result->{primarySubmitter}\nLabHead: $result->{labHead}\nDescription: $description\n\nHTML_URL: https://proteomecentral.proteomexchange.org/dataset/$identifier$testClause\nXML_URL: https://proteomecentral.proteomexchange.org/dataset/$identifier$testClause$modeClause\n\n",
 				   );
 
 	#### Send a tweet too if this is a new dataset
@@ -731,6 +758,7 @@ sub validatePXXMLDocument {
   $response->{validationWarnings} = [];
   $response->{validationErrors} = [];
   $response->{info} = [];
+  $response->{warnings} = [];
 
   #### Check to make sure the file exists
   unless ( -f $filename ) {
@@ -739,6 +767,9 @@ sub validatePXXMLDocument {
   }
 
   #### Open the file or report an error
+  my $partial_file = $filename;
+  $partial_file =~ s/^.+proteomecentral//;
+  push(@{$response->{info}},"Processing incoming file $partial_file");
   unless (open(INFILE,$filename)) {
     $response->{message} = "File '$filename' exists, but cannot be opened for read";
     return($response);
@@ -757,23 +788,23 @@ sub validatePXXMLDocument {
     if ($line && $line =~ /SchemaLocation=\"(.+?)\"/) {
       $schema = $1;
       if ( $permitOldSchemas ) {
-        if ( $schema =~ /^proteomeXchange-1.[0-4].0.xsd$/ ) {
+        if ( $schema =~ /^proteomeXchange-1.[0-5].0.xsd$/ ) {
 	  push(@{$response->{info}},"File has as acceptable XSD $schema");
 	  $info->{hasRightXSD} = 'passed';
         } else {
 	  $response->{result} = "ERROR";
 	  $response->{message} = "File has unexpected XSD '$schema'. Cannot process this file. Sorry.";
-	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.[0-4].0.xsd");
+	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.[0-5].0.xsd");
 	  $info->{hasRightXSD} = 'failed';
         }
       } else {
-        if ($schema eq 'proteomeXchange-1.4.0.xsd') {
-	  push(@{$response->{info}},"File has as acceptable XSD $schema");
+        if ($schema eq 'proteomeXchange-1.4.0.xsd' || $schema eq 'proteomeXchange-1.5.0.xsd') {
+	  push(@{$response->{info}},"File has an acceptable XSD $schema");
 	  $info->{hasRightXSD} = 'passed';
         } else {
 	  $response->{result} = "ERROR";
 	  $response->{message} = "File has unexpected XSD '$schema'. Cannot process this file. Sorry.";
-	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.4.0.xsd is permitted");
+	  push(@{$response->{info}},"File has unexpected XSD '$schema'. Cannot process this file. Sorry. At present, only proteomeXchange-1.4.0.xsd and proteomeXchange-1.5.0.xsd is permitted");
 	  $info->{hasRightXSD} = 'failed';
         }
       }
@@ -848,12 +879,21 @@ sub validatePXXMLDocument {
 
 
   #### If there are other warnings or errors, put them in info
+  my $nWarnings = 0;
+  foreach my $warning ( @{$response->{warnings}} ) {
+    $nWarnings++;
+    push(@{$response->{info}},$warning);
+  }
+  push(@{$response->{info}},"There was a total of $nWarnings non-CV warnings.");
+
+  #### If there are other warnings or errors, put them in info
   my $nErrors = 0;
-  foreach my $error ( @{$response->{warnings}} ) {
+  foreach my $error ( @{$response->{errors}} ) {
     $nErrors++;
     push(@{$response->{info}},$error);
+    push(@{$response->{validationErrors}},$error);
   }
-  push(@{$response->{info}},"There was a total of $nErrors other errors or warnings.");
+  push(@{$response->{info}},"There was a total of $nErrors non-CV errors.");
 
 
   ### If the PXPartner does not match the one in XML file, report an error
@@ -863,18 +903,30 @@ sub validatePXXMLDocument {
     push(@{$response->{validationErrors}},$message);
   }
 
-  ### If the description is not at least 50 characters, report an error
-  if ( !exists($dataset->{description}) || !defined($dataset->{description}) || length($dataset->{description}) < 50 ){
-    my $message = "The description for the submission is not sufficient. It must be at least 50 characters.";
-    push(@{$response->{info}},$message);
-    push(@{$response->{validationErrors}},$message);
+  ### Check if the description is  at least 50 characters
+  if ( !exists($dataset->{description}) || !defined($dataset->{description}) || length($dataset->{description}) < 50 ) {
+    my $descriptionLength = length($dataset->{description});
+    if ( $dataset->{changeLogEntry} ) {
+      my $message = "WARNING: The description for the submission is supposed to be least 50 characters, but for a revision, $descriptionLength is allowed for now";
+      push(@{$response->{info}},$message);
+    } else {
+      my $message = "The description length for a NEW submission must be at least 50 characters, but here is only $descriptionLength.";
+      push(@{$response->{info}},$message);
+      push(@{$response->{validationErrors}},$message);
+    }
   }
 
-  ### If the title is not at least 30 characters, report an error
+  ### If the title is at least 30 characters
   if ( !exists($dataset->{title}) || !defined($dataset->{title}) || length($dataset->{title}) < 30 ){
-    my $message = "The title for the submission is not sufficient. It must be at least 30 characters.";
-    push(@{$response->{info}},$message);
-    push(@{$response->{validationErrors}},$message);
+    my $titleLength = length($dataset->{title});
+    if ( $dataset->{changeLogEntry} ) {
+      my $message = "WARNING: The title for the submission is supposed to be least 30 characters, but for a revision, $titleLength is allowed for now";
+      push(@{$response->{info}},$message);
+    } else {
+      my $message = "The title length for a NEW submission must be at least 30 characters, but here is only $titleLength.";
+      push(@{$response->{info}},$message);
+      push(@{$response->{validationErrors}},$message);
+    }
   }
 
   #### Finish
@@ -887,6 +939,66 @@ sub validatePXXMLDocument {
     $response->{message} = "PX XML document parsing completed without error";
   }
 
+  return($response);
+}
+
+
+
+###############################################################################
+# processSupplementalFullDatasetLinkList: Process a submitted SupplementalFullDatasetLinkList
+###############################################################################
+sub processSupplementalFullDatasetLinkList {
+  my $self = shift;
+  my %args = @_;
+  my $SUB_NAME = 'processSupplementalFullDatasetLinkList';
+
+  #### Decode the argument list
+  my $method = $args{'method'} || die("[$SUB_NAME] ERROR:method  not passed");
+  my $path = $args{'path'} || die("[$SUB_NAME] ERROR:path  not passed");
+  my $params = $args{'params'} || die("[$SUB_NAME] ERROR:params  not passed");
+  my $response = $args{'response'} || die("[$SUB_NAME] ERROR:response  not passed");
+  my $uploadFilename = $args{'uploadFilename'} || die("[$SUB_NAME] ERROR: uploadFilename not passed");
+
+  my $test = $params->{test};
+  $test = 'no' if (!defined($test));
+
+  #### Set a default error message in case something goes wrong
+  $response->{result} = "ERROR";
+  $response->{message} = "Unable to process XML: Unknown error.";
+
+  push(@{$response->{info}},"File has been uploaded. Begin processing it.");
+
+  #### Parse and check the validity of the submitted file
+  my $result = $self->validatePXXMLDocument( filename => "$path/$uploadFilename", params => $params );
+  $response = $result;
+
+  #### If things did not go perfectly, then return
+  my $nWarnings = @{$response->{warnings}};
+  if ( $response->{result} ne 'OK' ) {
+    return($response);
+  }
+  if ( $nWarnings ) {
+    $response->{result} = "ERROR";
+    $response->{message} = "Unresolved issues with the submitted XML. Please correct and try again.";
+    return($response);
+  }
+
+  #### Extract the dataset and proceed. This is very messy. FIXME
+  $result = $response->{dataset};
+
+  push(@{$response->{info}},"Ready to update database record");
+
+  #### Try to add or update the database for this submitted information
+  if ( 0 ) {
+    $self->updateSupplementalFullDatasetLinkListRecord(
+      result => $result,
+      response => $response,
+      test => $params->{test},
+    );
+    push(@{$response->{info}},"Update returned '$response->{result}'");
+  }
+
+  #### Processing complete
   return($response);
 }
 

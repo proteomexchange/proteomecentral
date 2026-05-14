@@ -18,7 +18,8 @@ use IO::File;
 use File::Basename;
 
 use vars qw( $PHYSICAL_BASE_DIR $LOG_BASE_DIR $LOGGING_LEVEL );
-$PHYSICAL_BASE_DIR = '/net/dblocal/wwwspecial/proteomecentral';
+use ProteomeXchange::Configuration qw( %CONFIG );
+$PHYSICAL_BASE_DIR = $CONFIG{basePath};
 
 ##### Public Methods ###########################################################
 

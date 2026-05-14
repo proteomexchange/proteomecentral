@@ -1,0 +1,935 @@
+#!/net/dblocal/src/python/python3/bin/python3
+
+#### Define eprint() to print to stderr
+import sys
+def eprint(*args, **kwargs): print(*args, file=sys.stderr, **kwargs)
+
+#### Import some standard libraries
+import os
+import argparse
+import os.path
+import re
+import json
+import copy
+import requests
+import datetime
+
+
+#### Main execution function
+def main():
+
+    #### Parse command-line arguments
+    argparser = argparse.ArgumentParser(description='Reads one spectrum from a file and prints to stdout')
+    argparser.add_argument('--output_format', action='store', default='json', help="Format use when writing the spectrum (one of 'tsv', 'json')")
+    argparser.add_argument('--annotation_id', action='store', help="Integer id of the annotation document to overlay on latest definitions")
+    argparser.add_argument('--dataset_id', action='store', help="Identifier of a dataset to pre-load information from. e.g. PXD001207")
+    params = argparser.parse_args()
+
+    response = { 'state': 'OK', 'status': 200, 'title': 'OK', 'detail': 'Function completed normally', 'log': [] }
+    mode = 'CLI'
+
+    #### CGI debugging stuff
+    #print("Content-type: text/plain\n")
+    #print(os.environ)
+    #print(f"INFO: QUERY_STRING: {os.environ['QUERY_STRING']}")
+
+    #### If we got here through CGI
+    if "REQUEST_URI" in os.environ:
+        mode = 'HTTP'
+
+        #### Set the output_format to json if the HTTP_REQUEST_TYPE was set to json
+        if "HTTP_REQUEST_TYPE" in os.environ and os.environ["HTTP_REQUEST_TYPE"] == "application/json":
+            params.output_format = 'json'
+
+
+    #### If there is a query string
+    if "QUERY_STRING" in os.environ and os.environ["QUERY_STRING"] > "":
+
+        #### Parse out the CGI parameters and put in place of command-line arguments
+        keyvaluepairs = re.split("&", os.environ["QUERY_STRING"])
+        for keyvaluepair in keyvaluepairs:
+            key, value = re.split("=", keyvaluepair, 1)
+            if key == "output_format":
+                params.output_format = value
+            elif key == "annotation_id":
+                params.annotation_id = value
+            elif key == "dataset_id":
+                params.dataset_id = value
+            else:
+                add_message(response, level='ERROR', status=460, code='UnrecognizedParameter', message=f"Unrecognized parameter: {keyvaluepair}")
+                send_response(response, output_format=params.output_format, mode=mode)
+                return()
+
+    add_message(response, level='INFO', message="Setting up blank form definitions")
+    definitions = { "sections": [ "header", "study metadata", "condition metadata", "MS run metadata" ],
+        "section_definitions": {
+            "header": { "data rows": [ "annotator name", "annotator note" ], "is clonable": "false", "is required": "true",
+               "row attributes": {
+                   "annotator name": { "is required": "true", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                       "description": "Name of the annotator responsible for annotating this study" },
+                   "annotator note": { "is required": "false", "data type": "textarea", "n lines": 3, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+                                       "description": "Free text notes about the curation process of this paper. For example, what global problems where encountered, etc." } } },
+
+            "study metadata": { "data rows": [ "dataset id", "dataset title", "publication", "lab head name", "lab head email address", "lab head affiliation", 
+                                               "lab head country", "contributor", "n conditions", "n assays", "n proteins claimed", "protein-level FDR",
+                                               "study variables", "dataset description", "metadata completeness level" ], "is clonable": "false", "is required": "true",
+                   "row attributes": {
+                       "dataset id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+                                       "description": "Identifier of the datasets being annotated. A PXD identifier is preferred." },
+                       "dataset title": { "is required": "true", "data type": "textarea", "n lines": 3, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                       "description": "Title that describes the dataset succintly. Can be the journal article title if appropriate as a dataset title, too" },
+                       "publication": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+                                       "description": "Pubmed ID of paper describing the dataset. Typically, there is only one." },
+                       "lab head name": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                       "description": "Name of the lab head overseeing the production and publication of the dataset" },
+                       "lab head email address": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                       "description": "Email address of the lab head overseeing the production and publication of the dataset" },
+                       "lab head affiliation": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                       "description": "Name of the organization/institution of the lab head (e.g. Institute for Systems Biology)" },
+                       "lab head country": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                       "description": "Name of the country for the lab head (used for ProteomeXchange statistics)" },
+                       "contributor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+                                       "description": "Name of a contributor to the dataset, often a coauthor on the journal article" },
+                       "n conditions": { "is required": "true", "data type": "integer", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                         "description": "Number of biological conditions tested (ignoring replicates)" },
+                       "n assays": { "is required": "true", "data type": "integer", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                     "description": "Number of total assays performed as number of conditions times replicates" },
+                       "n proteins claimed": { "is required": "false", "data type": "integer", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                               "description": "Total number of proteins claimed detected unioned over all assays" },
+                       "protein-level FDR": { "is required": "false", "data type": "float", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                              "description": "Protein-level false discovery rate (as a decimal fraction such as 0.01 to mean 1%) claimed with the number of proteins detected" },
+                       "study variables": { "is required": "true", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                            "description": "Experiment variables distinguishing the conditions" },
+                       "dataset description": { "is required": "false", "data type": "textarea", "n lines": 3, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+                                            "description": "Abstract style summary of the dataset. Can be the journal article abstract if appropriate for the dataset." },
+                       "metadata completeness level": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
+                                                        "description": "Five-tier classification of the quality of the annotation summary as judged by the annotator" },
+                    } },
+            "condition metadata": { "data rows": [ "condition id", "condition tag", "condition title", "subject id", "subject title", "species", "strain", "genotype", "age", "developmental stage", "sex",
+                                                   "growth medium", "organism part", "tissue type", "cell type", "cell line", "subcellular component", "disease", "drug name",
+                                                   "light intensity", "light conditions", "temperature conditions", "humidity conditions",
+                                                   "growth protocol", "treatment", "treatment duration", "time since reference", "treatment protocol", 
+                                                   "other condition factor", "other condition factor value", 
+                                                   "tissue prep protocol", "cleanup protocol", "enrichment", "depletion", "fractionation", "separation protocol", 
+                                                   "alkylation agent", "cleavage agent", "digestion protocol", "acquisition type", "artifacts searched", "PTMs searched", 
+                                                   "quantitative label", "instrument", "acquisition protocol", "informatics protocol", 
+                                                   "other sample prep factor", "other sample prep factor value" ], "is clonable": "true", "is required": "true",
+	        "row attributes": {
+		    "condition id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Internal identifier for this annotation sheet of this condition" },
+		    "condition tag": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Terse tag for this condition for display where space is very limited. Each condition must have a distinctive tag" },
+		    "condition title": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Full title for this condition for display where space is not limited. Try to capture what is *different* about all the conditions here." },
+		    "subject id": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Internal identifier for the subject that is the source of this condition" },
+		    "subject title": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Title for the subject that is the source of this condition" },
+		    "species": { "is required": "true", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Full species name of the subject. Use a comma separated list of multiple known species are present" },
+		    "strain": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Name or abbreviation of the strain, ecotype, cultivar, race of the subject (e.g., col-0)" },
+		    "genotype": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Genotype name or designation if known or important" },
+		    "age": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		        "description": "Age of the subject including time unit (e.g., 5 days, 10 weeks, 32 years)" },
+		    "developmental stage": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Developmental stage of the organism" },
+		    "sex": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Biological sex of the subject (e.g., male, female, etc.)" },
+		    "growth medium": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
+		        "description": "Medium in which the subject was grown (e.g. for plants either soil, agar plate with 1/2 MS, agar plate with 1/2 MS plus sucrose, liquid culture, etc.)" },
+		    "organism part": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "High level part of the organism (e.g., leaf, root, stem, flower, seed, cotyledon)" },
+		    "tissue type": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Lower level of tissue or fluid (e.g., epidermis, stomata, endodermis, xylem, xylem sap, phloem sap)" },
+		    "cell type": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Type of cells if specific (e.g. parenchyma cells, xylem cells, phloem cells)" },
+		    "cell line": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+                        "description": "Name of the cell line (e.g. HeLa cells, HEK293T cells)" },
+		    "subcellular component": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Subcellular compartment  or subcellular fraction (organelle – such as chloroplast, nucleus, ER; or cytoplasm, microsomal fraction)" },
+		    "disease": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Disease afflicting the subject" },
+		    "drug name": { "is required": "false", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Name of a drug used to treat the subject" },
+
+		    "light intensity": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		        "description": "Intensity of the light during light time" },
+		    "light conditions": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		        "description": "Pattern of the light time/dark time (e.g. 8h light/16h dark or 10h light/14h dark)" },
+		    "temperature conditions": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		        "description": "Pattern of the temperature in light time/dark time (e.g. 35C light/25C dark)" },
+		    "humidity conditions": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "false",
+		        "description": "Pattern of the relative humidity in light time/dark time (e.g. 50% light/75% dark)" },
+
+		    "growth protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing the growth conditions of the subject (extended free text with sentences)" },
+		    "treatment": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Terse free-text statement providing the essence of the treatment applied to the subject" },
+		    "treatment duration": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "true",
+		        "description": "Duration of the listed treatment" },
+		    "time since reference": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "true", "duplication": "true",
+		        "description": "Time elapsed since a reference including time unit, mostly applicable to time course studies (e.g., 30 min, 8 hr)" },
+		    "treatment protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		                            "description": "Protocol describing the treatment of the subject beyond the initial growth conditions (extended free text with sentences that may elaborate considerably over the terse treatment field)" },
+
+		    "other condition factor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Other important biological factor of the subjects in the experiment that is not captured above (e.g. height)" },
+		    "other condition factor value": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Value associated with the other important biological factor of the subjects in the experiment that is not captured above (e.g. 23 cm)" },
+
+		    "tissue prep protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Preparation protocol of tissue material (buffer, pH, salts, detergents, protease inhibitors, reductants, etc); time; temperature" },
+		    "cleanup protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing removal of debris, e.g. by filtering (microcloth, spin filters, etc.) or centrifugation" },
+
+		    "enrichment": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Enrichment (e.g., TAILS, COFRADIC, FLAG-tag, none)" },
+		    "depletion": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Protein depletion protocol/product name (e.g., MARS14, RuBisCo, etc.)" },
+		    "fractionation": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Type of fractionation used (e.g., SCX, gel bands, OffGel, 2DLC, DiGE, FAIMS, none, unknown)" },
+		    "separation protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing the off-line separation or fractionation of proteins or peptides prior to LC-MS (extended free text with sentences)" },
+
+		    "alkylation agent": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Name of the alkylation agent (e.g., iodoacetamide)" },
+		    "cleavage agent": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+		        "description": "Protease or other cleavage agent used for digestion (e.g., trypsin, chymotrypsin, GluC)" },
+		    "digestion protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing the digestion of proteins into peptides (extended free text with sentences)" },
+
+                    "acquisition type": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                             "description": "Mode of mass spectrometry acquisition such as DDA, DIA, SRM, PMF, PASEF, diaPASEF, etc." },
+                    "artifacts searched": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                               "description": "Sample artifactual mass modifications assessed by the submitters (e.g. C+57; M+15.99)" },
+                    "PTMs searched": { "is required": "false", "data type": "string", "has curie": "true", "list box": "false", "autocomplete": "true", "has units": "false", "duplication": "true",
+                                          "description": "True biological post-translational modifications assessed by the submitters (e.g. phospho)" },
+		    "quantitative label": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
+		        "description": "Type of quantitative label used (e.g., TMT6, TMT10, iTRAQ4plex, iTRAQ8plex, SILAC 13C, label-free, none)" },
+		    "instrument": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
+		        "description": "Mass spectrometer used for analysis (e.g., Q Exactive, TripleTOF 6600)" },
+		    "acquisition protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing the acquisition of data including all LC-MS components where applicable (extended free text with sentences)" },
+		    "informatics protocol": { "is required": "false", "data type": "textarea", "n lines": 5, "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Protocol describing the downstream analysis of data produced by the instrument (extended free text with sentences)" },
+
+		    "other sample prep factor": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Other important sample prep factor of the condition that is not listed above" },
+		    "other sample prep factor value": { "is required": "false", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "true",
+		        "description": "Value associated with the other important sample prep factor of the condition that is not listed above" },
+                    } },
+
+            "MS run metadata": { "data rows": [ "MS run ordinal", "MS run name", "MS run type", "channel ids", "assay ids", "assay tags", "condition ids", "biological replicate counters",
+                                                   "technical replicate counters", "fractionation ordinal", "fractionation label" ], "is clonable": "true", "is required": "false",
+	        "row attributes": {
+		    "MS run ordinal": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Ordinal for the order of this MS run for batch effect analysis (e.g. for 24 fractions, number each file 1, 2, 3, etc.) Or this may be a datetime stamp extracted from the MS Run files" },
+		    "MS run name": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Base name of the MS run. This is typically the name before the .RAW, .wiff, .d/, .mzML, etc." },
+		    "MS run type": { "is required": "true", "data type": "string", "has curie": "true", "list box": "true", "autocomplete": "true", "has units": "false", "duplication": "false",
+		        "description": "Type of run (assay, blank, calibration, synthetic peptide reference)" },
+		    "channel ids": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of the channels if assays are multiplexed. Use NA for label-free data" },
+		    "assay ids": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of numerical assay ids corresponding to each channel" },
+		    "assay tags": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of terse tags for each assay corresponding to each channel. Just a single value for label-free" },
+		    "condition ids": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of condition ids (from the condition sections above) corresponding to each channel. Just a single id for label-free." },
+		    "biological replicate counters": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of ordinals of biological replicates within each condition. Just a single value for label-free. Use none if none." },
+		    "technical replicate counters": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Semicolon separated list of ordinals of technical replicates within each biological replicate. Just a single value for label-free. Use none if none." },
+		    "fractionation ordinal": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Ordinal for the order of the fractionation for the samples for batch effect analysis (e.g. for 24 fractions, number each file 1, 2, 3, etc.). Best to leave as 'unknown' if it is not known. Don't make it up." },
+		    "fractionation label": { "is required": "true", "data type": "string", "has curie": "false", "list box": "false", "autocomplete": "false", "has units": "false", "duplication": "false",
+		        "description": "Free-text label for each fraction for gel bands, or offgel fractionation, or SCX fractionation. Labels are not required, but may be generated by the data producer. Best to leave as 'unknown' if it is not known." }
+                    } }
+        }
+    }
+
+
+    data = None
+    dataset_id = params.dataset_id
+    loaded_annotation_datetime = None
+
+    #### Make a deep copy of the blank definitions as a template for extra sections
+    reference_definitions = copy.deepcopy(definitions)
+
+    #### If there is an annotations_id, then read that data and insert it
+    if params.annotation_id is not None:
+        add_message(response, level='INFO', message=f"Finding annotations for annotation_id={params.annotation_id}")
+        filename = f"/net/dblocal/wwwspecial/proteomecentral/devED/lib/proxi/metadata_autocomplete/annotation_data/{params.annotation_id}.json"
+        if not os.path.exists(filename):
+            add_message(response, level='ERROR', status=460, code='AnnotationNotFound', message=f"There is no stored content for annotation_id={params.annotation_id}")
+            send_response(response, output_format=params.output_format, mode=mode)
+            return
+
+        #### Open and load the file
+        with open(filename) as infile:
+            data = json.load(infile)
+        loaded_annotation_datetime = os.path.getmtime(filename)
+
+        #### Determine what the dataset_id is from the loaded data
+        for field_key,field in data.items():
+            if field["name"] == 'dataset id':
+                dataset_id = field['value']
+                add_message(response, level='INFO', message=f"Loaded annotations and inside found dataset_id={dataset_id}")
+                break
+
+
+    #### If data has content, then integrate it
+    if data is not None:
+        global_counter = 100
+        add_message(response, level='INFO', message=f"Merging loaded annotations into template definitions")
+
+        #### Set up a container to contain any rows that used to be in the study metadata that need to be replicated to the condition metadata
+        replicate_to_condition_metadata = {}
+
+        #### Loop over each field in the loaded annotations file in a first pass to collect things affected by schema changes
+        for field_key,field in data.items():
+            section = field["section"]
+            name = field["name"]
+
+            #### Address fixes due to schema changes
+            if name == "labeling modifications" and section == "study metadata":
+                continue
+            if name == "acquisition type" and section == "study metadata":
+                if name not in replicate_to_condition_metadata:
+                    replicate_to_condition_metadata[name] = []
+                replicate_to_condition_metadata[name].append(field)
+            if name == "artifacts searched" and section == "study metadata":
+                if name not in replicate_to_condition_metadata:
+                    replicate_to_condition_metadata[name] = []
+                replicate_to_condition_metadata[name].append(field)
+            if name == "PTMs searched" and section == "study metadata":
+                if name not in replicate_to_condition_metadata:
+                    replicate_to_condition_metadata[name] = []
+                replicate_to_condition_metadata[name].append(field)
+
+        #### If there are things to replicate, do it now
+        for replicate_key,replicate_fields in replicate_to_condition_metadata.items():
+            if replicate_key in definitions['section_definitions']['condition metadata']['row attributes']:
+                name = replicate_key
+                section = 'condition metadata'
+                ireplicate = 0
+                for replicate_field in replicate_fields:
+                    ireplicate += 1
+                    if ireplicate == 1:
+                        definitions['section_definitions'][section]['row attributes'][name]['value'] = replicate_field['value']
+                        definitions['section_definitions'][section]['row attributes'][name]['comment'] = replicate_field['comment']
+                        definitions['section_definitions'][section]['row attributes'][name]['cv'] = replicate_field['cv']
+                        reference_definitions['section_definitions'][section]['row attributes'][name]['value'] = replicate_field['value']
+                        reference_definitions['section_definitions'][section]['row attributes'][name]['comment'] = replicate_field['comment']
+                        reference_definitions['section_definitions'][section]['row attributes'][name]['cv'] = replicate_field['cv']
+                    else:
+                        new_row_name = f"{name}___{global_counter}"
+                        global_counter += 1
+
+                        #### Get a new copy of the row to fill in below
+                        row = copy.deepcopy(reference_definitions['section_definitions'][section]['row attributes'][name])
+
+                        #### Now need to insert that new row name into the list
+                        #### This complex bit iterates through the rows to look for the last row that is like this one
+                        #### and then insert the new row after the last of its kind
+                        new_rows = []
+                        loop_state = 'before'
+                        for row_name in definitions['section_definitions'][section]['data rows']:
+                            #eprint(f"loop_state={loop_state}, row_name={row_name}")
+                            if loop_state == 'correct area':
+                                if row_name[0:(len(name)-1)] != name:
+                                    #eprint(f"INFO: Inserting new row {new_row_name}")
+                                    new_rows.append(new_row_name)
+                                    loop_state = 'after'
+                            if loop_state == 'before':
+                                if row_name == name:
+                                    loop_state = 'correct area'
+                            new_rows.append(row_name)
+                        #### If it hasn't been placed, place it here
+                        if loop_state != 'after':
+                            #eprint(f"INFO: Appending new section {section} at end")
+                            new_sections.append(section)
+                            loop_state = 'after'
+                        definitions['section_definitions'][section]['data rows'] = new_rows
+                        definitions['section_definitions'][section]['row attributes'][new_row_name] = row
+                        reference_definitions['section_definitions'][section]['data rows'] = new_rows
+                        reference_definitions['section_definitions'][section]['row attributes'][new_row_name] = row
+
+                        #### Add the data
+                        row['value'] = replicate_field['value']
+                        row['comment'] = replicate_field['comment']
+                        row['cv'] = replicate_field['cv']
+
+
+
+        #### Loop over each field in the loaded annotations file and insert it into the definitions
+        for field_key,field in data.items():
+            section = field["section"]
+            name = field["name"]
+
+            #### Temporary renaming patch
+            match = re.search(r'pattern',name)
+            if match:
+                name = re.sub(r'pattern','conditions',name)
+
+            #### Skip rows that have moved due to schema changes
+            if name == "labeling modifications" and section == "study metadata":
+                continue
+            if name == "acquisition type" and section == "study metadata":
+                continue
+            if name == "artifacts searched" and section == "study metadata":
+                continue
+            if name == "PTMs searched" and section == "study metadata":
+                continue
+ 
+            #### If the name section does not exist, it is like a copied section. Deal with that here: CS1
+            if section not in definitions['section_definitions']:
+                #### The pattern is {referencesection___nnn}
+                match = re.match("(.+?)___(.+)$",section)
+                if match:
+                    reference_section_name = match.group(1)
+                    #eprint(f"reference_section_name={reference_section_name}")
+                    #### Make a duplicate of the section type from the reference and add it
+                    new_section = copy.deepcopy(reference_definitions['section_definitions'][reference_section_name])
+                    definitions['section_definitions'][section] = new_section
+
+                    #### Now need to insert that new section name into the list
+                    #### This complex bit iterates through the sections to look for the last section that is like this one
+                    #### and then insert the new section after the last of its kind
+                    new_sections = []
+                    loop_state = 'before'
+                    for section_name in definitions['sections']:
+                        #eprint(f"loop_state={loop_state}, section_name={section_name}")
+                        if loop_state == 'correct area':
+                            if section_name[0:(len(reference_section_name)-1)] != reference_section_name:
+                                #eprint(f"INFO: Inserting new section {section}")
+                                new_sections.append(section)
+                                loop_state = 'after'
+                        if loop_state == 'before':
+                            if section_name == reference_section_name:
+                                loop_state = 'correct area'
+                        new_sections.append(section_name)
+                    #### If it hasn't been placed, place it here
+                    if loop_state != 'after':
+                        #eprint(f"INFO: Appending new section {section} at end")
+                        new_sections.append(section)
+                        loop_state = 'after'
+                    definitions['sections'] = new_sections
+
+                else:
+                    add_message(response, level='ERROR', status=461, code='UnparsableSectionName', message=f"Unable to parse section name {section}")
+
+            #### Now find the place in the definitions where to place this field
+            if section in definitions['section_definitions']:
+
+                #### The the row attribute is (now) there, then add the information
+                match = re.match("(.+?)___(.+)$",name)
+                if match:
+                    name = match.group(1)
+                if name in definitions['section_definitions'][section]['row attributes']:
+                    row = definitions['section_definitions'][section]['row attributes'][name]
+
+                    #### Check to see if there is already information in this row. If so, we need to create another
+                    if 'value' in row or 'comment' in row:
+                        new_row_name = f"{name}___{global_counter}"
+                        global_counter += 1
+
+                        #### Get a new copy of the row to fill in below
+                        reference_section = re.sub(r'___.+$','',section)
+                        row = copy.deepcopy(reference_definitions['section_definitions'][reference_section]['row attributes'][name])
+
+                        #### Now need to insert that new row name into the list
+                        #### This complex bit iterates through the rows to look for the last row that is like this one
+                        #### and then insert the new row after the last of its kind
+                        new_rows = []
+                        loop_state = 'before'
+                        for row_name in definitions['section_definitions'][section]['data rows']:
+                            #eprint(f"loop_state={loop_state}, row_name={row_name}")
+                            if loop_state == 'correct area':
+                                if row_name[0:(len(name)-1)] != name:
+                                    #eprint(f"INFO: Inserting new row {new_row_name}")
+                                    new_rows.append(new_row_name)
+                                    loop_state = 'after'
+                            if loop_state == 'before':
+                                if row_name == name:
+                                    loop_state = 'correct area'
+                            new_rows.append(row_name)
+                        #### If it hasn't been placed, place it here
+                        if loop_state != 'after':
+                            #eprint(f"INFO: Appending new section {section} at end")
+                            new_sections.append(section)
+                            loop_state = 'after'
+                        definitions['section_definitions'][section]['data rows'] = new_rows
+                        definitions['section_definitions'][section]['row attributes'][new_row_name] = row
+
+                    #### Add the data
+                    row['value'] = field['value']
+                    row['comment'] = field['comment']
+                    row['cv'] = field['cv']
+
+                #### This should not happen
+                else:
+                    add_message(response, level='ERROR', status=462, code='UnparsableAttributeName', message=f"Unable to parse name '{name}' in section '{section}'")
+
+            #### This should not happen unless we were not able to add a section in the above in CS1
+            else:
+                add_message(response, level='ERROR', status=463, code='NonExistantSection', message=f"Unable to find section name {section} in the template definitions")
+
+        #### Reorder the MS runs by the ordinal if possible
+        new_section_names = []
+        msrun_sections = []
+        for section_name in definitions['sections']:
+            if 'MS run metadata' in section_name:
+                ordinal_str = '0'
+                if 'value' in definitions['section_definitions'][section_name]['row attributes']['MS run ordinal']:
+                    ordinal_str = definitions['section_definitions'][section_name]['row attributes']['MS run ordinal']['value']
+                #print(f"ordinal_str={ordinal_str}")
+                match = re.match(r'(.*?)(\d+)(.*?)$',ordinal_str)
+                if match:
+                    prefix = match.group(1)
+                    numeral = int(match.group(2))
+                    suffix = match.group(3)
+                    #print(prefix,numeral,suffix)
+                    msrun_sections.append( { 'name': section_name, 'prefix': prefix, 'numeral': numeral, 'suffix': suffix } )
+                else:
+                    msrun_sections.append( { 'name': section_name, 'prefix': '', 'numeral': 0, 'suffix': '' } )
+            else:
+                new_section_names.append(section_name)
+        msrun_sections = sorted(msrun_sections, key = lambda x: (x['prefix'],x['numeral'],x['suffix']) )
+        for msrun_section in msrun_sections:
+            new_section_names.append(msrun_section['name'])
+        definitions['sections'] = new_section_names
+
+
+    #### If there is a dataset_id, then fetch information about it and insert into the data structure
+    if dataset_id is not None:
+        add_message(response, level='INFO', message=f"Fetching data from ProteomeCentral for dataset_id={dataset_id}")
+        match = re.match("PXD\d\d\d\d\d\d$",dataset_id)
+        if not match:
+            add_message(response, level='ERROR', status=464, code='UnsupportededDatasetIdentifier', message=f"Dataset identifier '{dataset_id}' is unsupported. Must be PXDnnnnnn.")
+            send_response(response, output_format=params.output_format, mode=mode)
+            return
+
+        url_str = f"https://proteomecentral.proteomexchange.org/cgi/GetDataset?ID={dataset_id}&outputMode=json"
+        response_content = requests.get(url_str, headers={'accept': 'application/json'})
+
+        #### Examine response
+        status_code = response_content.status_code
+        if status_code != 200:
+            add_message(response, level='WARNING', message=f"Unable to fetch information for dataset '{dataset_id}'. Not a publicly released dataset?")
+            #send_response(response, output_format=params.output_format, mode=mode)
+            #return
+            pxd = {}
+            #response['state'] = 'OK'
+
+
+        #### Unpack the response content into a dict
+        else:
+            pxd = response_content.json()
+            #eprint(json.dumps(pxd, indent=4, sort_keys=True))
+
+        #### Always force the PXD into the dataset id
+        definitions['section_definitions']['study metadata']['row attributes']['dataset id']['value'] = dataset_id
+        add_message(response, level='INFO', message=f"Set the dataset id to '{dataset_id}'")
+
+        #### Try to extract the title from the JSON
+        if 'title' in pxd:
+            definitions['section_definitions']['study metadata']['row attributes']['dataset title']['value'] = pxd['title']
+            add_message(response, level='INFO', message=f"Set the title to '{pxd['title']}'")
+
+        #### Try to extract the title from the JSON
+        if 'description' in pxd:
+            definitions['section_definitions']['study metadata']['row attributes']['dataset description']['value'] = pxd['description']
+            add_message(response, level='INFO', message=f"Set the description to the description from ProteomeCentral")
+
+        #### Try to extract lab head information from the JSON
+        if 'contacts' in pxd:
+            contact_name = ''
+            contact_email = ''
+            contact_affiliation = ''
+            is_correct_contact = False
+            for contact in pxd['contacts']:
+                if 'terms' in contact:
+                    for term in contact['terms']:
+                        if term['name'] == 'contact name':
+                            contact_name = term['value']
+                        if term['name'] == 'contact email':
+                            contact_email = term['value']
+                        if term['name'] == 'contact affiliation':
+                            contact_affiliation = term['value']
+                        if term['name'] == 'lab head':
+                            is_correct_contact = True
+                    if is_correct_contact:
+                        break
+            if is_correct_contact:
+                definitions['section_definitions']['study metadata']['row attributes']['lab head name']['value'] = contact_name
+                definitions['section_definitions']['study metadata']['row attributes']['lab head email address']['value'] = contact_email
+                definitions['section_definitions']['study metadata']['row attributes']['lab head affiliation']['value'] = contact_affiliation
+                add_message(response, level='INFO', message=f"Updated lab head name to '{contact_name}'")
+                add_message(response, level='INFO', message=f"Updated lab head email address to '{contact_email}'")
+                add_message(response, level='INFO', message=f"Updated lab head affiliation to '{contact_affiliation}'")
+
+
+        #### Try to extract publication information from the JSON
+        if 'publications' in pxd:
+            for publication in pxd['publications']:
+                if 'terms' in contact:
+                    for term in publication['terms']:
+                        if term['name'] == 'PubMed identifier':
+                            if 'value' not in definitions['section_definitions']['study metadata']['row attributes']['publication']:
+                                definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = None
+                            if definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] is None:
+                                definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = term['value']
+                                definitions['section_definitions']['study metadata']['row attributes']['publication']['cv'] = f"PMID:{term['value']}"
+                                add_message(response, level='INFO', message=f"Setting publication to '{term['value']}' from ProteomeCentral")
+                            else:
+                                if definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] == term['value']:
+                                    add_message(response, level='INFO', message=f"Previous publication value '{term['value']}' matches value pulled from ProteomeCentral")
+                                    definitions['section_definitions']['study metadata']['row attributes']['publication']['cv'] = f"PMID:{term['value']}"
+                                else:
+                                    add_message(response, level='INFO', message=f"Updated publication from previous value '{definitions['section_definitions']['study metadata']['row attributes']['publication']['value']}' to ProteomeCentral value '{term['value']}'")
+                                    definitions['section_definitions']['study metadata']['row attributes']['publication']['value'] = term['value']
+                                    definitions['section_definitions']['study metadata']['row attributes']['publication']['cv'] = f"PMID:{term['value']}"
+
+        #### Try to extract MS Runs information from the JSON
+        if 'datasetFiles' in pxd:
+            #### Loop over all the datasetFiles to find the MS Runs
+            if 'dataset_info' not in definitions:
+                definitions['dataset_info'] = {}
+            definitions['dataset_info']['MS run name'] = []
+            for dataset_file in pxd['datasetFiles']:
+                if dataset_file['name'] == 'Associated raw file URI':
+                    uri = dataset_file['value']
+                    match = re.match("(.+)/(.+)?$",uri)
+                    if match:
+                        filename = match.group(2)
+                        #print(f"-{filename}")
+                        match = re.match("(.+)\.(.+)?$",filename)
+                        if match:
+                            fileroot = match.group(1)
+                            #print(f"--{fileroot}")
+                            definitions['dataset_info']['MS run name'].append( { 'name': fileroot } )
+            definitions['dataset_info']['MS run name'].sort(key=by_rootname)
+            add_message(response, level='INFO', message=f"Added {len(definitions['dataset_info']['MS run name'])} MS run names for annotation")
+
+    #### See if there is an MS Run Metadata table to import
+    if dataset_id is not None:
+        merge_msrun_metadata(dataset_id, definitions, reference_definitions, response, loaded_annotation_datetime)
+
+    add_message(response, level='INFO', message=f"Processing complete")
+    send_response(response, output_format=params.output_format, mode=mode, dataset_id=dataset_id)
+
+    for key in [ 'state', 'status', 'title', 'detail', 'log' ]:
+        definitions[key] = response[key]
+
+    #### If output is JSON, then dump it
+    if params.output_format.lower() == 'json':
+        print(json.dumps(definitions,sort_keys=True,indent=2))
+    else:
+        row = 0
+        max_ordinal = 0
+        emitted_run_names = {}
+        for section_name in definitions['sections']:
+            if 'MS run metadata' not in section_name:
+                continue
+            section = definitions['section_definitions'][section_name]
+            if row == 0:
+                column_names = section['data rows']
+                print("\t".join(column_names))
+            values = []
+            for column_name in column_names:
+                try:
+                    value = section['row attributes'][column_name]['value']
+                except:
+                    value = ''
+                values.append(value)
+                if column_name == 'MS run name' and value != '':
+                    emitted_run_names[value] = True
+            if values[1] != '':
+                print("\t".join(values))
+            try:
+                ordinal = int(section['row attributes']['MS run ordinal']['value'])
+            except:
+                ordinal = 0
+            if ordinal > max_ordinal:
+                max_ordinal = ordinal
+            row += 1
+        try:
+            for ms_run_name in definitions['dataset_info']['MS run name']:
+                name =  ms_run_name['name']
+                if name not in emitted_run_names:
+                    max_ordinal += 1
+                    for i in range(len(values)):
+                        values[i] = ''
+                    values[0] = str(max_ordinal)
+                    values[1] = ms_run_name['name']
+                    print("\t".join(values))
+        except:
+            print("No MS runs available")
+
+
+############################################################################
+def merge_msrun_metadata(dataset_id, definitions, reference_definitions, response, loaded_annotation_datetime):
+
+    #### Find the most recent version
+    version = 1
+    filename = 'nothing'
+    while 1:
+        test_filename = f"/net/dblocal/wwwspecial/proteomecentral/devED/lib/proxi/metadata_autocomplete/annotation_MSRunMetadata/{dataset_id}_{version}.txt"
+        if os.path.exists(test_filename):
+            filename = test_filename
+        else:
+            break
+        version += 1
+
+    if not os.path.exists(filename):
+        add_message(response, level='INFO', message=f"No MS run metadata TSV file found for {dataset_id}, so nothing to integrate")
+        return
+
+    msrun_table_datetime = os.path.getmtime(filename)
+
+    expected_column_titles = definitions['section_definitions']['MS run metadata']['data rows']
+
+    # #### Determine how many MS run metadata sections we have already
+    n_existing_msruns = 0
+    new_sections = []
+    sections_to_delete = []
+    for section_name in definitions['sections']:
+        if section_name == "MS run metadata" or "MS run metadata" in section_name:
+            n_existing_msruns += 1
+            sections_to_delete.append(section_name)
+        else:
+            new_sections.append(section_name)
+
+    # #### If there are fewer than 2, then go ahead and delete them all in anticipation of loading from the file
+    if loaded_annotation_datetime is None or msrun_table_datetime > loaded_annotation_datetime:
+        definitions['sections'] = new_sections
+        add_message(response, level='INFO', message=f"There is a new(er) version of an MS run table found. Purging existing MS run metadata section in order to load from a file")
+        for section_name in sections_to_delete:
+            del definitions['section_definitions'][section_name]
+
+    # #### Else, write a detailed message on why we opted not to load from the file and return
+    else:
+        add_message(response, level='WARNING', message=
+            "Although there is a metadata file available for loading, it is older than the annotation you just loaded, so it will not be merged. " +
+            "If you store a new MSrun table, then upon the next load of this annotation, it will be imported.")
+        return
+
+    # #### Get a list of the expected MS run names
+    expected_msrun_names = {}
+    expected_msrun_names_underscored = {}
+    unexpected_msrun_names = {}
+    previous_msrun_names = {}
+    if 'dataset_info' in definitions and 'MS run name' in definitions['dataset_info']:
+        for msrun_name in definitions['dataset_info']['MS run name']:
+            name = msrun_name['name']
+            expected_msrun_names[name] = 1
+            fixed_name = re.sub("-","_",name)
+            fixed_name = re.sub(" ","_",fixed_name).lower().strip()
+            expected_msrun_names_underscored[fixed_name] = name
+
+
+    # #### Read the file
+    with open(filename) as infile:
+        iline = 0
+        msrun_index = 1000
+        expected_header_columns = [ "MS run ordinal", "MS run name", "MS run type", "channel ids", "assay ids", "assay tags", "condition ids", "biological replicate counters",
+            "technical replicate counters", "fractionation ordinal", "fractionation label" ]
+        warned_about_extra_columns = True
+        for line in infile:
+            line = line.strip()
+
+            # #### Skip lines beginning with a # as a comment
+            match = re.match(r'#',line)
+            if match:
+                continue
+
+            # #### Skip empty lines
+            match = re.match(r'\s*$',line)
+            if match:
+                continue
+
+            columns = line.split("\t")
+
+            # #### The first non-empty non-comment line must be the header with the prescribed column titles
+            if iline == 0:
+                if len(columns) < len(expected_header_columns):
+                    add_message(response, level='ERROR', status=464, code='MSRunMetadataTooFewColumns', message=f"Expected {len(expected_header_columns)} columns in input file {filename} but found {len(columns)}.")
+                icolumn = 0
+                for column in columns:
+                    if column.lower() != expected_header_columns[icolumn].lower():
+                        add_message(response, level='ERROR', status=464, code='MSRunMetadataWrongColumnHeader',
+                                    message=f"In header of MS run metadata file {filename}, expected column {icolumn} (beginning with 0) to be '{expected_header_columns[icolumn]}' but instead found '{column}'.")
+                    icolumn += 1
+                    if icolumn >= len(expected_header_columns):
+                        break
+
+                add_message(response, level='INFO', message=f"response status is {response['state']}")
+                if response['state'] != 'OK':
+                    response['state'] = 'OK'
+                    response['status'] = 200
+                    return
+                add_message(response, level='INFO', message=f"Column names are as expected")
+                iline += 1
+                continue
+
+            # #### Create a new section to hold the contents of this line
+            new_msrun = copy.deepcopy(reference_definitions['section_definitions']['MS run metadata'])
+            new_section_label = f"MS run metadata___{msrun_index}"
+            msrun_index += 1
+            definitions['section_definitions'][new_section_label] = new_msrun
+            definitions['sections'].append(new_section_label)
+
+            icolumn = 0
+            for column in columns:
+
+                #### Skip any columns out past where we were expecting as a courtesy
+                if icolumn >= len(expected_header_columns):
+                    if not warned_about_extra_columns:
+                        add_message(response, level='WARNING', message=f"There are additional data in columns out past where we expect. This could be indicative of a data problem. Or maybe there is just some additional auxiliary information out there past the last column, which is permitted, but ignored.")
+                        warned_about_extra_columns = True
+                    break
+
+                #### Strip surrounding quotes
+                match = re.match(r'\s*\"(.*)\"\s*$',column)
+                if match:
+                    column = match.group(1)
+                definitions['section_definitions'][new_section_label]['row attributes'][expected_header_columns[icolumn]]['value'] = column
+
+                # #### Keep track of the MS run names
+                if icolumn == 1:
+                    if column in previous_msrun_names:
+                        add_message(response, level='ERROR', status=464, code='DuplicatedMSRunName', message=f"Row {iline} has an MS run name {column} that has already occurred earlier and is thus duplicated")
+                        definitions['section_definitions'][new_section_label]['row attributes'][expected_header_columns[icolumn]]['is_invalid'] = f"Row {iline} has an MS run name {column} that has already occurred earlier and is thus duplicated"
+                        
+                    elif column in expected_msrun_names:
+                        del expected_msrun_names[column]
+                        previous_msrun_names[column] = 1
+                    else:
+                        previous_msrun_names[column] = 1
+                        fixed_name = re.sub("-","_",column)
+                        fixed_name = re.sub(" ","_",fixed_name).lower().strip()
+                        if fixed_name in expected_msrun_names_underscored:
+                            real_name = expected_msrun_names_underscored[fixed_name]
+                            del expected_msrun_names[real_name]
+                            del expected_msrun_names_underscored[fixed_name]
+                        else:
+                            ### Only complain if there are some files to compare with
+                            if len(expected_msrun_names_underscored) > 0:
+                                add_message(response, level='ERROR', status=464, code='UnexpectedMSRunName', message=f"Row {iline} has an MS run name '{column}' which is not among the expected MS run names from ProteomeXchange")
+                                definitions['section_definitions'][new_section_label]['row attributes'][expected_header_columns[icolumn]]['is_invalid'] = f"Input file row {iline} has an MS run name '{column}' which is not among the expected MS run names from ProteomeXchange"
+                                unexpected_msrun_names[column] = 1
+
+                icolumn += 1
+
+            iline += 1
+
+        # #### Check to see if an expected MS runs were not mentioned
+        for msrun in expected_msrun_names:
+            add_message(response, level='ERROR', status=464, code='MissingMSRunName', message=f"The ProteomeXchange record has an MS run name '{msrun}' that is not listed in the imported data table")
+
+        response['state'] = 'OK'
+        response['status'] = 200
+
+
+############################################################################
+def by_rootname(val):
+    return val['name']
+
+
+#### Add a message to the response
+def add_message(response, level=None, state=None, status=None, code=None, message=''):
+
+    state = None
+    timestamp = datetime.datetime.now()
+    #time.strftime('%Y-%m-%d %H:%M:%S', time.now())
+
+    if level == None:
+        level = 'ERROR'
+        state = 'ERROR'
+        status = 469
+        error_code = 'AddMessageMissingLevel'
+        message = 'Internal error: during error handling, level was None'
+
+    if level == 'DEBUG':
+        message_dict = { 'level': level, 'message': message, 'prefix': f"{timestamp} [{level}]: " }
+        response['log'].append(message_dict)
+
+    elif level == 'INFO':
+        message_dict = { 'level': level, 'message': message, 'prefix': f"{timestamp} [{level}]: " }
+        response['log'].append(message_dict)
+
+    elif level == 'WARNING':
+        if code is None: code = 'WARNING'
+        message_dict = { 'level': level, 'code': code, 'message': message, 'prefix': f"{timestamp} [{level}]: " }
+        if len(response['log']) < 999:
+            response['log'].append(message_dict)
+
+    elif level == 'ERROR':
+        pass
+
+    else:
+        level = 'ERROR'
+        state = 'ERROR'
+        status = 469
+        error_code = 'AddMessageUnrecognizedLevel'
+        message = f"Internal error: during error handling, level '{level}' was not recognized"
+
+    if level == 'ERROR':
+        if code is None: code = 'ERROR'
+        if status is None: status = 469
+        message_dict = { 'level': level, 'code': code, 'message': message, 'prefix': f"{timestamp} [{level}]: " }
+        if len(response['log']) < 999:
+            response['log'].append(message_dict)
+        response['state'] = level
+        response['status'] = status
+        response['title'] = code
+        response['detail'] = message
+
+
+
+#### Write our the current status in the correct format
+def send_response(response, output_format="text", mode='CLI', dataset_id=None):
+
+    if mode == 'HTTP':
+        if response['state'] == 'OK':
+            pass
+        else:
+            print("Status: " + str(response['status']))
+
+        #### Start the HTTP output
+        if output_format == 'json':
+           print("Access-Control-Allow-Origin: *")
+           print("Access-Control-Allow-Headers: x-requested-with, Content-Type")
+           print("Access-Control-Allow-Methods: POST, GET, OPTIONS")
+           print("Content-type: application/json\n")
+        else:
+           print("Content-type: text/tab-separated-values")
+           if dataset_id is not None:
+               print(f'Content-Disposition: attachment; filename="{dataset_id}.tsv"')
+           print("")
+
+        #### If this is an error, show the error information
+        if response['state'] != 'OK':
+            if output_format == 'json':
+                response['type'] = 'about:blank'
+                print(json.dumps(response,sort_keys=True,indent=2))
+            else:
+                for key in response:
+                    print(f"{key}: " + str(response[key]))
+
+    else:
+        if response['state'] == 'OK':
+            print("OK")
+        else:
+            if output_format == 'json':
+                print(json.dumps(response,sort_keys=True,indent=2))
+            else:
+                for key in response:
+                    print(f"{key}: " + str(response[key]))
+
+
+#### When executed directly, run the main() function
+if __name__ == "__main__": main()
