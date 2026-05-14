@@ -249,7 +249,9 @@ class SDRFHandler:
             for title in columns_of_interest:
                 if column_indexes[title] is not None:
                     icolumn = column_indexes[title]
-                    column_unique_values[title][row[icolumn]] = True
+                    value = row[icolumn]
+                    if value is not None and str(value).strip() != '':
+                        column_unique_values[title][value] = True
 
         #### Record which columns are completely empty (i.e. no values in the column)
         for row in sdrf_data['rows']:
@@ -543,7 +545,7 @@ class SDRFHandler:
                             self.log_problem('WARNING', 'MergeValueOverridesMain', irow + 1, icolumn + 1, f"For column '{title}', values in main ({main_value}) and merge ({merge_value}) differ. Value from merge ({merge_value}) supercedes.")
                 elif len(merged_column['main_icolumn']) > 1:
                     for imulti_column in merged_column['main_icolumn']:
-                        value = row[merged_column['merge_icolumn'][0]]
+                        value = imulti_column
                         if tag_with_decisions:
                             value += '_multi'
                         new_row.append(value)
