@@ -75,7 +75,7 @@ function main(what=null) {
 	var timeout = setTimeout(function() {
 	    if (document.getElementById(link_id))
 		document.getElementById(link_id).click();
-	}, 200);
+	}, 300);
     }
 
 }
@@ -142,7 +142,7 @@ function get_PXitem(pxid) {
 		    throw new Error('['+data.error_code+'] '+data.description);
 	    }
 	    else if (call == 'datasets')
-		PXdataset_details(data,false);
+		PXdataset_details(data,apiurl,false);
 	    else
 		PXlibrary_details(data,false);
         })
@@ -959,7 +959,7 @@ function get_PXdeets_div(preview=false) {
 }
 
 
-function PXdataset_details(itemdata,preview=false) {
+function PXdataset_details(itemdata,src_url=null,preview=false) {
     var div = get_PXdeets_div(preview);
 
     var accession = '--n/a--';
@@ -1039,19 +1039,25 @@ function PXdataset_details(itemdata,preview=false) {
 	'Full Dataset Link List' : [
 	    '||{fullDatasetLinks}'
 	],
-	'SDRF (Sample and Datafile Relationship Format)' : [
-	    '|Data URL|{sdrf_metadata/submitted_sdrf_data_url}',
-	    '|UI URL|{sdrf_metadata/submitted_sdrf_ui_url}',
-	    '|Ext. Data URL|{sdrf_metadata/external_sdrf_data_url}',
-	    '|Ext. UI URL|{sdrf_metadata/external_sdrf_ui_url}',
-	    '|N Samples|{sdrf_metadata/sdrf_data/n_samples}',
-	    '|N Files|{sdrf_metadata/sdrf_data/n_files}',
-	    '|N Rows|{sdrf_metadata/sdrf_data/n_rows}'
-	],
+	'SDRF (Sample and Datafile Relationship Format)' : [],
 	'Full Dataset File List' : [
 	    '||{datasetFiles}'
 	]
     };
+
+    for (var sdrfsrc of ['curated', 'repository', 'agentic']) {
+	if (itemdata['sdrf_metadata']['sdrf_source'][sdrfsrc]['sdrf_data']) {
+	    esqueleto['SDRF (Sample and Datafile Relationship Format)'].push(
+		'th|'+sdrfsrc+'|SDRF_LINK',
+		'|N Assays|{sdrf_metadata/sdrf_source/'+sdrfsrc+'/sdrf_data/n_assays}',
+		'|N Samples|{sdrf_metadata/sdrf_source/'+sdrfsrc+'/sdrf_data/n_samples}',
+		'|N Files|{sdrf_metadata/sdrf_source/'+sdrfsrc+'/sdrf_data/n_files}',
+		'|N Rows|{sdrf_metadata/sdrf_source/'+sdrfsrc+'/sdrf_data/n_rows}',
+		'|Data URL|{sdrf_metadata/sdrf_source/'+sdrfsrc+'/data_url}',
+		'|UI URL|{sdrf_metadata/sdrf_source/'+sdrfsrc+'/ui_url}'
+	    );
+	}
+    }
 
 
     for (var head in esqueleto) {
@@ -1066,14 +1072,20 @@ function PXdataset_details(itemdata,preview=false) {
 
 	var filetypes = {};
         for (var row of esqueleto[head]) {
-            var [format, name, lookup] = row.split("|");
+	    let [format, name, lookup] = row.split("|");
 
-	    var [path1, path2, path3] = lookup.substring( lookup.indexOf( '{' ) + 1, lookup.indexOf( '}' ) ).split('/');
-	    var value = itemdata[path1];
+	    var [path1, path2, path3, path4, path5, path6] = lookup.substring( lookup.indexOf( '{' ) + 1, lookup.indexOf( '}' ) ).split('/');
+	    var value = itemdata[path1] ? itemdata[path1] : lookup;
 	    if (path2 && value)
 		value = value[path2];
 	    if (path3 && value)
 		value = value[path3];
+	    if (path4 && value)
+		value = value[path4];
+	    if (path5 && value)
+		value = value[path5];
+	    if (path6 && value)
+		value = value[path6];
 
             var fields = lookup.substring( lookup.indexOf( '[' ) + 1, lookup.indexOf( ']' ) ).split(',');
 
@@ -1107,20 +1119,36 @@ function PXdataset_details(itemdata,preview=false) {
                     link.append(value);
                     td.append(link);
                 }
+                else if (value == "SDRF_LINK") {
+		    let sdata = itemdata['sdrf_metadata']['sdrf_source'][name]['sdrf_data'];
+
+                    var link = document.createElement("a");
+		    link.className = 'filtertag';
+		    link.style.padding = '0px 20px';
+		    if (!document.getElementById('pagelink_sdrf'))
+			link.id = "pagelink_sdrf"; // there can only be one...
+		    link.onclick = function() { render_PXtable(sdata['titles'],sdata['rows'], accession); toggle_box("table-details", true); };
+		    link.append(' view ');
+		    link.title = 'view full SDRF data table (pop-up)';
+		    td.append(link);
+
+		    for (let problem of ['errors','warnings']) {
+			if (sdata['problems'][problem]['count'] > 0) {
+			    link = document.createElement("span");
+			    link.className = 'buttontag';
+			    link.style.padding = '0px 10px';
+                            link.title = 'view SDRF data file '+problem+' (pop-up)';
+			    link.onclick = function() { render_PXtable([problem],sdata['problems'][problem]['list'], 'File '+problem); toggle_box("table-details", true); };
+			    link.append(sdata['problems'][problem]['count'] + " " + problem);
+                            td.append(link);
+			}
+		    }
+
+		}
 		else
 		    td.append(value);
 
-                if (name == "N Rows") {  // meh
-                    var link = document.createElement("a");
-		    link.id = "pagelink_sdrf";
-		    link.onclick = function() { render_PXtable(itemdata['sdrf_metadata']['sdrf_data']['titles'],itemdata['sdrf_metadata']['sdrf_data']['rows'], accession); toggle_box("table-details"); };
-		    link.append(' [ view ]');
-		    link.title = 'view full SDRF data table (pop-up)';
-		    td.append(link);
-		}
-
 		tr.append(td);
-
 		table.append(tr);
             }
             else if (Array.isArray(value)) {
@@ -1372,6 +1400,18 @@ function PXdataset_details(itemdata,preview=false) {
 
 	span.append(document.createElement("br"));
     }
+
+    if (src_url) {
+	var ele = document.createElement("a");
+	ele.className = 'updated';
+	ele.href = src_url;
+	ele.append("View raw API response (JSON)");
+	div.after(ele);
+	ele = document.createElement("br");
+	ele.style.clear = 'both';
+        div.after(ele);
+    }
+
 }
 
 function UNUSED_PXdataset_details() {
@@ -1842,12 +1882,22 @@ function render_PXtable(headings,rowdata,what=null) {
 
     for (var row of rowdata) {
 	tr = document.createElement("tr");
-	for (var cell of row) {
+
+	if (Array.isArray(row)) {
+	    for (var cell of row) {
+		var td = document.createElement('td');
+		td.style.whiteSpace = 'nowrap';
+		td.append(cell);
+		tr.append(td);
+	    }
+	}
+	else {
             var td = document.createElement('td');
             td.style.whiteSpace = 'nowrap';
-            td.append(cell);
+            td.append(row);
             tr.append(td);
 	}
+
 	table.append(tr);
     }
 
@@ -1923,7 +1973,7 @@ function display_rows(tableid, type, value=null) {
 	return;
 
     for (const row of table.rows) {
-	console.log(row.dataset[type]);
+	//console.log(row.dataset[type]);
 	if (!value)
 	    row.style.display = '';
 	else if (row.dataset[type] == value)
