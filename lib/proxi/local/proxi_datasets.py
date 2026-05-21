@@ -734,7 +734,7 @@ class ProxiDatasets:
             identifier = row[0]
             announce_date = row[9]   # FIXME
 
-            previous_extended_data_date ='2026-05-01'
+            previous_extended_data_date ='2006-05-01'
             #if identifier == 'PXD070494':
             if announce_date >= previous_extended_data_date:
                 print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
@@ -759,6 +759,14 @@ class ProxiDatasets:
                         validity = "invalid"
                     extended_data[identifier]['sdrf_stats'] = f"{sdrf_best_source} {validity}: {sdrf_data['n_samples']} samples / {sdrf_data['n_files']} files / {sdrf_data['n_rows']} rows" \
                         f" -- {sdrf_data['problems']['errors']['count']}/{sdrf_data['problems']['warnings']['count']} errors/warnings"
+                    n_sdrf_sources = 0
+                    for sdrf_source in ['repository', 'curated', 'agentic' ]:
+                        if dataset['sdrf_metadata']['sdrf_source'][sdrf_source]['data_url'] is not None:
+                            n_sdrf_sources += 1
+                    if n_sdrf_sources > 1:
+                        extended_data[identifier]['sdrf_stats'] = f"multiple sources: {sdrf_data['n_samples']} samples / {sdrf_data['n_files']} files / {sdrf_data['n_rows']} rows" \
+                            f" -- {sdrf_data['problems']['errors']['count']}/{sdrf_data['problems']['warnings']['count']} errors/warnings"
+
                     print(f"    extended_data={extended_data[identifier]}")
 
                 n_updated_records += 1
