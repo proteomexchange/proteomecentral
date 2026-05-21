@@ -764,7 +764,8 @@ class ProxiDatasets:
                         if dataset['sdrf_metadata']['sdrf_source'][sdrf_source]['data_url'] is not None:
                             n_sdrf_sources += 1
                     if n_sdrf_sources > 1:
-                        extended_data[identifier]['sdrf_stats'] = f"multiple sources: {sdrf_data['n_samples']} samples / {sdrf_data['n_files']} files / {sdrf_data['n_rows']} rows" \
+                        words = { 2: 'two', 3: 'three' }
+                        extended_data[identifier]['sdrf_stats'] = f"{words[n_sdrf_sources]} sources: {sdrf_data['n_samples']} samples / {sdrf_data['n_files']} files / {sdrf_data['n_rows']} rows" \
                             f" -- {sdrf_data['problems']['errors']['count']}/{sdrf_data['problems']['warnings']['count']} errors/warnings"
 
                     print(f"    extended_data={extended_data[identifier]}")
