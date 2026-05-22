@@ -275,9 +275,11 @@ class SDRFHandler:
             self.log_problem('ERROR', 'ZeroAssays', 0, 0, "SDRF file has no assay information for 'assay name'")
 
         self.n_files = len(column_unique_values['comment[data file]'])
-        if len(column_unique_values['comment[file uri]']) > self.n_files:
-            self.n_files = len(column_unique_values['comment[file uri]'])
-            self.log_problem('ERROR', 'MissingFileNames', 0, column_indexes['comment[data file]'], f"Data for file names is missing (no data for 'comment[data file]')")
+        n_file_uris = len(column_unique_values['comment[file uri]'])
+        if self.n_files == 0 and n_file_uris > 0:
+            self.n_files = n_file_uris
+        if self.n_files > 0 and n_file_uris > 0 and self.n_files != n_file_uris:
+            self.log_problem('ERROR', 'MissingFileNames', 0, column_indexes['comment[data file]'], f"Data mismatch for 'comment[data file]' ({len(column_unique_values['comment[data file]'])} distinct values) and 'comment[file uri]' ({len(column_unique_values['comment[file uri]'])} distinct values)")
         if self.n_files == 0:
             self.log_problem('ERROR', 'MissingFileData', 0, 0, f"Neither data file nor file uri is present")
 
