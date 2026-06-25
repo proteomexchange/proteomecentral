@@ -97,6 +97,32 @@
 <div id="results" style="display:none;"></div>
 
 
+<div id="sdrf-info" class="data-popup" style="overflow: auto; max-width:500px; border-color: rgb(127, 127, 127); visibility: hidden; opacity: 0; left: 100px; top: 100px;"><h3 class="dataset-title" style="margin: 0px; position: sticky; left: 0px; top: 0px; background: rgb(127, 127, 127);">SDRF Source Definitions<span class="filterlink" title="dismiss" onclick="toggle_box(&quot;sdrf-info&quot;);" style="float: right;"> ✖ </span></h3>
+
+  <div id="sdrf-info" class="dataset-content">
+    <p style="text-align: justify;text-indent: 20px;">
+      <strong>Curated</strong> SDRF files currently come from the BigBio GitHub site (https://github.com/bigbio/sdrf-annotated-datasets)
+      where a group of community curators, led by the developers of SDRF-Proteomics itself, produce and
+      deposit high-quality SDRFs for previously deposited datasets. The curators may not understand the datasets as fully as the
+      original authors, but they understand best how to create valid SDRF files.
+    </p>
+    <p style="text-align: justify;text-indent: 20px;">
+      <strong>Repository</strong> SDRF files are the original files deposited into a ProteomeXchange repository by the original data submitters
+      along with the original data files. The submitters presumably know their data the best, but often are less familiar with
+      producing valid and high-quality SDRF files. Many repository SDRFs do not pass validation, but may still be useful for understanding the dataset.
+    </p>
+    <p style="text-align: justify;text-indent: 20px;">
+      <strong>Agentic</strong> SDRF files are produced by the HAMLET pipeline (https://github.com/NCEMS/HAMLET), which aims to analyze large numbers of PXDs
+      and the associated journal articles with generative AI agents
+      in order to produce SDRF files for many more datasets than is possible by human curators. These SDRFs are almost always
+      technically valid, but some values may not be accurately captured by the AI. This pipeline is still in a beta phase and these SDRFs should
+      be evaluated carefully for possible incorrect values.
+    </p>
+  </div>
+</div>
+
+
+
 <!-- END main content -->
 
 <br clear="all">

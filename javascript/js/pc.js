@@ -116,6 +116,7 @@ function get_PXitem(pxid) {
     results_node.innerHTML = '';
     results_node.className = '';
 
+    window.scrollTo(0, 0);
     var wait = getAnimatedWaitBar(barwidth);
     wait.style.padding = 0;
     var span = document.createElement("h3");
@@ -294,6 +295,7 @@ function get_PXdata(filter,value,action=null) {
     results_node.innerHTML = '';
     results_node.className = '';
 
+    window.scrollTo(0, 0);
     var wait = getAnimatedWaitBar(barwidth);
     wait.style.padding = 0;
     var span = document.createElement("h3");
@@ -1059,7 +1061,7 @@ function PXdataset_details(itemdata,src_url=null,preview=false) {
 	}
     }
 
-
+    var pagelink_sdrf = false;
     for (var head in esqueleto) {
         var ele = document.createElement("div");
         ele.className = 'dataset-secthead';
@@ -1125,9 +1127,11 @@ function PXdataset_details(itemdata,src_url=null,preview=false) {
                     var link = document.createElement("a");
 		    link.className = 'filtertag';
 		    link.style.padding = '0px 20px';
-		    if (!document.getElementById('pagelink_sdrf'))
+		    if (!pagelink_sdrf) {
 			link.id = "pagelink_sdrf"; // there can only be one...
-		    link.onclick = function() { render_PXtable(sdata['titles'],sdata['rows'], accession); toggle_box("table-details", true); };
+			pagelink_sdrf = true;
+		    }
+		    link.onclick = function() { render_PXtable(sdata['titles'],sdata['rows'], accession+" / "+name); toggle_box("table-details", true); };
 		    link.append(' view ');
 		    link.title = 'view full SDRF data table (pop-up)';
 		    td.append(link);
@@ -1138,12 +1142,20 @@ function PXdataset_details(itemdata,src_url=null,preview=false) {
 			    link.className = 'buttontag';
 			    link.style.padding = '0px 10px';
                             link.title = 'view SDRF data file '+problem+' (pop-up)';
-			    link.onclick = function() { render_PXtable([problem],sdata['problems'][problem]['list'], 'File '+problem); toggle_box("table-details", true); };
+			    link.onclick = function() { render_PXtable([problem],sdata['problems'][problem]['list'], 'File '+problem+" ("+name+")"); toggle_box("table-details", true); };
 			    link.append(sdata['problems'][problem]['count'] + " " + problem);
                             td.append(link);
 			}
 		    }
 
+                    link = document.createElement("span");
+                    link.className = 'filtertag';
+                    link.style.background = '#ccc';
+                    link.style.padding = '0px 10px';
+                    link.title = 'view SDRF data file source definitions';
+                    link.onclick = function() { toggle_box("sdrf-info"); };
+                    link.append("info");
+                    td.append(link);
 		}
 		else
 		    td.append(value);
@@ -1842,6 +1854,7 @@ function render_PXtable(headings,rowdata,what=null) {
         div.id = 'table-details';
         div.className = 'data-popup';
         div.style.overflow = 'auto';
+	div.style.borderColor = '#f26722';
         document.getElementById("results").append(div);
     }
     div.innerHTML = '';
@@ -1852,6 +1865,7 @@ function render_PXtable(headings,rowdata,what=null) {
     span.style.position = 'sticky';
     span.style.left = '0';
     span.style.top = '0';
+    span.style.background = '#f26722';
     span.append("SDRF Info");
     if (what)
 	span.append(": [ "+what+" ]");
@@ -1859,9 +1873,27 @@ function render_PXtable(headings,rowdata,what=null) {
     var span2 = document.createElement("span");
     span2.className = 'filterlink';
     span2.style.float= 'right';
-    span.title = 'dismiss';
+    span2.title = 'dismiss';
     span2.setAttribute('onclick', 'toggle_box("table-details");');
     span2.append(" \u{2716} ");
+    span.append(span2);
+
+    span2 = document.createElement("span");
+    span2.className = 'filterlink';
+    span2.style.float= 'right';
+    span2.style.marginRight = '40px';
+    span2.title = 'Full-size window';
+    span2.setAttribute('onclick', 'toggle_boxsize("table-details",true);');
+    span2.append(" \u{1F78F} ");
+    span.append(span2);
+
+    span2 = document.createElement("span");
+    span2.className = 'filterlink';
+    span2.style.float= 'right';
+    span2.style.marginRight = '40px';
+    span2.title = 'Small window';
+    span2.setAttribute('onclick', 'toggle_boxsize("table-details",false,true);');
+    span2.append(" __ ");
     span.append(span2);
 
     div.append(span);
@@ -1966,6 +1998,15 @@ function toggle_box(box,open=false,close=false) {
             elebox.style.top = '10px';
     }
 }
+
+function toggle_boxsize(box,max=false,min=false) {
+    var elebox = document.getElementById(box);
+    if ((elebox.style.maxHeight == "95vh" && !max) || min)
+        elebox.style.maxHeight = "35vh";
+    else
+        elebox.style.maxHeight = "95vh";
+}
+
 
 function display_rows(tableid, type, value=null) {
     var table = document.getElementById(tableid+"_div");
