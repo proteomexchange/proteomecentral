@@ -391,9 +391,13 @@ class ProxiDatasets:
 
         sdrf_metadata = dataset['sdrf_metadata']
 
-        extern_sdrf_path = f"{extern_sdrfs_dir}/{dataset_identifier}/{dataset_identifier}.sdrf.tsv"
+        extern_sdrf_path = f"{extern_sdrfs_dir}/{dataset_identifier}"
         if not os.path.exists(extern_sdrf_path):
             return
+        files = os.listdir(extern_sdrf_path)
+        if len(files) != 1:
+            print(f"WARNING: Multiple files present in {extern_sdrf_path}. Expected one file, but got: {files}")
+        extern_sdrf_path += '/' + files[0]
 
         sdrf_handler = SDRFHandler()
         sdrf_handler.read(extern_sdrf_path)
