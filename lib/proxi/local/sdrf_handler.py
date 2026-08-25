@@ -279,7 +279,19 @@ class SDRFHandler:
         if self.n_files == 0 and n_file_uris > 0:
             self.n_files = n_file_uris
         if self.n_files > 0 and n_file_uris > 0 and self.n_files != n_file_uris:
-            self.log_problem('ERROR', 'MissingFileNames', 0, column_indexes['comment[data file]'], f"Data mismatch for 'comment[data file]' ({len(column_unique_values['comment[data file]'])} distinct values) and 'comment[file uri]' ({len(column_unique_values['comment[file uri]'])} distinct values)")
+            have_zip_files = False
+            has_unavailable_files = False
+            for file_uri, value in column_unique_values['comment[file uri]'].items():
+                if file_uri == 'not available':
+                    has_unavailable_files = True
+                if file_uri.endswith('.zip') or file_uri.endswith('.7z'):
+                    have_zip_files = True
+            if has_unavailable_files:
+                self.log_problem('WARNING', 'FileNameMismatch', 0, column_indexes['comment[file uri]'], f"Data mismatch between 'comment[data file]' ({len(column_unique_values['comment[data file]'])} distinct values) and 'comment[file uri]' ({len(column_unique_values['comment[file uri]'])} distinct values) but this appears to be because some file uris are listed as not available, so this may be okay")
+            if have_zip_files:
+                self.log_problem('WARNING', 'FileNameMismatch', 0, column_indexes['comment[file uri]'], f"Data mismatch between 'comment[data file]' ({len(column_unique_values['comment[data file]'])} distinct values) and 'comment[file uri]' ({len(column_unique_values['comment[file uri]'])} distinct values) but this appears to be because the file uris are zip archive files, so this may be okay")
+            else:
+                self.log_problem('ERROR', 'MissingFileNames', 0, column_indexes['comment[data file]'], f"Data mismatch for 'comment[data file]' ({len(column_unique_values['comment[data file]'])} distinct values) and 'comment[file uri]' ({len(column_unique_values['comment[file uri]'])} distinct values)")
         if self.n_files == 0:
             self.log_problem('ERROR', 'MissingFileData', 0, 0, f"Neither data file nor file uri is present")
 
