@@ -492,9 +492,13 @@ class ProxiDatasets:
 
         repository_sdrf_path = f"{repository_sdrf_cache_identifier_dir}/{sdrf_filename}"
         if not os.path.exists(repository_sdrf_path):
-            response = requests.get(sdrf_file_url)
+            try:
+                response = requests.get(sdrf_file_url)
+            except Exception as e:
+                eprint(f"WARNING: Failed to download '{sdrf_file_url}'. ERROR code: {e}")
+                return
             if response.status_code != 200:
-                eprint(f"WARNING: Failed to download 'sdrf_file_url'. Status code: {response.status_code}")
+                eprint(f"WARNING: Failed to download '{sdrf_file_url}'. Status code: {response.status_code}")
                 return
             with open(repository_sdrf_path, 'wb') as outfile:
                 outfile.write(response.content)
