@@ -506,7 +506,7 @@ function showstats(type,amount,nrows,value,color) {
     pct = (100 * pct).toFixed((pct<0.1?1:0));
 
     document.getElementById("center_"+type).setAttribute('fill', color);
-    document.getElementById("stats1_"+type).innerHTML = amount+" datasets ("+pct+"%)";
+    document.getElementById("stats1_"+type).innerHTML = amount+" "+_px_settings['data_mode']+" ("+pct+"%)";
     document.getElementById("stats2_"+type).innerHTML = value;
 }
 

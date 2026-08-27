@@ -12,6 +12,7 @@
     <div id="bannerlinks">
       <a href="/">Home</a> |
       <a href="/?view=datasets">Datasets</a> |
+      <a href="/?view=libraries">Libraries</a> |
       <a href="/usi/">USI</a> |
       <a href="/quetzal/">Quetzal</a> |
       <a href="/PROXI.php">PROXI</a>
