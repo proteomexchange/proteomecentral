@@ -835,7 +835,7 @@ sub validatePXXMLDocument {
     $root = $1;
   }
   unless ( -f "$root/$schema" ) {
-    $response->{message} = "The schema $schema is not found on the local system. Please report this internal error.";
+    $response->{message} = "The schema $schema is not found on the local system (root=$root). Please report this internal error.";
     return($response);
   }
 
