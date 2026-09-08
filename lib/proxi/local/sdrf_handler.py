@@ -182,7 +182,6 @@ class SDRFHandler:
             'characteristics[organism part]': None,
             'comment[technical replicate]': None,
             'characteristics[biological replicate]': None,
-            'comment[file uri]': None,
             'comment[modification parameters]': None,
             'comment[cleavage agent details]': None,
             'comment[instrument]': None,
