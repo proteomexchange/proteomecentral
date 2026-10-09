@@ -76,6 +76,7 @@ class ProxiDatasets:
 
         self.refresh_data_if_stale()
 
+        self.hamlet_subdir = None
 
 
     #### Destructor
@@ -427,6 +428,18 @@ class ProxiDatasets:
             return
 
         extern_sdrfs_dir = '/net/dblocal/wwwspecial/proteomecentral/extern/HAMLET/store/hamlet_sdrfs'
+        extern_sdrfs_subdir = ""
+        if self.hamlet_subdir is None:
+            subdirs = os.listdir(extern_sdrfs_dir)
+            latest_subdir = ''
+            for subdir in subdirs:
+                if subdir[0] == 'v':
+                    latest_subdir = subdir
+            if latest_subdir > '':
+                extern_sdrfs_subdir = latest_subdir
+        else:
+            extern_sdrfs_subdir = self.hamlet_subdir
+        extern_sdrfs_dir += f"/{extern_sdrfs_subdir}"
 
         sdrf_metadata = dataset['sdrf_metadata']
 
@@ -444,13 +457,13 @@ class ProxiDatasets:
         sdrf_handler.sdrf_data['problems'] = sdrf_handler.problems
 
         sdrf_metadata['sdrf_data'] = sdrf_handler.sdrf_data
-        sdrf_metadata['external_sdrf_ui_url'] = f"https://github.com/NCEMS/HAMLET/blob/main/store/hamlet_sdrfs/{dataset_identifier}.sdrf.tsv"
-        sdrf_metadata['external_sdrf_data_url'] = f"https://raw.githubusercontent.com/NCEMS/HAMLET/refs/heads/main/store/hamlet_sdrfs/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['external_sdrf_ui_url'] = f"https://github.com/NCEMS/HAMLET/blob/main/store/hamlet_sdrfs/{extern_sdrfs_subdir}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['external_sdrf_data_url'] = f"https://raw.githubusercontent.com/NCEMS/HAMLET/refs/heads/main/store/hamlet_sdrfs/{extern_sdrfs_subdir}/{dataset_identifier}.sdrf.tsv"
 
         sdrf_source = 'agentic'
         sdrf_metadata['sdrf_source'][sdrf_source]['sdrf_data'] = sdrf_handler.sdrf_data
-        sdrf_metadata['sdrf_source'][sdrf_source]['ui_url'] = f"https://github.com/NCEMS/HAMLET/blob/main/store/hamlet_sdrfs/{dataset_identifier}.sdrf.tsv"
-        sdrf_metadata['sdrf_source'][sdrf_source]['data_url'] = f"https://raw.githubusercontent.com/NCEMS/HAMLET/refs/heads/main/store/hamlet_sdrfs/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['sdrf_source'][sdrf_source]['ui_url'] = f"https://github.com/NCEMS/HAMLET/blob/main/store/hamlet_sdrfs/{extern_sdrfs_subdir}/{dataset_identifier}.sdrf.tsv"
+        sdrf_metadata['sdrf_source'][sdrf_source]['data_url'] = f"https://raw.githubusercontent.com/NCEMS/HAMLET/refs/heads/main/store/hamlet_sdrfs/{extern_sdrfs_subdir}/{dataset_identifier}.sdrf.tsv"
         sdrf_metadata['sdrf_best_source'] = sdrf_source
 
 
