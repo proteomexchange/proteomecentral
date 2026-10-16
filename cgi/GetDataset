@@ -1,27 +1,11 @@
 #!/usr/local/bin/perl -w
-
 use strict;
 use FindBin;
-use lib "$FindBin::Bin/../lib/perl";
-
-use XML::Writer;
-use ProteomeXchange::Dataset;
-use ProteomeXchange::DatasetParser;
-use ProteomeXchange::ShowDataset;
-use ProteomeXchange::DDIJS;
-use LWP::UserAgent;
-use HTTP::Request;
-
-
-my $ua = LWP::UserAgent->new();
+use CGI qw/:standard/;
 
 $| = 1;
-use CGI qw/:standard/;
 my $cgi = new CGI;
 $cgi->charset('utf-8');
-
-our $CGI_BASE_DIR = $cgi->new->url();
-$CGI_BASE_DIR =~ s/cgi.*/cgi/;
 
 my $response = {};
 $response->{result} = "ERROR";
@@ -29,20 +13,15 @@ $response->{message} = "ERROR: Unhandled exception E001";
 my @tmp = ( 'Dataset service start' );
 $response->{info} = \@tmp;
 
-my $ddi_js = ProteomeXchange::DDIJS->new();
-
 my $params;
-
-my @parameters = qw ( test verbose action ID filterstr outputMode detailLevel );
-
-our @template;
+my @parameters = qw ( test verbose action ID announcementXML filterstr outputMode detailLevel );
 
 
 #### Extract CGI parameters
 foreach my $parameter ( @parameters ) {
   if ($cgi->param($parameter)) {
     $params->{$parameter} = $cgi->param($parameter);
-  	push(@{$response->{info}},"Found input parameter $parameter=$params->{$parameter}") if ($cgi->param('verbose'));
+    push(@{$response->{info}},"Found input parameter $parameter=$params->{$parameter}") if ($cgi->param('verbose'));
   }
 }
 
@@ -50,82 +29,93 @@ foreach my $parameter ( @parameters ) {
 foreach my $arg ( @ARGV ) {
   if ( $arg =~ /(\S+)=(\S+)/) {
     my $key = $1;
-	  my $value = $2;
-		foreach my $parameter ( @parameters ) {
-			if ($key eq $parameter) {
-				$params->{$parameter} = $value;
-				push(@{$response->{info}},"Found input parameter $key=$value");
-			}
-		}
+    my $value = $2;
+    foreach my $parameter ( @parameters ) {
+      if ($key eq $parameter) {
+	$params->{$parameter} = $value;
+	push(@{$response->{info}},"Found input parameter $key=$value");
+      }
+    }
   }# else {
-   #  $response->{message} = "ERROR: Unable to parse method line parameter '$arg'\n";
-	 #  exit;
+  #  $response->{message} = "ERROR: Unable to parse method line parameter '$arg'\n";
+  #  exit;
   #}
 }
 
 $response->{verbose} = $params->{verbose};
 my $outputMode = $params->{outputMode} || 'html';
 
-my $skinLink = 'https://proteomecentral.proteomexchange.org/template.php';
-my @template;
-
-if ( $outputMode eq 'html' ) {
-    $response = $ua->request( HTTP::Request->new( GET => "$skinLink" ) );
-    if ( $response -> is_success()){
-        @template = split( "\n", $response->content() );
-    } else {
-        $response->{message} = "unable to open template https://proteomecentral.proteomexchange.org/template.php\n";
-        exit;
-    }
-}
-
-my $HTML  = new ProteomeXchange::ShowDataset;
-#### Handle a dataset identifier
-
-#### If the action is to search
-if ($params->{action} && $params->{action} =~ /search/i){
-  if ($params->{ID}  && $params->{ID} ne '') {
-    $HTML->showDataset(params=>$params,response=>$response);
-  } else {
-    $HTML->listDatasets(params=>$params,response=>$response);
-  }
-
-#### Otherwise, if action is not to search
-} else {
-
-  #### If an ID was directly provided, provide that one
+#### redirect here to new API//viewer so as to avoid unneeded CPU-costly imports
+#
+if ($outputMode =~ /html/i) {
+  my $qs = '';
   if ($params->{ID} && $params->{ID} ne '') {
-    if ($outputMode =~ /html/i) {
-      my $headerStr = $HTML->createPageHeader(template=>\@template,params=>$params);
-      $HTML->showDataset(params=>$params, response=>$response, headerStr=>$headerStr);
-      $HTML->printPageFooter(template=>\@template);
-    } else {
-      $HTML -> showDataset(params=>$params,response=>$response);
-    }
+    $qs = "?pxid=$params->{ID}";
+  }
 
-  #### Otherwise list render a whole listing of datasets
-  } else {
-    if ($outputMode =~ /html/i){
+  print "Status: 301 Moved Permanently\n";
+  print "Location: https://proteomecentral.proteomexchange.org/ui$qs\n";
+  print "\n";
+  exit;
+}
+elsif ($outputMode =~ /json/i) {
+  # only if we have an ID:
+  if ($params->{ID} && $params->{ID} ne '') {
+    print "Status: 301 Moved Permanently\n";
+    print "Location: https://proteomecentral.proteomexchange.org/api/proxi/v0.1/datasets/$params->{ID}?src=GetDatasetRedirect&resultType=full\n";
+    print "\n";
+    exit;
+  }
+}
+elsif ($outputMode =~ /xml/i) {
+  # only if we have a filename (new param):
+  if ($params->{announcementXML} && $params->{announcementXML} ne '') {
+    my $filepath = "/local/wwwspecial/proteomecentral/var/submissions/$params->{announcementXML}";
+    $filepath =~ s|\.\./||g;
 
-      print qq~
-<html>
-<header><meta http-equiv="REFRESH" content="0;url=https://proteomecentral.proteomexchange.org/ui">
-<body>
-</body>
-</html>
-~;
-return;
-
-      #$HTML -> printPageHeader (template => \@template);
-      my $js = get_js();
-      $HTML -> printTablePageHeader (template => \@template, inject_content => $js);
-      $HTML -> listDatasets(params=>$params,response=>$response);
-      $HTML -> printPageFooter (template => \@template);
-    } else {
-      $HTML -> listDatasets(params=>$params,response=>$response);
+    if ( -e "$filepath" ) {
+      open (INFILE, "$filepath" ) || die("ERROR: Unable to open $filepath");
+      print "Content-type: text/plain\n\n";
+      while ( my $inline = <INFILE> ) {
+	print $inline;
+      }
+      close(INFILE);
+      exit;
     }
   }
 }
+#
+#### fallback if we did not handle the request...
+
+
+use lib "$FindBin::Bin/../lib/perl";
+use XML::Writer;
+use ProteomeXchange::Dataset;
+use ProteomeXchange::DatasetParser;
+use ProteomeXchange::ShowDataset;
+use ProteomeXchange::DDIJS;
+use HTTP::Request;
+
+
+our $CGI_BASE_DIR = $cgi->new->url();
+$CGI_BASE_DIR =~ s/cgi.*/cgi/;
+
+my $ddi_js = ProteomeXchange::DDIJS->new();
+my $HTML   = new ProteomeXchange::ShowDataset;
+
+#### If the action is to search  // LM: did not seem to be used any longer...?
+# if ($params->{action} && $params->{action} =~ /search/i){
+####
+
+#### If an ID was directly provided, provide that one
+if ($params->{ID} && $params->{ID} ne '') {
+  $HTML->showDataset(params=>$params,response=>$response);
+}
+#### Otherwise list render a whole listing of datasets
+else {
+  $HTML->listDatasets(params=>$params,response=>$response);
+}
+
 
 
 #####################################################################
