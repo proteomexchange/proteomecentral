@@ -35,8 +35,8 @@ def tsv_generator(list_of_lists):
         yield("\t".join(row) + "\n")
 
 
-def get_dataset(identifier) -> str:
-    status_code, message, dataset = master_datasets.get_dataset(identifier)
+def get_dataset(identifier, resultType = None) -> str:
+    status_code, message, dataset = master_datasets.get_dataset(identifier, result_type = resultType)
     if status_code == 200:
         return(dataset)
     else:

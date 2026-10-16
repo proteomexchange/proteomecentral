@@ -182,7 +182,7 @@ class ProxiDatasets:
 
 
     #### Get the dataset metadata from the local system
-    def get_dataset(self, dataset_identifier):
+    def get_dataset(self, dataset_identifier, result_type = None):
 
         decomposed_dataset_identifier = self.decompose_dataset_identifier(dataset_identifier)
 
@@ -232,10 +232,11 @@ class ProxiDatasets:
         self.dataset['datasetHistory'] = self.dataset_history
 
         #### Get SDRF information if available
-        self.initialize_sdrf_metadata(self.dataset)
-        self.get_agentic_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
-        self.get_repository_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
-        self.get_curated_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
+        if result_type is not None and result_type == 'extended':
+            self.initialize_sdrf_metadata(self.dataset)
+            self.get_agentic_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
+            self.get_repository_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
+            self.get_curated_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
 
         return(self.status_response['status_code'], self.status_response, self.dataset)
 
