@@ -164,6 +164,18 @@ paths:
         description: "Identifier of the dataset"
         required: true
         type: "string"
+      - name: "resultType"
+        in: "query"
+        description: "Type of result to return to the user, where 'extended' returns\
+          \ auxiliary information such as SDRF data for the \
+          \ ProteomeCentral UI, and where 'compact' and 'full' returns a more traditional\
+          \ list of objects."
+        type: "string"
+        default: "compact"
+        enum:
+        - "compact"
+        - "full"
+        - "extended"
       responses:
         200:
           description: "OK"
