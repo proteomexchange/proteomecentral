@@ -127,7 +127,7 @@ function get_PXitem(pxid) {
     wait.append(span);
     results_node.append(wait);
 
-    var apiurl = _api[call] + '/' + pxid + '?src=PCUI&resultType=full';
+    var apiurl = _api[call] + '/' + pxid + '?src=PCUI&resultType=extended';  // was: full
     fetch(apiurl)
         .then(response => {
             try   { return response.json(); }
@@ -1107,10 +1107,13 @@ function PXdataset_details(itemdata,src_url=null,preview=false) {
                 if (name.startsWith('Announcement XML')) {
                     var link = document.createElement("a");
                     link.target = "_xml";
-                    link.href  = "/cgi/GetDataset?outputMode=XML&test=no&ID="+accession;
+                    link.href = "/cgi/GetDataset?src=PCUI&outputMode=XML&ID="+accession;
+		    // keep in case file is not found on server...
 		    if (itemdata['__current__datasetHistory']['reanalysisNumber'])
 			link.href += "." + itemdata['__current__datasetHistory']['reanalysisNumber'];
 		    link.href += "-" + itemdata['__current__datasetHistory']['revisionNumber'];
+		    // triggers new (faster) code:
+                    link.href += "&announcementXML="+value;
                     link.append(value);
                     td.append(link);
 		}
