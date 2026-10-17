@@ -475,6 +475,8 @@ class ProxiDatasets:
         if dataset is None:
             return
 
+        if 'sdrf_metadata' not in dataset or dataset['sdrf_metadata'] is None:
+            self.initialize_sdrf_metadata(dataset)
         sdrf_metadata = dataset['sdrf_metadata']
 
         sdrf_file_url = None
