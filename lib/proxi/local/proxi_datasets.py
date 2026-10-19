@@ -232,8 +232,8 @@ class ProxiDatasets:
         self.dataset['datasetHistory'] = self.dataset_history
 
         #### Get SDRF information if available
+        self.initialize_sdrf_metadata(self.dataset)
         if result_type is not None and result_type == 'extended':
-            self.initialize_sdrf_metadata(self.dataset)
             self.get_agentic_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
             self.get_repository_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
             self.get_curated_sdrf_metadata(decomposed_dataset_identifier['stripped_dataset_identifier'], self.dataset)
