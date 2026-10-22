@@ -1,12 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
-<?php
-  $DOCUMENT_ROOT = $_SERVER['DOCUMENT_ROOT'];
-  /* $Id$ */
-  $TITLE="PROXI server status";
-  $SUBTITLE="";
-  include("includes/header.inc.php");
-?>
+<!--#set var="TITLE" value="PROXI server status"-->
+<!--#include virtual="includes/header.inc.php" -->
 <link rel="stylesheet" href="css/proxistatus.css">
 <script src="javascript/js/proxistatus.js"></script>
 
@@ -23,8 +18,6 @@ Debug Info::<br/>
 
 <!-- END main content -->
 
-<?php
-  include("includes/footer.inc.php");
-?>
+<!--#include virtual="includes/footer.inc.php" -->
 </body>
 </html>

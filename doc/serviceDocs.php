@@ -1,16 +1,11 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
-<?php
-  $DOCUMENT_ROOT = $_SERVER['DOCUMENT_ROOT'];
-  /* $Id$ */
-  $TITLE="ProteomeXchange Dataset Submission Service Documentation";
-  $SUBTITLE="TEMPLATESUBTITLE";
-  include("$DOCUMENT_ROOT/includes/header.inc.php");
-?>
+<!--#set var="TITLE" value="ProteomeXchange Dataset Submission Service Documentation"-->
+<!--#include virtual="/includes/header.inc.php" -->
 
 <!-- BEGIN main content -->
 
-<H2><?php echo "$TITLE"; ?></H2>
+<H2><!--#echo var="TITLE" --></H2>
 
 <P>The ProteomeXchange ProteomeCentral server has two main components, the front-facing dataset browsing interface and the back-end dataset management/announcement system. The front-facing dataset browsing interface is largely self-explanatory and is accessible to a web browser at <a href="http://proteomecentral.proteomexchange.org/">http://proteomecentral.proteomexchange.org/</a>. The back-end dataset management/announcement system is used as a web service by automated software rather than interactively via a web browser. This page provides documentation to this web service.<P>
 <P>The primary workflow for registering datasets via ProteomeXchange is as follows:
@@ -105,7 +100,5 @@ validateXML</td><td>This is similar to submitXML, except that the uploaded XML i
 
 <!-- END main content -->
 
-<?php
-  include("$DOCUMENT_ROOT/includes/footer.inc.php");
-?>
+<!--#include virtual="/includes/footer.inc.php" -->
 </html>

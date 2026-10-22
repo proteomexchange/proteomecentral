@@ -3,7 +3,10 @@
 <link rel="stylesheet" href="/css/isb.css" />
 <link rel="stylesheet" href="/css/pc.css" />
 <script src="/javascript/js/utils.js"></script>
-<title><?php if ($TITLE) { echo "$TITLE"; } ?></title>
+<!--#if expr="-z v('TITLE')"-->
+<!--#set var="TITLE" value="ProteomeCentral"-->
+<!--#endif-->
+<title><!--#echo var="TITLE" --></title>
 </head>
 
 <body bgcolor="#f4f6f8" marginwidth="0" marginheight="0">
