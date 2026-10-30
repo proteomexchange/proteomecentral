@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <!--#set var="TITLE" value="Universal Spectrum Identifier // ProteomeXchange"-->
-<!--#include virtual="/devLM/includes/header.inc.php" -->
+<!--#include virtual="/includes/header.inc.php" -->
 <script src="../javascript/js/usi.js"></script>
 <script src="../javascript/js/lorikeet/jquery.min.js"></script>
 <script src="../javascript/js/lorikeet/jquery-ui.slider.min.js"></script>
@@ -141,7 +141,7 @@ Case 5: Reporting spectra of unidentified peptides with the potential to lead to
 
 <!-- END main content -->
 
-<!--#include virtual="/devLM/includes/footer.inc.php" -->
+<!--#include virtual="/includes/footer.inc.php" -->
 
 </body>
 </html>
