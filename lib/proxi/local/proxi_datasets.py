@@ -397,9 +397,26 @@ class ProxiDatasets:
         if not os.path.exists(extern_sdrf_path):
             return
         files = os.listdir(extern_sdrf_path)
-        if len(files) != 1:
+        if len(files) == 0:
+            print(f"WARNING: No files present in {extern_sdrf_path}. Expected one file, but got 0")
+            return
+        if len(files) > 1:
             print(f"WARNING: Multiple files present in {extern_sdrf_path}. Expected one file, but got: {files}")
-        extern_sdrf_path += '/' + files[0]
+            final_file = None
+            okay_file = None
+            for file in files:
+                if file.endswith('.md'):
+                    continue
+                if file.endswith('.tsv'):
+                    final_file = file
+                okay_file = file
+            if final_file is None and okay_file is not None:
+                final_file = okay_file
+                print(f"WARNING: File {final_file} is not explicitly a tsv file, but seems like a decent choice here")
+        else:
+            final_file = files[0]
+
+        extern_sdrf_path += '/' + final_file
 
         sdrf_handler = SDRFHandler()
         sdrf_handler.read(extern_sdrf_path)
@@ -762,7 +779,7 @@ class ProxiDatasets:
             #if identifier == 'PXD070494':
             if announce_date >= previous_extended_data_date:
                 print(f"irow={irow}  identifier={identifier}, announce_date={announce_date}")
-                status_code, message, dataset = self.get_dataset(identifier)
+                status_code, message, dataset = self.get_dataset(identifier, result_type='extended')
                 if status_code != 200 or dataset is None:
                     error_message = f"ERROR: Unable to read dataset with identifier {identifier}"
                     print(error_message)
